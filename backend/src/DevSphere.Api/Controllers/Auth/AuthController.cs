@@ -52,6 +52,21 @@ public class AuthController : ControllerBase
             return BadRequest(result.Errors);
         }
 
+        var role = request.Role;
+
+        if (role != AppRoles.Candidate &&
+            role != AppRoles.Employer)
+        {
+            return BadRequest(new
+            {
+                message = "Invalid role."
+            });
+        }
+
+        await _userManager.AddToRoleAsync(
+            user,
+            role);
+
         var token = await _tokenService.CreateToken(user);
 
         return Ok(new AuthResponse
@@ -84,6 +99,8 @@ public class AuthController : ControllerBase
         {
             return Unauthorized();
         }
+
+        
 
         var token = await _tokenService.CreateToken(user);
 
