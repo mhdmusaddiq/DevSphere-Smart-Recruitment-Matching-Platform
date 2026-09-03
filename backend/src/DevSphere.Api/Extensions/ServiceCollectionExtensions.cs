@@ -42,7 +42,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IVacancyService, VacancyService>();
 
-        services.AddScoped<JobApplicationService>();
+        services.AddScoped<IJobApplicationService, JobApplicationService>();
 
         var jwtSettings = configuration.GetSection("JwtSettings");
 

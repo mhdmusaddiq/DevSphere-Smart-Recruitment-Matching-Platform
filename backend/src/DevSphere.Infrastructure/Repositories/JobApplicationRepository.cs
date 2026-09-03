@@ -15,25 +15,6 @@ public class JobApplicationRepository
     }
 
 
-    public async Task AddAsync(
-        JobApplication application)
-    {
-        await _context.JobApplications
-            .AddAsync(application);
-
-        await _context.SaveChangesAsync();
-    }
-
-
-    public async Task<List<JobApplication>> GetByCandidateAsync(
-        string candidateId)
-    {
-        return await _context.JobApplications
-            .Where(x => x.CandidateId == candidateId)
-            .ToListAsync();
-    }
-
-
     public async Task<bool> ExistsAsync(
         string candidateId,
         string vacancyId)
@@ -42,5 +23,32 @@ public class JobApplicationRepository
             .AnyAsync(x =>
                 x.CandidateId == candidateId &&
                 x.VacancyId == vacancyId);
+    }
+
+
+    public async Task AddAsync(
+        JobApplication application)
+    {
+        await _context.JobApplications.AddAsync(application);
+
+        await _context.SaveChangesAsync();
+    }
+
+
+    public async Task<IEnumerable<JobApplication>> GetByCandidateAsync(
+        string candidateId)
+    {
+        return await _context.JobApplications
+            .Where(x => x.CandidateId == candidateId)
+            .ToListAsync();
+    }
+
+
+    public async Task<IEnumerable<JobApplication>> GetByVacancyAsync(
+        string vacancyId)
+    {
+        return await _context.JobApplications
+            .Where(x => x.VacancyId == vacancyId)
+            .ToListAsync();
     }
 }

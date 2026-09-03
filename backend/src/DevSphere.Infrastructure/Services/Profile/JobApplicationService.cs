@@ -1,9 +1,10 @@
 using DevSphere.Application.DTOs.Application;
+using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Repositories;
 
 namespace DevSphere.Infrastructure.Services.Profile;
 
-public class JobApplicationService
+public class JobApplicationService : IJobApplicationService
 {
     private readonly JobApplicationRepository _repository;
 
@@ -35,7 +36,7 @@ public class JobApplicationService
             Id = Guid.NewGuid(),
             CandidateId = request.CandidateId,
             VacancyId = request.VacancyId,
-            Status = 0,
+            Status = DevSphere.Domain.Enums.ApplicationStatus.Applied,
             AppliedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow
         };
@@ -44,7 +45,12 @@ public class JobApplicationService
         await _repository.AddAsync(application);
 
 
-        return request;
+        return new JobApplicationDto
+        {
+            CandidateId = application.CandidateId,
+            VacancyId = application.VacancyId,
+            Status = application.Status.ToString()
+        };
     }
 
 
@@ -56,11 +62,12 @@ public class JobApplicationService
 
 
         return applications
-            .Select(x => new JobApplicationDto
-            {
-                CandidateId = x.CandidateId,
-                VacancyId = x.VacancyId
-            })
-            .ToList();
+    .Select(x => new JobApplicationDto
+    {
+        CandidateId = x.CandidateId,
+        VacancyId = x.VacancyId,
+        Status = x.Status.ToString()
+    })
+    .ToList();
     }
 }

@@ -1,7 +1,8 @@
 using DevSphere.Application.DTOs.Application;
-using DevSphere.Infrastructure.Services.Profile;
+using DevSphere.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DevSphere.Api.Controllers.Profile;
 
@@ -9,10 +10,10 @@ namespace DevSphere.Api.Controllers.Profile;
 [Route("api/applications")]
 public class JobApplicationController : ControllerBase
 {
-    private readonly JobApplicationService _service;
+    private readonly IJobApplicationService _service;
 
     public JobApplicationController(
-        JobApplicationService service)
+        IJobApplicationService service)
     {
         _service = service;
     }
@@ -23,10 +24,30 @@ public class JobApplicationController : ControllerBase
     public async Task<IActionResult> Apply(
         JobApplicationDto request)
     {
-        var result = await _service
-            .ApplyAsync(request);
+        var candidateId = User.FindFirst(
+            ClaimTypes.NameIdentifier
+        )?.Value;
 
-        return Ok(result);
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        request.CandidateId = candidateId;
+
+        try
+        {
+            var result = await _service.ApplyAsync(request);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
 
@@ -34,12 +55,17 @@ public class JobApplicationController : ControllerBase
     [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> GetMyApplications()
     {
-        var candidateId = User
-            .FindFirst("sub")?
-            .Value;
+        var candidateId = User.FindFirst(
+            ClaimTypes.NameIdentifier
+        )?.Value;
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
 
         var result = await _service
-            .GetByCandidateAsync(candidateId!);
+            .GetByCandidateAsync(candidateId);
 
         return Ok(result);
     }

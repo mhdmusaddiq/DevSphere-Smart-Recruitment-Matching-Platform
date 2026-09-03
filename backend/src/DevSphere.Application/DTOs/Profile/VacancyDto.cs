@@ -11,4 +11,6 @@ public class VacancyDto
     public int RequiredExperienceMonths { get; set; }
 
     public bool IsOpen { get; set; }
+
+    public Guid Id { get; set; }
 }

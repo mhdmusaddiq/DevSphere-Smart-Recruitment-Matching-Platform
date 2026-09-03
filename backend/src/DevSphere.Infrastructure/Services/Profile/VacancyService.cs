@@ -26,6 +26,7 @@ public class VacancyService : IVacancyService
         return vacancies
             .Select(x => new VacancyDto
             {
+                Id = x.Id,
                 Title = x.Title,
                 Description = x.Description,
                 Location = x.Location,
@@ -58,6 +59,7 @@ public class VacancyService : IVacancyService
 
         return new VacancyDto
         {
+            Id = vacancy.Id,
             Title = vacancy.Title,
             Description = vacancy.Description,
             Location = vacancy.Location,
