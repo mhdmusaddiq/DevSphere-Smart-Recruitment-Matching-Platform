@@ -29,7 +29,8 @@ public class VacancyService : IVacancyService
                 Title = x.Title,
                 Description = x.Description,
                 Location = x.Location,
-                RequiredExperienceMonths = x.RequiredExperienceMonths
+                RequiredExperienceMonths = x.RequiredExperienceMonths,
+                IsOpen = x.IsOpen
             })
             .ToList();
     }
@@ -55,7 +56,13 @@ public class VacancyService : IVacancyService
 
         await _repository.AddAsync(vacancy);
 
-
-        return request;
+        return new VacancyDto
+        {
+            Title = vacancy.Title,
+            Description = vacancy.Description,
+            Location = vacancy.Location,
+            RequiredExperienceMonths = vacancy.RequiredExperienceMonths,
+            IsOpen = vacancy.IsOpen
+        };
     }
 }

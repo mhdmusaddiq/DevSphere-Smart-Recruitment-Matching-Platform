@@ -34,9 +34,9 @@ public class VacancyController : ControllerBase
     public async Task<IActionResult> Create(
         VacancyDto request)
     {
-        var employerId = User
-            .FindFirst("sub")?
-            .Value;
+        var employerId = User.FindFirst(
+    System.Security.Claims.ClaimTypes.NameIdentifier
+)?.Value;
 
         var result = await _service
             .CreateAsync(

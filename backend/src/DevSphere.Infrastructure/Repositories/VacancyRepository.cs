@@ -15,7 +15,15 @@ public class VacancyRepository
     }
 
 
-    public async Task<List<Vacancy>> GetOpenAsync()
+    public async Task<Vacancy?> GetByIdAsync(
+        Guid id)
+    {
+        return await _context.Vacancies
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+
+    public async Task<IEnumerable<Vacancy>> GetOpenAsync()
     {
         return await _context.Vacancies
             .Where(x => x.IsOpen)
@@ -26,17 +34,8 @@ public class VacancyRepository
     public async Task AddAsync(
         Vacancy vacancy)
     {
-        await _context.Vacancies
-            .AddAsync(vacancy);
+        await _context.Vacancies.AddAsync(vacancy);
 
         await _context.SaveChangesAsync();
-    }
-
-
-    public async Task<Vacancy?> GetByIdAsync(
-        Guid id)
-    {
-        return await _context.Vacancies
-            .FirstOrDefaultAsync(x => x.Id == id);
     }
 }
