@@ -1,10 +1,11 @@
 using DevSphere.Api.Extensions;
+using DevSphere.Api.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerConfiguration();
 
 builder.Services.AddDevSphereServices(builder.Configuration);
 
@@ -19,6 +20,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseDevSphereMiddleware();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 
