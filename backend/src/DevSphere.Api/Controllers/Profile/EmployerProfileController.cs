@@ -22,7 +22,9 @@ public class EmployerProfileController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var userId = User.FindFirst("sub")?.Value;
+        var userId = User.FindFirst(
+     System.Security.Claims.ClaimTypes.NameIdentifier
+ )?.Value;
 
         var profile = await _service
             .GetByUserIdAsync(userId!);
@@ -35,7 +37,9 @@ public class EmployerProfileController : ControllerBase
     public async Task<IActionResult> Create(
         EmployerProfileDto request)
     {
-        var userId = User.FindFirst("sub")?.Value;
+        var userId = User.FindFirst(
+     System.Security.Claims.ClaimTypes.NameIdentifier
+ )?.Value;
 
         var result = await _service
             .CreateAsync(userId!, request);

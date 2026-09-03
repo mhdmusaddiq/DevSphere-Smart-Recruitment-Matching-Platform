@@ -23,21 +23,13 @@ public class CandidateProfileRepository
     }
 
 
-    public async Task AddAsync(
+    public async Task<CandidateProfile> AddAsync(
         CandidateProfile profile)
     {
-        await _context.CandidateProfiles
-            .AddAsync(profile);
+        await _context.CandidateProfiles.AddAsync(profile);
 
         await _context.SaveChangesAsync();
-    }
 
-
-    public async Task UpdateAsync(
-        CandidateProfile profile)
-    {
-        _context.CandidateProfiles.Update(profile);
-
-        await _context.SaveChangesAsync();
+        return profile;
     }
 }

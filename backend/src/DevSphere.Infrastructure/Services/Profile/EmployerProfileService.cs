@@ -9,7 +9,6 @@ public class EmployerProfileService : IEmployerProfileService
 {
     private readonly EmployerProfileRepository _repository;
 
-
     public EmployerProfileService(
         EmployerProfileRepository repository)
     {
@@ -22,7 +21,6 @@ public class EmployerProfileService : IEmployerProfileService
     {
         var profile = await _repository
             .GetByUserIdAsync(userId);
-
 
         if (profile == null)
         {
@@ -40,26 +38,31 @@ public class EmployerProfileService : IEmployerProfileService
     }
 
 
-
     public async Task<EmployerProfileDto> CreateAsync(
         string userId,
-        EmployerProfileDto request)
+        EmployerProfileDto profile)
     {
-        var profile = new EmployerProfile
+        var entity = new EmployerProfile
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            CompanyName = request.CompanyName,
-            ContactEmail = request.ContactEmail,
-            Website = request.Website,
-            Location = request.Location,
+            CompanyName = profile.CompanyName,
+            ContactEmail = profile.ContactEmail,
+            Website = profile.Website,
+            Location = profile.Location,
             CreatedAt = DateTime.UtcNow
         };
 
 
-        await _repository.AddAsync(profile);
+        await _repository.AddAsync(entity);
 
 
-        return request;
+        return new EmployerProfileDto
+        {
+            CompanyName = entity.CompanyName,
+            ContactEmail = entity.ContactEmail,
+            Website = entity.Website,
+            Location = entity.Location
+        };
     }
 }
