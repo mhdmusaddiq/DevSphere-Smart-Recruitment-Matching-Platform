@@ -37,7 +37,9 @@ public class CandidateProfileController : ControllerBase
     public async Task<IActionResult> Create(
         CandidateProfileDto request)
     {
-        var userId = User.FindFirst("sub")?.Value;
+        var userId = User.FindFirst(
+     System.Security.Claims.ClaimTypes.NameIdentifier
+ )?.Value;
 
         var result = await _service
             .CreateAsync(userId!, request);
