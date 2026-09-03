@@ -1,10 +1,13 @@
+using DevSphere.Application.Interfaces;
+using DevSphere.Infrastructure.Data;
+using DevSphere.Infrastructure.Identity;
+using DevSphere.Infrastructure.Repositories;
+using DevSphere.Infrastructure.Services;
+using DevSphere.Infrastructure.Services.Profile;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using DevSphere.Infrastructure.Data;
-using DevSphere.Infrastructure.Identity;
-using DevSphere.Infrastructure.Services;
 
 namespace DevSphere.Api.Extensions;
 
@@ -24,6 +27,22 @@ public static class ServiceCollectionExtensions
             ;
 
         services.AddScoped<TokenService>();
+
+        services.AddScoped<ICandidateProfileService, CandidateProfileService>();
+
+        services.AddScoped<CandidateProfileRepository>();
+
+        services.AddScoped<EmployerProfileRepository>();
+
+        services.AddScoped<VacancyRepository>();
+
+        services.AddScoped<JobApplicationRepository>();
+
+        services.AddScoped<IEmployerProfileService, EmployerProfileService>();
+
+        services.AddScoped<IVacancyService, VacancyService>();
+
+        services.AddScoped<JobApplicationService>();
 
         var jwtSettings = configuration.GetSection("JwtSettings");
 
