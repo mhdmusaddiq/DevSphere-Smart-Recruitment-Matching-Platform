@@ -1,5 +1,7 @@
 using DevSphere.Api.Extensions;
 using DevSphere.Api.Configurations;
+using DevSphere.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,19 @@ builder.Services.AddSwaggerConfiguration();
 builder.Services.AddDevSphereServices(builder.Configuration);
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider
+        .GetRequiredService<RoleManager<ApplicationRole>>();
+
+    var userManager = scope.ServiceProvider
+        .GetRequiredService<UserManager<ApplicationUser>>();
+
+    await RoleSeeder.SeedAsync(
+        roleManager,
+        userManager);
+}
 
 if (app.Environment.IsDevelopment())
 {
