@@ -3,6 +3,7 @@ using DevSphere.Infrastructure.Identity;
 using DevSphere.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DevSphere.Api.Controllers.Auth;
 
@@ -51,7 +52,7 @@ public class AuthController : ControllerBase
             return BadRequest(result.Errors);
         }
 
-        var token = _tokenService.CreateToken(user);
+        var token = await _tokenService.CreateToken(user);
 
         return Ok(new AuthResponse
         {
@@ -84,7 +85,7 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var token = _tokenService.CreateToken(user);
+        var token = await _tokenService.CreateToken(user);
 
         return Ok(new AuthResponse
         {
@@ -93,4 +94,16 @@ public class AuthController : ControllerBase
             DisplayName = user.DisplayName
         });
     }
+
+    [Authorize]
+    [HttpGet("me")]
+    public IActionResult Me()
+    {
+        return Ok(new
+        {
+            userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+            email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+        });
+    }
+
 }
