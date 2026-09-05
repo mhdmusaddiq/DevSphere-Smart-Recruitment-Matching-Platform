@@ -38,13 +38,15 @@ public class MatchEngineService : IMatchEngine
         // Skills - 50%
         // =========================
 
-        var requiredSkills = vacancy.RequiredSkills
-            .Select(x => x.Name.Trim().ToLower())
-            .ToList();
+        var requiredSkills = vacancy.RequiredSkills?
+     .Select(x => x.Name.Trim().ToLower())
+     .ToList()
+     ?? new List<string>();
 
-        var candidateSkills = candidate.Skills
-            .Select(x => x.Name.Trim().ToLower())
-            .ToList();
+        var candidateSkills = candidate.Skills?
+    .Select(x => x.Name.Trim().ToLower())
+    .ToList()
+    ?? new List<string>();
 
         var matchedSkills = requiredSkills
             .Intersect(candidateSkills)
