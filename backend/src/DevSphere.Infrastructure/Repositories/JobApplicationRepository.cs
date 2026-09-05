@@ -16,8 +16,8 @@ public class JobApplicationRepository
 
 
     public async Task<bool> ExistsAsync(
-        string candidateId,
-        string vacancyId)
+    string candidateId,
+    Guid vacancyId)
     {
         return await _context.JobApplications
             .AnyAsync(x =>
@@ -45,7 +45,7 @@ public class JobApplicationRepository
 
 
     public async Task<IEnumerable<JobApplication>> GetByVacancyAsync(
-        string vacancyId)
+    Guid vacancyId)
     {
         return await _context.JobApplications
             .Where(x => x.VacancyId == vacancyId)

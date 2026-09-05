@@ -1,14 +1,13 @@
+using DevSphere.Domain.Entities.Applications;
+using DevSphere.Domain.Entities.Candidates;
+using DevSphere.Domain.Entities.Contacts;
+using DevSphere.Domain.Entities.Employers;
+using DevSphere.Domain.Entities.Notifications;
+using DevSphere.Domain.Entities.Skills;
+using DevSphere.Domain.Entities.Vacancies;
+using DevSphere.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-
-using DevSphere.Infrastructure.Identity;
-
-using DevSphere.Domain.Entities.Skills;
-using DevSphere.Domain.Entities.Candidates;
-using DevSphere.Domain.Entities.Employers;
-using DevSphere.Domain.Entities.Vacancies;
-using DevSphere.Domain.Entities.Applications;
-using DevSphere.Domain.Entities.Notifications;
 
 namespace DevSphere.Infrastructure.Data;
 
@@ -33,4 +32,6 @@ public class DevSphereDbContext
     public DbSet<JobApplication> JobApplications { get; set; }
 
     public DbSet<Notification> Notifications { get; set; }
+
+    public DbSet<ContactRequest> ContactRequests { get; set; }
 }

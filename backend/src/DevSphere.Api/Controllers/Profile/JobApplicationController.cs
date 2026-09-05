@@ -85,15 +85,13 @@ public class JobApplicationController : ControllerBase
 
 
 
-
     [HttpGet("vacancy/{vacancyId}")]
     [Authorize(Roles = "Employer")]
     public async Task<IActionResult> GetByVacancy(
-        string vacancyId)
+        Guid vacancyId)
     {
         var result = await _service
             .GetByVacancyAsync(vacancyId);
-
 
         return Ok(result);
     }

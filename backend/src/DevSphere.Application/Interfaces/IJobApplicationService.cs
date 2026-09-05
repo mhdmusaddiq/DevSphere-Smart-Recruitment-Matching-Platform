@@ -11,7 +11,7 @@ public interface IJobApplicationService
         string candidateId);
 
     Task<List<JobApplicationDto>> GetByVacancyAsync(
-    string vacancyId);
+    Guid vacancyId);
 
 
     Task<JobApplicationDto> UpdateStatusAsync(
