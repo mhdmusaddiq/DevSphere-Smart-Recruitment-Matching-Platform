@@ -24,11 +24,24 @@ public class MatchingController : ControllerBase
         string candidateId,
         string vacancyId)
     {
-        var result = await _engine
-            .CalculateAsync(
-                candidateId,
-                vacancyId);
+        try
+        {
+            var result = await _engine
+                .CalculateAsync(
+                    candidateId,
+                    vacancyId);
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+
+            return StatusCode(500, new
+            {
+                error = ex.Message,
+                detail = ex.InnerException?.Message
+            });
+        }
     }
 }

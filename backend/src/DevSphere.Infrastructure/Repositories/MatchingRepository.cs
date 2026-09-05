@@ -20,9 +20,9 @@ public class MatchingRepository
         string candidateId)
     {
         return await _context.CandidateProfiles
-            .Include(x => x.Skills)
-            .FirstOrDefaultAsync(x =>
-                x.UserId == candidateId);
+     .Include(x => x.Skills)
+     .FirstOrDefaultAsync(x =>
+         x.Id.ToString() == candidateId);
     }
 
 
