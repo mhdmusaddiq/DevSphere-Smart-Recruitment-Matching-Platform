@@ -51,9 +51,17 @@ public class MatchEngineService : IMatchEngine
             .ToList()
             ?? new List<string>();
 
-        var matchedSkills = requiredSkills
-            .Intersect(candidateSkills)
-            .Count();
+        var matchedSkillList = requiredSkills
+    .Intersect(candidateSkills)
+    .ToList();
+
+
+        var missingSkillList = requiredSkills
+            .Except(candidateSkills)
+            .ToList();
+
+
+        var matchedSkills = matchedSkillList.Count;
 
         Console.WriteLine("Candidate Skills:");
         foreach (var skill in candidateSkills)
@@ -141,6 +149,10 @@ public class MatchEngineService : IMatchEngine
 
         return new MatchResultDto
         {
+            MatchedSkills = matchedSkillList,
+
+            MissingSkills = missingSkillList,
+
             SkillsScore = Math.Round(skillsScore, 2),
 
             ExperienceScore = Math.Round(
