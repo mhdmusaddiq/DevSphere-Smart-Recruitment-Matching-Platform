@@ -16,8 +16,8 @@ public class MatchingRepository
     }
 
 
-    public async Task<CandidateProfile?> GetCandidateAsync(
-        string candidateId)
+    public virtual async Task<CandidateProfile?> GetCandidateAsync(
+    string candidateId)
     {
         return await _context.CandidateProfiles
      .Include(x => x.Skills)
@@ -26,8 +26,8 @@ public class MatchingRepository
     }
 
 
-    public async Task<Vacancy?> GetVacancyAsync(
-        string vacancyId)
+    public virtual async Task<Vacancy?> GetVacancyAsync(
+    string vacancyId)
     {
         return await _context.Vacancies
             .Include(x => x.RequiredSkills)

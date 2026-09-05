@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DevSphere.Application\DevSphere.Application.csproj" />
     <ProjectReference Include="..\..\src\DevSphere.Domain\DevSphere.Domain.csproj" />
+	  <ProjectReference Include="..\..\src\DevSphere.Infrastructure\DevSphere.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
