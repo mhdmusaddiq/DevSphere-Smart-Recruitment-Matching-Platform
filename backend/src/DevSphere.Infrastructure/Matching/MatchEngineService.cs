@@ -39,14 +39,17 @@ public class MatchEngineService : IMatchEngine
         // =========================
 
         var requiredSkills = vacancy.RequiredSkills?
-     .Select(x => x.Name.Trim().ToLower())
-     .ToList()
-     ?? new List<string>();
-
-        var candidateSkills = candidate.Skills?
-    .Select(x => x.Name.Trim().ToLower())
+    .Select(x => x.Name?.Trim().ToLower() ?? "")
+    .Where(x => !string.IsNullOrWhiteSpace(x))
     .ToList()
     ?? new List<string>();
+
+
+        var candidateSkills = candidate.Skills?
+            .Select(x => x.Name?.Trim().ToLower() ?? "")
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList()
+            ?? new List<string>();
 
         var matchedSkills = requiredSkills
             .Intersect(candidateSkills)
@@ -126,9 +129,15 @@ public class MatchEngineService : IMatchEngine
         }
 
 
+
         // =========================
         // Result
         // =========================
+
+        Console.WriteLine($"Skills Score: {skillsScore}");
+        Console.WriteLine($"Experience Score: {experienceScore}");
+        Console.WriteLine($"Education Score: {educationScore}");
+        Console.WriteLine($"Location Score: {locationScore}");
 
         return new MatchResultDto
         {
