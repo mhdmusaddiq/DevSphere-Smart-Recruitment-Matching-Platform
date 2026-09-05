@@ -68,4 +68,14 @@ public class JobApplicationRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task<JobApplication?> GetWithVacancyAsync(
+    Guid id)
+    {
+        return await _context.JobApplications
+            .Include(x => x.VacancyId)
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+
+
 }
