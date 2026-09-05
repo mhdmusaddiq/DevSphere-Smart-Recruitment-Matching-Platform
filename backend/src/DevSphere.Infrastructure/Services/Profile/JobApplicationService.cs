@@ -7,12 +7,14 @@ namespace DevSphere.Infrastructure.Services.Profile;
 public class JobApplicationService : IJobApplicationService
 {
     private readonly JobApplicationRepository _repository;
-
+    private readonly INotificationService _notificationService;
 
     public JobApplicationService(
-        JobApplicationRepository repository)
+    JobApplicationRepository repository,
+    INotificationService notificationService)
     {
         _repository = repository;
+        _notificationService = notificationService;
     }
 
 
@@ -105,15 +107,27 @@ public class JobApplicationService : IJobApplicationService
         }
 
 
-        application.Status =
-            Enum.Parse<DevSphere.Domain.Enums.ApplicationStatus>(
-                status);
+        if (!Enum.TryParse<
+     DevSphere.Domain.Enums.ApplicationStatus>(
+     status,
+     true,
+     out var newStatus))
+        {
+            throw new Exception(
+                "Invalid application status.");
+        }
 
+        application.Status = newStatus;
 
         application.UpdatedAt = DateTime.UtcNow;
 
 
         await _repository.UpdateAsync(application);
+
+        await _notificationService.CreateAsync(
+    application.CandidateId,
+    $"Your application status has been updated to {application.Status}."
+);
 
 
         return new JobApplicationDto

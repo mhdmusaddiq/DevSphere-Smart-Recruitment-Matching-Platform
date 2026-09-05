@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
+using DevSphere.Infrastructure.Repositories.Notifications;
+using DevSphere.Infrastructure.Services.Notifications;
 
 namespace DevSphere.Api.Extensions;
 
@@ -49,6 +50,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IJobApplicationService, JobApplicationService>();
 
         services.AddScoped<MatchingRepository>();
+
+        services.AddScoped<NotificationRepository>();
+
+        services.AddScoped<INotificationService, NotificationService>();
 
         var jwtSettings = configuration.GetSection("JwtSettings");
 

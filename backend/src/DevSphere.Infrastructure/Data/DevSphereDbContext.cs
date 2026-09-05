@@ -8,6 +8,7 @@ using DevSphere.Domain.Entities.Candidates;
 using DevSphere.Domain.Entities.Employers;
 using DevSphere.Domain.Entities.Vacancies;
 using DevSphere.Domain.Entities.Applications;
+using DevSphere.Domain.Entities.Notifications;
 
 namespace DevSphere.Infrastructure.Data;
 
@@ -30,4 +31,6 @@ public class DevSphereDbContext
     public DbSet<Vacancy> Vacancies { get; set; }
 
     public DbSet<JobApplication> JobApplications { get; set; }
+
+    public DbSet<Notification> Notifications { get; set; }
 }
