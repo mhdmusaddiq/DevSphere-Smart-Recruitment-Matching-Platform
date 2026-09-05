@@ -1,6 +1,7 @@
 using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Data;
 using DevSphere.Infrastructure.Identity;
+using DevSphere.Infrastructure.Matching;
 using DevSphere.Infrastructure.Repositories;
 using DevSphere.Infrastructure.Services;
 using DevSphere.Infrastructure.Services.Profile;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
 
 namespace DevSphere.Api.Extensions;
 
@@ -42,7 +44,11 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IVacancyService, VacancyService>();
 
+        services.AddScoped<IMatchEngine, MatchEngineService>();
+
         services.AddScoped<IJobApplicationService, JobApplicationService>();
+
+        services.AddScoped<MatchingRepository>();
 
         var jwtSettings = configuration.GetSection("JwtSettings");
 

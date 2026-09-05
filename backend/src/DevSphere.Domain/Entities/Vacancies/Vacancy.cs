@@ -1,3 +1,5 @@
+using DevSphere.Domain.Entities.Skills;
+
 namespace DevSphere.Domain.Entities.Vacancies;
 
 public class Vacancy : BaseEntity
@@ -13,4 +15,6 @@ public class Vacancy : BaseEntity
     public int RequiredExperienceMonths { get; set; }
 
     public bool IsOpen { get; set; } = true;
+
+    public ICollection<Skill> RequiredSkills { get; set; } = new List<Skill>();
 }
