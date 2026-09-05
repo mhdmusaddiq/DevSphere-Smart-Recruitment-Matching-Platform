@@ -51,4 +51,21 @@ public class JobApplicationRepository
             .Where(x => x.VacancyId == vacancyId)
             .ToListAsync();
     }
+
+    public async Task<JobApplication?> GetByIdAsync(
+    Guid id)
+    {
+        return await _context.JobApplications
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+
+    public async Task UpdateAsync(
+        JobApplication application)
+    {
+        _context.JobApplications.Update(application);
+
+        await _context.SaveChangesAsync();
+    }
+
 }

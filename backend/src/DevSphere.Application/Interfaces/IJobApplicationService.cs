@@ -9,4 +9,13 @@ public interface IJobApplicationService
 
     Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId);
+
+    Task<List<JobApplicationDto>> GetByVacancyAsync(
+    string vacancyId);
+
+
+    Task<JobApplicationDto> UpdateStatusAsync(
+        Guid applicationId,
+        string status);
+
 }
