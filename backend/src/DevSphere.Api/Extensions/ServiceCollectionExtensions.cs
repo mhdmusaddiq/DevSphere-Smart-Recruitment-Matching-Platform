@@ -10,7 +10,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using DevSphere.Infrastructure.Repositories.Notifications;
+using DevSphere.Infrastructure.Repositories.Contacts;
 using DevSphere.Infrastructure.Services.Notifications;
+using DevSphere.Infrastructure.Configurations;
+using DevSphere.Infrastructure.Services.Administration;
+using DevSphere.Infrastructure.Services.Applications;
+using DevSphere.Infrastructure.Services.Candidates;
+using DevSphere.Infrastructure.Services.Dashboards;
+using DevSphere.Infrastructure.Services.Employers;
+using DevSphere.Infrastructure.Services.Files;
+using DevSphere.Infrastructure.Services.Matching;
 
 namespace DevSphere.Api.Extensions;
 
@@ -53,7 +62,30 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<NotificationRepository>();
 
+        services.AddScoped<ContactRequestRepository>();
+
         services.AddScoped<INotificationService, NotificationService>();
+
+        services.Configure<FileStorageOptions>(
+            configuration.GetSection(FileStorageOptions.SectionName));
+
+        services.AddScoped<ResumeRepository>();
+        services.AddScoped<EmployerArchitectureRepository>();
+        services.AddScoped<ApplicationHistoryRepository>();
+        services.AddScoped<MatchResultRepository>();
+        services.AddScoped<AdminRepository>();
+        services.AddScoped<DashboardRepository>();
+        services.AddScoped<CandidateCareerRepository>();
+
+        services.AddScoped<IResumeService, ResumeService>();
+        services.AddScoped<IEmployerArchitectureService, EmployerArchitectureService>();
+        services.AddScoped<IApplicationHistoryService, ApplicationHistoryService>();
+        services.AddScoped<IMatchResultStore, MatchResultStore>();
+        services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IFileValidationService, FileValidationService>();
+        services.AddScoped<ICandidateCareerService, CandidateCareerService>();
 
         var jwtSettings = configuration.GetSection("JwtSettings");
 
