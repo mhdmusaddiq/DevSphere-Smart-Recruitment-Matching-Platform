@@ -46,4 +46,21 @@ public class CandidateProfileController : ControllerBase
 
         return Ok(result);
     }
-}
+
+    [HttpPut]
+    public async Task<IActionResult> Update(
+        CandidateProfileDto request)
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        var result = await _service.UpdateAsync(userId!, request);
+
+        if (result == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(result);
+    }}

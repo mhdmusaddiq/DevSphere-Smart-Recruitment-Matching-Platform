@@ -9,4 +9,7 @@ public interface ICandidateProfileService
     Task<CandidateProfileDto> CreateAsync(
         string userId,
         CandidateProfileDto profile);
-}
+
+    Task<CandidateProfileDto?> UpdateAsync(
+        string userId,
+        CandidateProfileDto profile);}

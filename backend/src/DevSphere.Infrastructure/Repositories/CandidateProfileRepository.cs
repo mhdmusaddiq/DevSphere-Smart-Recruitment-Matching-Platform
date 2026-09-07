@@ -32,4 +32,12 @@ public class CandidateProfileRepository
 
         return profile;
     }
-}
+
+    public async Task<CandidateProfile> UpdateAsync(
+        CandidateProfile profile)
+    {
+        _context.CandidateProfiles.Update(profile);
+        await _context.SaveChangesAsync();
+
+        return profile;
+    }}

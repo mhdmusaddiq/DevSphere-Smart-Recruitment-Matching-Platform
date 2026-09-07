@@ -41,6 +41,14 @@ public class CandidateProfileService : ICandidateProfileService
         string userId,
         CandidateProfileDto profile)
     {
+        var existing = await _repository.GetByUserIdAsync(userId);
+
+        if (existing != null)
+        {
+            throw new InvalidOperationException(
+                "A candidate profile already exists for this user.");
+        }
+
         var entity = new CandidateProfile
         {
             Id = Guid.NewGuid(),
@@ -65,4 +73,32 @@ public class CandidateProfileService : ICandidateProfileService
             Education = saved.Education
         };
     }
-}
+
+    public async Task<CandidateProfileDto?> UpdateAsync(
+        string userId,
+        CandidateProfileDto profile)
+    {
+        var existing = await _repository.GetByUserIdAsync(userId);
+
+        if (existing == null)
+        {
+            return null;
+        }
+
+        existing.FullName = profile.FullName;
+        existing.Location = profile.Location;
+        existing.ExperienceMonths = profile.ExperienceMonths;
+        existing.Education = profile.Education;
+        existing.UpdatedAt = DateTime.UtcNow;
+
+        var updated = await _repository.UpdateAsync(existing);
+
+        return new CandidateProfileDto
+        {
+            FullName = updated.FullName,
+            Location = updated.Location,
+            ExperienceMonths = updated.ExperienceMonths,
+            Education = updated.Education
+        };
+    }}
+
