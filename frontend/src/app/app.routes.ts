@@ -1,23 +1,37 @@
-import { Routes } from '@angular/router';
-import { ProfileComponent } from './features/profile/profile.component';
-import { ResumeComponent } from './features/resume/resume.component';
+﻿import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'profile',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    redirectTo: 'candidate/jobs'
   },
   {
-    path: 'profile',
-    component: ProfileComponent
+    path: 'candidate/profile',
+    loadComponent: () =>
+      import('./features/profile/profile.component')
+        .then(m => m.ProfileComponent)
   },
   {
-    path: 'resume',
-    component: ResumeComponent
+    path: 'candidate/resume',
+    loadComponent: () =>
+      import('./features/resume/resume.component')
+        .then(m => m.ResumeComponent)
+  },
+  {
+    path: 'candidate/jobs',
+    loadComponent: () =>
+      import('./features/jobs/jobs.component')
+        .then(m => m.JobsComponent)
+  },
+  {
+    path: 'candidate/applications',
+    loadComponent: () =>
+      import('./features/applications/applications.component')
+        .then(m => m.ApplicationsComponent)
   },
   {
     path: '**',
-    redirectTo: 'profile'
+    redirectTo: 'candidate/jobs'
   }
 ];

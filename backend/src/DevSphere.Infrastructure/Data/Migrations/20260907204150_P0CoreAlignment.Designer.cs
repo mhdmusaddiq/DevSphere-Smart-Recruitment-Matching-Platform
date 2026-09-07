@@ -4,6 +4,7 @@ using DevSphere.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DevSphere.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(DevSphereDbContext))]
-    partial class DevSphereDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260907204150_P0CoreAlignment")]
+    partial class P0CoreAlignment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -62,7 +65,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AuditEvents", (string)null);
+                    b.ToTable("AuditEvents");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Administration.SystemSetting", b =>
@@ -98,7 +101,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
                     b.HasIndex("Key")
                         .IsUnique();
 
-                    b.ToTable("SystemSettings", (string)null);
+                    b.ToTable("SystemSettings");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Applications.ApplicationSnapshot", b =>
@@ -136,7 +139,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("ResumeVersionId");
 
-                    b.ToTable("ApplicationSnapshots", (string)null);
+                    b.ToTable("ApplicationSnapshots");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Applications.ApplicationStatusHistory", b =>
@@ -176,7 +179,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("JobApplicationId");
 
-                    b.ToTable("ApplicationStatusHistories", (string)null);
+                    b.ToTable("ApplicationStatusHistories");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Applications.JobApplication", b =>
@@ -212,7 +215,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
                     b.HasIndex("CandidateId", "VacancyId")
                         .IsUnique();
 
-                    b.ToTable("JobApplications", (string)null);
+                    b.ToTable("JobApplications");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Candidates.CandidateProfile", b =>
@@ -248,7 +251,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CandidateProfiles", (string)null);
+                    b.ToTable("CandidateProfiles");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Career.CertificationRecord", b =>
@@ -291,7 +294,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("CertificationRecords", (string)null);
+                    b.ToTable("CertificationRecords");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Career.EducationRecord", b =>
@@ -334,7 +337,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("EducationRecords", (string)null);
+                    b.ToTable("EducationRecords");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Career.LanguageCapability", b =>
@@ -366,7 +369,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("LanguageCapabilities", (string)null);
+                    b.ToTable("LanguageCapabilities");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Career.ProjectRecord", b =>
@@ -402,7 +405,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("ProjectRecords", (string)null);
+                    b.ToTable("ProjectRecords");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Career.WorkExperience", b =>
@@ -444,7 +447,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("WorkExperiences", (string)null);
+                    b.ToTable("WorkExperiences");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Contacts.ContactRequest", b =>
@@ -489,7 +492,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
                     b.HasIndex("JobApplicationId", "EmployerId")
                         .IsUnique();
 
-                    b.ToTable("ContactRequests", (string)null);
+                    b.ToTable("ContactRequests");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Employers.CompanyVerification", b =>
@@ -534,7 +537,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("EmployerProfileId");
 
-                    b.ToTable("CompanyVerifications", (string)null);
+                    b.ToTable("CompanyVerifications");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Employers.EmployerProfile", b =>
@@ -571,7 +574,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("EmployerProfiles", (string)null);
+                    b.ToTable("EmployerProfiles");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Matching.CriterionResult", b =>
@@ -608,7 +611,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("MatchResultId");
 
-                    b.ToTable("CriterionResults", (string)null);
+                    b.ToTable("CriterionResults");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Matching.MatchResult", b =>
@@ -649,7 +652,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("VacancyId");
 
-                    b.ToTable("MatchResults", (string)null);
+                    b.ToTable("MatchResults");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Notifications.Notification", b =>
@@ -680,7 +683,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Resume.Resume", b =>
@@ -705,7 +708,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("CandidateProfileId");
 
-                    b.ToTable("Resumes", (string)null);
+                    b.ToTable("Resumes");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Resume.ResumeVersion", b =>
@@ -752,7 +755,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
                     b.HasIndex("ResumeId", "VersionNumber")
                         .IsUnique();
 
-                    b.ToTable("ResumeVersions", (string)null);
+                    b.ToTable("ResumeVersions");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Skills.Skill", b =>
@@ -783,7 +786,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("VacancyId");
 
-                    b.ToTable("Skills", (string)null);
+                    b.ToTable("Skills");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Vacancies.RequiredSkill", b =>
@@ -813,7 +816,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("VacancyId");
 
-                    b.ToTable("RequiredSkills", (string)null);
+                    b.ToTable("RequiredSkills");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Vacancies.Vacancy", b =>
@@ -852,7 +855,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Vacancies", (string)null);
+                    b.ToTable("Vacancies");
                 });
 
             modelBuilder.Entity("DevSphere.Domain.Entities.Vacancies.VacancyRequirement", b =>
@@ -881,7 +884,7 @@ namespace DevSphere.Infrastructure.Data.Migrations
 
                     b.HasIndex("VacancyId");
 
-                    b.ToTable("VacancyRequirements", (string)null);
+                    b.ToTable("VacancyRequirements");
                 });
 
             modelBuilder.Entity("DevSphere.Infrastructure.Identity.ApplicationRole", b =>

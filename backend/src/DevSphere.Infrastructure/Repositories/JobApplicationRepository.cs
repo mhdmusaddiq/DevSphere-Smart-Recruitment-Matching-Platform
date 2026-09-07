@@ -45,10 +45,14 @@ public class JobApplicationRepository
 
 
     public async Task<IEnumerable<JobApplication>> GetByVacancyAsync(
-    Guid vacancyId)
+        Guid vacancyId,
+        string employerId)
     {
         return await _context.JobApplications
-            .Where(x => x.VacancyId == vacancyId)
+            .Include(x => x.Vacancy)
+            .Where(x =>
+                x.VacancyId == vacancyId &&
+                x.Vacancy.EmployerId == employerId)
             .ToListAsync();
     }
 
@@ -72,7 +76,7 @@ public class JobApplicationRepository
     Guid id)
     {
         return await _context.JobApplications
-            .Include(x => x.VacancyId)
+            .Include(x => x.Vacancy)
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 

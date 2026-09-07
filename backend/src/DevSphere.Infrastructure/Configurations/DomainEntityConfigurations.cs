@@ -3,6 +3,7 @@ using DevSphere.Domain.Entities.Applications;
 using DevSphere.Domain.Entities;
 using DevSphere.Domain.Entities.Candidates;
 using DevSphere.Domain.Entities.Career;
+using DevSphere.Domain.Entities.Contacts;
 using DevSphere.Domain.Entities.Employers;
 using DevSphere.Domain.Entities.Matching;
 using DevSphere.Domain.Entities.Resume;
@@ -163,6 +164,57 @@ public class CriterionResultConfiguration : IEntityTypeConfiguration<CriterionRe
     public void Configure(EntityTypeBuilder<CriterionResult> builder)
     {
         builder.Property(x => x.CriterionName).HasMaxLength(100);
+    }
+}
+
+public class JobApplicationConfiguration : IEntityTypeConfiguration<JobApplication>
+{
+    public void Configure(EntityTypeBuilder<JobApplication> builder)
+    {
+        builder.Property(x => x.CandidateId)
+            .HasMaxLength(450);
+
+        builder.HasOne(x => x.Vacancy)
+            .WithMany()
+            .HasForeignKey(x => x.VacancyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => new
+        {
+            x.CandidateId,
+            x.VacancyId
+        })
+        .IsUnique();
+    }
+}
+
+public class ContactRequestConfiguration : IEntityTypeConfiguration<ContactRequest>
+{
+    public void Configure(EntityTypeBuilder<ContactRequest> builder)
+    {
+        builder.Property(x => x.EmployerId)
+            .HasMaxLength(450);
+
+        builder.Property(x => x.CandidateId)
+            .HasMaxLength(450);
+
+        builder.Property(x => x.Status)
+            .HasMaxLength(50);
+
+        builder.HasOne<JobApplication>()
+            .WithMany()
+            .HasForeignKey(x => x.JobApplicationId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasIndex(x => new
+        {
+            x.JobApplicationId,
+            x.EmployerId
+        })
+        .IsUnique();
+
+        builder.HasIndex(x => x.CandidateId);
+        builder.HasIndex(x => x.EmployerId);
     }
 }
 

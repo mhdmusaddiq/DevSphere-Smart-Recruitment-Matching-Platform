@@ -1,5 +1,7 @@
+using System.Security.Claims;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
+using DevSphere.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,26 +13,89 @@ namespace DevSphere.Api.Controllers.Applications;
 public class ApplicationHistoryController : ControllerBase
 {
     private readonly IApplicationHistoryService _service;
+    private readonly JobApplicationRepository _applicationRepository;
 
-    public ApplicationHistoryController(IApplicationHistoryService service)
+    public ApplicationHistoryController(
+        IApplicationHistoryService service,
+        JobApplicationRepository applicationRepository)
     {
         _service = service;
+        _applicationRepository = applicationRepository;
     }
 
     [HttpPost("snapshot")]
+    [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> CreateSnapshot(
         Guid jobApplicationId,
         ApplicationSnapshotDto request,
         CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var application =
+            await _applicationRepository.GetWithVacancyAsync(jobApplicationId);
+
+        if (application == null)
+        {
+            return NotFound();
+        }
+
+        if (application.CandidateId != userId)
+        {
+            return Forbid();
+        }
+
         request.JobApplicationId = jobApplicationId;
-        return Ok(await _service.CreateSnapshotAsync(request, cancellationToken));
+
+        return Ok(
+            await _service.CreateSnapshotAsync(
+                request,
+                cancellationToken));
     }
 
     [HttpGet("status-history")]
-    public async Task<IActionResult> GetStatusHistory(Guid jobApplicationId, CancellationToken cancellationToken)
+    [Authorize(Roles = "Candidate,Employer")]
+    public async Task<IActionResult> GetStatusHistory(
+        Guid jobApplicationId,
+        CancellationToken cancellationToken)
     {
-        return Ok(await _service.GetStatusHistoryAsync(jobApplicationId, cancellationToken));
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var application =
+            await _applicationRepository.GetWithVacancyAsync(jobApplicationId);
+
+        if (application == null)
+        {
+            return NotFound();
+        }
+
+        var isCandidate =
+            User.IsInRole("Candidate") &&
+            application.CandidateId == userId;
+
+        var isEmployer =
+            User.IsInRole("Employer") &&
+            application.Vacancy.EmployerId == userId;
+
+        if (!isCandidate && !isEmployer)
+        {
+            return Forbid();
+        }
+
+        return Ok(
+            await _service.GetStatusHistoryAsync(
+                jobApplicationId,
+                cancellationToken));
     }
 
     [HttpPost("status-history")]
@@ -40,7 +105,34 @@ public class ApplicationHistoryController : ControllerBase
         ApplicationStatusHistoryDto request,
         CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var application =
+            await _applicationRepository.GetWithVacancyAsync(jobApplicationId);
+
+        if (application == null)
+        {
+            return NotFound();
+        }
+
+        if (application.Vacancy.EmployerId != userId)
+        {
+            return Forbid();
+        }
+
         request.JobApplicationId = jobApplicationId;
-        return Ok(await _service.RecordStatusAsync(request, cancellationToken));
+
+        // Never trust ChangedByUserId supplied by the client.
+        request.ChangedByUserId = userId;
+
+        return Ok(
+            await _service.RecordStatusAsync(
+                request,
+                cancellationToken));
     }
 }

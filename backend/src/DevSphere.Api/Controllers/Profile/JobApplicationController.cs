@@ -1,3 +1,4 @@
+using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Repositories;
@@ -50,6 +51,14 @@ public class JobApplicationController : ControllerBase
 
             return Ok(result);
         }
+        catch (ApplicationConflictException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+
         catch (Exception ex)
         {
             return BadRequest(new
@@ -90,8 +99,16 @@ public class JobApplicationController : ControllerBase
     public async Task<IActionResult> GetByVacancy(
         Guid vacancyId)
     {
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
         var result = await _service
-            .GetByVacancyAsync(vacancyId);
+            .GetByVacancyAsync(vacancyId, employerId);
 
         return Ok(result);
     }
@@ -148,7 +165,8 @@ public class JobApplicationController : ControllerBase
             var result = await _service
                 .UpdateStatusAsync(
                     applicationId,
-                    request.Status);
+                    request.Status,
+                    employerId);
 
 
 
