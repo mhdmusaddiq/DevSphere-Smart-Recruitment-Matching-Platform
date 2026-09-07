@@ -99,4 +99,33 @@ public class ResumeController : ControllerBase
 
         return Ok(resume);
     }
+
+    [HttpGet("versions/{versionId:guid}/download")]
+    public async Task<IActionResult> DownloadVersion(
+        Guid versionId,
+        CancellationToken cancellationToken)
+    {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var download = await _service.DownloadOwnVersionAsync(
+            userId,
+            versionId,
+            cancellationToken);
+
+        if (download == null)
+        {
+            return NotFound();
+        }
+
+        return File(
+            download.Content,
+            download.ContentType,
+            download.FileName,
+            enableRangeProcessing: true);
+    }
 }

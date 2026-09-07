@@ -15,4 +15,9 @@ public interface IResumeService
         string contentType,
         long fileSizeBytes,
         CancellationToken cancellationToken = default);
+
+    Task<ResumeDownloadDto?> DownloadOwnVersionAsync(
+        string userId,
+        Guid versionId,
+        CancellationToken cancellationToken = default);
 }

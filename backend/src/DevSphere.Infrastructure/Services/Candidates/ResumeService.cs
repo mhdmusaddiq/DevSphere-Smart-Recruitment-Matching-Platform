@@ -115,6 +115,49 @@ public class ResumeService : IResumeService
         return Map(resume);
     }
 
+    public async Task<ResumeDownloadDto?> DownloadOwnVersionAsync(
+        string userId,
+        Guid versionId,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+        {
+            return null;
+        }
+
+        var resume = await _repository.GetByCandidateProfileIdAsync(
+            profile.Id,
+            cancellationToken);
+
+        if (resume == null)
+        {
+            return null;
+        }
+
+        var version = resume.Versions
+            .FirstOrDefault(x => x.Id == versionId);
+
+        if (version == null)
+        {
+            return null;
+        }
+
+        var content = await _storage.OpenReadAsync(
+            version.StorageKey,
+            cancellationToken);
+
+        return new ResumeDownloadDto
+        {
+            Content = content,
+            FileName = version.OriginalFileName,
+            ContentType = string.IsNullOrWhiteSpace(version.ContentType)
+                ? "application/octet-stream"
+                : version.ContentType
+        };
+    }
+
     private static ResumeDto Map(Resume resume)
     {
         return new ResumeDto
