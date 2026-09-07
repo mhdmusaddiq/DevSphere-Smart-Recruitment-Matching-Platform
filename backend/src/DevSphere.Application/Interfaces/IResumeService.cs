@@ -4,7 +4,15 @@ namespace DevSphere.Application.Interfaces;
 
 public interface IResumeService
 {
-    Task<ResumeDto?> GetAsync(Guid candidateProfileId, CancellationToken cancellationToken = default);
+    Task<ResumeDto?> GetOwnAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
 
-    Task<ResumeDto> AddVersionAsync(Guid candidateProfileId, ResumeVersionDto version, CancellationToken cancellationToken = default);
+    Task<ResumeDto?> AddUploadedVersionAsync(
+        string userId,
+        Stream content,
+        string fileName,
+        string contentType,
+        long fileSizeBytes,
+        CancellationToken cancellationToken = default);
 }
