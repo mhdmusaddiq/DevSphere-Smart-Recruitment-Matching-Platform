@@ -1,0 +1,213 @@
+<div class="applications-page">
+
+  <header>
+    <a class="brand" routerLink="/jobs">
+      <span>D</span>
+      <strong>DevSphere</strong>
+    </a>
+
+    <nav>
+      <a routerLink="/jobs">Jobs</a>
+      <a class="active" routerLink="/applications">
+        My Applications
+      </a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="intro">
+      <p class="eyebrow">APPLICATION TRACKER</p>
+      <h1>My Applications</h1>
+
+      <p>
+        Follow your applications and see how each opportunity
+        progresses through the recruitment process.
+      </p>
+    </section>
+
+    @if (errorMessage) {
+      <div class="alert">
+        {{ errorMessage }}
+      </div>
+    }
+
+    @if (loading) {
+
+      <div class="state">
+        <div class="spinner"></div>
+        <p>Loading applications...</p>
+      </div>
+
+    } @else {
+
+      <section class="application-grid">
+
+        @for (application of applications; track application.id) {
+
+          <article class="application-card">
+
+            <div class="card-top">
+              <span class="label">
+                APPLICATION
+              </span>
+
+              <span
+                class="status"
+                [ngClass]="statusClass(application.status)"
+              >
+                {{ application.status }}
+              </span>
+            </div>
+
+            <h2>
+              Vacancy
+            </h2>
+
+            <p class="vacancy-id">
+              {{ application.vacancyId }}
+            </p>
+
+            <div class="progress">
+              <div
+                class="step"
+                [class.done]="true"
+              >
+                Applied
+              </div>
+
+              <div
+                class="step"
+                [class.done]="
+                  application.status === 'UnderReview' ||
+                  application.status === 'Shortlisted' ||
+                  application.status === 'Selected'
+                "
+              >
+                Review
+              </div>
+
+              <div
+                class="step"
+                [class.done]="
+                  application.status === 'Shortlisted' ||
+                  application.status === 'Selected'
+                "
+              >
+                Shortlist
+              </div>
+
+              <div
+                class="step"
+                [class.done]="application.status === 'Selected'"
+              >
+                Selected
+              </div>
+            </div>
+
+            <button
+              type="button"
+              (click)="openHistory(application)"
+            >
+              View Status History
+            </button>
+
+          </article>
+
+        } @empty {
+
+          <div class="state">
+            <h2>No applications yet</h2>
+
+            <p>
+              Explore available jobs and submit your first application.
+            </p>
+
+            <a class="browse-button" routerLink="/jobs">
+              Browse Jobs
+            </a>
+          </div>
+
+        }
+
+      </section>
+
+    }
+
+  </main>
+
+  @if (selectedApplication) {
+
+    <div class="modal" (click)="closeHistory()">
+
+      <section
+        class="history-panel"
+        (click)="$event.stopPropagation()"
+      >
+
+        <button
+          type="button"
+          class="close"
+          (click)="closeHistory()"
+        >
+          ×
+        </button>
+
+        <p class="eyebrow">
+          STATUS TIMELINE
+        </p>
+
+        <h2>Application History</h2>
+
+        @if (historyLoading) {
+
+          <div class="state">
+            <div class="spinner"></div>
+            <p>Loading history...</p>
+          </div>
+
+        } @else {
+
+          <div class="timeline">
+
+            @for (item of history; track item.id) {
+
+              <div class="timeline-item">
+
+                <div class="dot"></div>
+
+                <div>
+                  <strong>
+                    {{ item.newStatus }}
+                  </strong>
+
+                  <p>
+                    {{ item.notes || 'Application status updated.' }}
+                  </p>
+
+                  <span>
+                    {{ item.changedAtUtc | date:'medium' }}
+                  </span>
+                </div>
+
+              </div>
+
+            } @empty {
+
+              <p class="empty-history">
+                No status changes have been recorded yet.
+              </p>
+
+            }
+
+          </div>
+
+        }
+
+      </section>
+
+    </div>
+
+  }
+
+</div>

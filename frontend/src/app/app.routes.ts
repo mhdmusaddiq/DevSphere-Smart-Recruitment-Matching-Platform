@@ -13,6 +13,12 @@ export const routes: Routes = [
         .then(m => m.JobsComponent)
   },
   {
+    path: 'applications',
+    loadComponent: () =>
+      import('./features/applications/applications.component')
+        .then(m => m.ApplicationsComponent)
+  },
+  {
     path: '**',
     redirectTo: 'jobs'
   }

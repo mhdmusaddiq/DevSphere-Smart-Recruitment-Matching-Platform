@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Vacancy } from '../../core/models/vacancy.model';
 import { MatchResult } from '../../core/models/match-result.model';
 import { JobsApiService } from '../../core/services/jobs-api.service';
+import { ApplicationsApiService } from '../../core/services/applications-api.service';
 
 @Component({
   selector: 'app-jobs',
@@ -18,6 +19,7 @@ import { JobsApiService } from '../../core/services/jobs-api.service';
 })
 export class JobsComponent implements OnInit {
   private readonly jobsApi = inject(JobsApiService);
+  private readonly applicationsApi = inject(ApplicationsApiService);
 
   vacancies: Vacancy[] = [];
   searchTerm = '';
@@ -97,6 +99,33 @@ export class JobsComponent implements OnInit {
     });
   }
 
+
+  apply(vacancy: Vacancy): void {
+    this.errorMessage = '';
+
+    this.applicationsApi.apply(vacancy.id).subscribe({
+      next: () => {
+        this.errorMessage =
+          'Application submitted successfully.';
+      },
+      error: error => {
+        if (error.status === 409) {
+          this.errorMessage =
+            'You have already applied for this vacancy.';
+          return;
+        }
+
+        if (error.status === 401 || error.status === 403) {
+          this.errorMessage =
+            'Please sign in as a Candidate to apply.';
+          return;
+        }
+
+        this.errorMessage =
+          'Unable to submit the application.';
+      }
+    });
+  }
   closeMatch(): void {
     this.selectedVacancy = null;
     this.selectedMatch = null;

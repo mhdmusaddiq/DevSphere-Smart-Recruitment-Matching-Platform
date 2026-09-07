@@ -72,6 +72,7 @@ public class JobApplicationService : IJobApplicationService
         return applications
     .Select(x => new JobApplicationDto
     {
+        Id = x.Id,
         CandidateId = x.CandidateId,
         VacancyId = x.VacancyId,
         Status = x.Status.ToString()
@@ -177,6 +178,7 @@ public class JobApplicationService : IJobApplicationService
 
         return new JobApplicationDto
         {
+            Id = application.Id,
             CandidateId = application.CandidateId,
             VacancyId = application.VacancyId,
             Status = application.Status.ToString()

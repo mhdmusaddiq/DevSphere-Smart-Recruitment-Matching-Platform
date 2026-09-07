@@ -2,6 +2,8 @@ namespace DevSphere.Application.DTOs.Application;
 
 public class JobApplicationDto
 {
+    public Guid Id { get; set; }
+
     public string CandidateId { get; set; } = string.Empty;
 
     public Guid VacancyId { get; set; }

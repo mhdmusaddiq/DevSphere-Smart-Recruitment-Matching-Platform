@@ -7,7 +7,7 @@ namespace DevSphere.Api.Controllers.Profile;
 
 [ApiController]
 [Route("api/matching")]
-[Authorize(Roles = "Job Seeker")]
+[Authorize(Roles = "Candidate")]
 public class MatchingController : ControllerBase
 {
     private readonly IMatchEngine _engine;
