@@ -18,37 +18,37 @@ public class VacancyController : ControllerBase
     }
 
     [HttpGet]
-[AllowAnonymous]
-public async Task<IActionResult> GetOpen(
-    [FromQuery(Name = "q")] string? query,
-    [FromQuery] string? location,
-    [FromQuery] int page = 1,
-    [FromQuery] int pageSize = 20)
-{
-    if (page < 1)
+    [AllowAnonymous]
+    public async Task<IActionResult> GetOpen(
+        [FromQuery(Name = "q")] string? query,
+        [FromQuery] string? location,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
-        page = 1;
+        if (page < 1)
+        {
+            page = 1;
+        }
+
+        if (pageSize < 1)
+        {
+            pageSize = 20;
+        }
+
+        if (pageSize > 100)
+        {
+            pageSize = 100;
+        }
+
+        var vacancies = await _service
+            .GetOpenVacanciesAsync(
+                query,
+                location,
+                page,
+                pageSize);
+
+        return Ok(vacancies);
     }
-
-    if (pageSize < 1)
-    {
-        pageSize = 20;
-    }
-
-    if (pageSize > 100)
-    {
-        pageSize = 100;
-    }
-
-    var vacancies = await _service
-        .GetOpenVacanciesAsync(
-            query,
-            location,
-            page,
-            pageSize);
-
-    return Ok(vacancies);
-}
 
     [HttpGet("{vacancyId:guid}")]
     [AllowAnonymous]
@@ -75,12 +75,24 @@ public async Task<IActionResult> GetOpen(
             System.Security.Claims.ClaimTypes.NameIdentifier
         )?.Value;
 
-        var result = await _service
-            .CreateAsync(
-                employerId!,
-                request);
+        try
+        {
+            var result = await _service
+                .CreateAsync(
+                    employerId!,
+                    request);
 
-        return Ok(result);
+            return StatusCode(
+                StatusCodes.Status201Created,
+                result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     [HttpPut("{vacancyId:guid}")]
@@ -93,13 +105,46 @@ public async Task<IActionResult> GetOpen(
             System.Security.Claims.ClaimTypes.NameIdentifier
         )?.Value;
 
-        var result = await _service
-            .UpdateAsync(
-                employerId!,
-                vacancyId,
-                request);
+        try
+        {
+            var result = await _service
+                .UpdateAsync(
+                    employerId!,
+                    vacancyId,
+                    request);
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = ex.Message
+                });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
     }
 
     [HttpPut("{vacancyId:guid}/close")]
@@ -111,11 +156,37 @@ public async Task<IActionResult> GetOpen(
             System.Security.Claims.ClaimTypes.NameIdentifier
         )?.Value;
 
-        var result = await _service
-            .CloseAsync(
-                employerId!,
-                vacancyId);
+        try
+        {
+            var result = await _service
+                .CloseAsync(
+                    employerId!,
+                    vacancyId);
 
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = ex.Message
+                });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
     }
 }
