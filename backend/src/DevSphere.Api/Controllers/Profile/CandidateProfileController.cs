@@ -63,4 +63,65 @@ public class CandidateProfileController : ControllerBase
         }
 
         return Ok(result);
+    }
+    [HttpGet("skills")]
+    public async Task<IActionResult> GetSkills()
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        var result = await _service.GetSkillsAsync(userId!);
+
+        return Ok(result);
+    }
+
+    [HttpPost("skills")]
+    public async Task<IActionResult> AddSkill(
+        AddCandidateSkillDto request)
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        try
+        {
+            var result = await _service
+                .AddSkillAsync(userId!, request);
+
+            if (result == null)
+            {
+                return NotFound("Candidate profile not found.");
+            }
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    [HttpDelete("skills/{skillId:guid}")]
+    public async Task<IActionResult> DeleteSkill(
+        Guid skillId)
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        var deleted = await _service
+            .DeleteSkillAsync(userId!, skillId);
+
+        if (!deleted)
+        {
+            return NotFound();
+        }
+
+        return NoContent();
     }}
+

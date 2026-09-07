@@ -12,4 +12,16 @@ public interface ICandidateProfileService
 
     Task<CandidateProfileDto?> UpdateAsync(
         string userId,
-        CandidateProfileDto profile);}
+        CandidateProfileDto profile);
+
+    Task<IReadOnlyCollection<CandidateSkillDto>> GetSkillsAsync(
+        string userId);
+
+    Task<CandidateSkillDto?> AddSkillAsync(
+        string userId,
+        AddCandidateSkillDto request);
+
+    Task<bool> DeleteSkillAsync(
+        string userId,
+        Guid skillId);
+}
