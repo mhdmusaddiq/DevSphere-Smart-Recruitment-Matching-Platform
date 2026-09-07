@@ -7,4 +7,6 @@ public class RequiredSkill : BaseEntity
     public string Name { get; set; } = string.Empty;
 
     public int? MinimumExperienceMonths { get; set; }
+
+    public int Weight { get; set; }
 }
