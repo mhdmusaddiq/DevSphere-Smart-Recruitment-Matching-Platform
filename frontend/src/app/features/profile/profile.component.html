@@ -1,0 +1,314 @@
+<div class="page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">JOB SEEKER</p>
+      <h1>Candidate Profile</h1>
+      <p>Keep your professional information accurate and up to date.</p>
+    </div>
+
+    <span class="status" [class.ready]="profileExists">
+      {{ profileExists ? 'Profile active' : 'Profile not created' }}
+    </span>
+  </header>
+
+  @if (message) {
+    <div class="alert success">{{ message }}</div>
+  }
+
+  @if (error) {
+    <div class="alert error">{{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="card loading">Loading profile...</div>
+  } @else {
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Personal Profile</h2>
+          <p>Your core information used by the recruitment platform.</p>
+        </div>
+      </div>
+
+      <form class="form-grid" (ngSubmit)="saveProfile()">
+        <label>
+          Full name
+          <input
+            name="fullName"
+            [(ngModel)]="profile.fullName"
+            placeholder="Your full name"
+            required>
+        </label>
+
+        <label>
+          Location
+          <input
+            name="location"
+            [(ngModel)]="profile.location"
+            placeholder="Colombo, Sri Lanka">
+        </label>
+
+        <label>
+          Experience (months)
+          <input
+            type="number"
+            min="0"
+            name="experienceMonths"
+            [(ngModel)]="profile.experienceMonths">
+        </label>
+
+        <label>
+          Education summary
+          <input
+            name="educationSummary"
+            [(ngModel)]="profile.education"
+            placeholder="BSc in Software Engineering">
+        </label>
+
+        <div class="actions full">
+          <button class="primary" type="submit" [disabled]="savingProfile">
+            {{ savingProfile
+              ? 'Saving...'
+              : (profileExists ? 'Update Profile' : 'Create Profile') }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    @if (profileExists) {
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Skills</h2>
+            <p>Add the skills employers should see.</p>
+          </div>
+        </div>
+
+        <div class="inline-form">
+          <input
+            [(ngModel)]="newSkill"
+            placeholder="Example: Angular"
+            (keyup.enter)="addSkill()">
+          <button class="primary" type="button" (click)="addSkill()">
+            Add Skill
+          </button>
+        </div>
+
+        <div class="chips">
+          @for (skill of skills; track skill.id) {
+            <span class="chip">
+              {{ skill.name }}
+              <button
+                type="button"
+                aria-label="Remove skill"
+                (click)="removeSkill(skill.id)">×</button>
+            </span>
+          } @empty {
+            <p class="empty">No skills added yet.</p>
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Work Experience</h2>
+            <p>Add and maintain your employment history.</p>
+          </div>
+        </div>
+
+        <form class="form-grid" (ngSubmit)="saveWork()">
+          <label>
+            Job title
+            <input
+              name="jobTitle"
+              [(ngModel)]="workForm.jobTitle"
+              required>
+          </label>
+
+          <label>
+            Company
+            <input
+              name="companyName"
+              [(ngModel)]="workForm.companyName"
+              required>
+          </label>
+
+          <label>
+            Start date
+            <input
+              type="date"
+              name="workStartDate"
+              [(ngModel)]="workForm.startDate"
+              required>
+          </label>
+
+          <label>
+            End date
+            <input
+              type="date"
+              name="workEndDate"
+              [(ngModel)]="workForm.endDate">
+          </label>
+
+          <label class="full">
+            Description
+            <textarea
+              name="workDescription"
+              rows="3"
+              [(ngModel)]="workForm.description"></textarea>
+          </label>
+
+          <div class="actions full">
+            <button class="primary" type="submit">
+              {{ editingWorkId ? 'Update Experience' : 'Add Experience' }}
+            </button>
+
+            @if (editingWorkId) {
+              <button
+                class="secondary"
+                type="button"
+                (click)="cancelWorkEdit()">
+                Cancel
+              </button>
+            }
+          </div>
+        </form>
+
+        <div class="records">
+          @for (item of workExperiences; track item.id) {
+            <article class="record">
+              <div>
+                <h3>{{ item.jobTitle }}</h3>
+                <strong>{{ item.companyName }}</strong>
+                <p>
+                  {{ item.startDate }} —
+                  {{ item.endDate || 'Present' }}
+                </p>
+                <p>{{ item.description }}</p>
+              </div>
+
+              <div class="record-actions">
+                <button
+                  class="secondary"
+                  type="button"
+                  (click)="editWork(item)">
+                  Edit
+                </button>
+                <button
+                  class="danger"
+                  type="button"
+                  (click)="deleteWork(item.id)">
+                  Delete
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <p class="empty">No work experience added yet.</p>
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <h2>Education</h2>
+            <p>Maintain your academic history.</p>
+          </div>
+        </div>
+
+        <form class="form-grid" (ngSubmit)="saveEducation()">
+          <label>
+            Institution
+            <input
+              name="institution"
+              [(ngModel)]="educationForm.institution"
+              required>
+          </label>
+
+          <label>
+            Qualification
+            <input
+              name="qualification"
+              [(ngModel)]="educationForm.qualification"
+              required>
+          </label>
+
+          <label>
+            Field of study
+            <input
+              name="fieldOfStudy"
+              [(ngModel)]="educationForm.fieldOfStudy">
+          </label>
+
+          <label>
+            Start date
+            <input
+              type="date"
+              name="educationStartDate"
+              [(ngModel)]="educationForm.startDate"
+              required>
+          </label>
+
+          <label>
+            End date
+            <input
+              type="date"
+              name="educationEndDate"
+              [(ngModel)]="educationForm.endDate">
+          </label>
+
+          <div class="actions full">
+            <button class="primary" type="submit">
+              {{ editingEducationId
+                ? 'Update Education'
+                : 'Add Education' }}
+            </button>
+
+            @if (editingEducationId) {
+              <button
+                class="secondary"
+                type="button"
+                (click)="cancelEducationEdit()">
+                Cancel
+              </button>
+            }
+          </div>
+        </form>
+
+        <div class="records">
+          @for (item of educationRecords; track item.id) {
+            <article class="record">
+              <div>
+                <h3>{{ item.qualification }}</h3>
+                <strong>{{ item.institution }}</strong>
+                <p>{{ item.fieldOfStudy }}</p>
+                <p>
+                  {{ item.startDate }} —
+                  {{ item.endDate || 'Present' }}
+                </p>
+              </div>
+
+              <div class="record-actions">
+                <button
+                  class="secondary"
+                  type="button"
+                  (click)="editEducation(item)">
+                  Edit
+                </button>
+                <button
+                  class="danger"
+                  type="button"
+                  (click)="deleteEducation(item.id)">
+                  Delete
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <p class="empty">No education records added yet.</p>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>
