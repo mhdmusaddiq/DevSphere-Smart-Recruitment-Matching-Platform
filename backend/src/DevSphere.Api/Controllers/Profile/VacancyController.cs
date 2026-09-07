@@ -17,7 +17,6 @@ public class VacancyController : ControllerBase
         _service = service;
     }
 
-
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetOpen()
@@ -28,6 +27,21 @@ public class VacancyController : ControllerBase
         return Ok(vacancies);
     }
 
+    [HttpGet("{vacancyId:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetById(
+        Guid vacancyId)
+    {
+        var vacancy = await _service
+            .GetByIdAsync(vacancyId);
+
+        if (vacancy == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(vacancy);
+    }
 
     [HttpPost]
     [Authorize(Roles = "Employer")]
@@ -35,13 +49,49 @@ public class VacancyController : ControllerBase
         VacancyDto request)
     {
         var employerId = User.FindFirst(
-    System.Security.Claims.ClaimTypes.NameIdentifier
-)?.Value;
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
 
         var result = await _service
             .CreateAsync(
                 employerId!,
                 request);
+
+        return Ok(result);
+    }
+
+    [HttpPut("{vacancyId:guid}")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> Update(
+        Guid vacancyId,
+        VacancyDto request)
+    {
+        var employerId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        var result = await _service
+            .UpdateAsync(
+                employerId!,
+                vacancyId,
+                request);
+
+        return Ok(result);
+    }
+
+    [HttpPut("{vacancyId:guid}/close")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> Close(
+        Guid vacancyId)
+    {
+        var employerId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        var result = await _service
+            .CloseAsync(
+                employerId!,
+                vacancyId);
 
         return Ok(result);
     }

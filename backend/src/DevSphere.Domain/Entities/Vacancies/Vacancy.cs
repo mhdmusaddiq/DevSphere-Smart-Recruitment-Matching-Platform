@@ -14,6 +14,18 @@ public class Vacancy : BaseEntity
 
     public int RequiredExperienceMonths { get; set; }
 
+    public int MinExperienceMonths { get; set; }
+
+    public int? MaxExperienceMonths { get; set; }
+
+    public string RequiredEducation { get; set; } = string.Empty;
+
+    public decimal? SalaryMin { get; set; }
+
+    public decimal? SalaryMax { get; set; }
+
+    public DateTime? ClosingDateUtc { get; set; }
+
     public bool IsOpen { get; set; } = true;
 
     public ICollection<Skill> RequiredSkills { get; set; } = new List<Skill>();

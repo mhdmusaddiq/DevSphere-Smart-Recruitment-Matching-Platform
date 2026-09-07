@@ -14,14 +14,12 @@ public class VacancyRepository
         _context = context;
     }
 
-
     public async Task<Vacancy?> GetByIdAsync(
         Guid id)
     {
         return await _context.Vacancies
             .FirstOrDefaultAsync(x => x.Id == id);
     }
-
 
     public async Task<IEnumerable<Vacancy>> GetOpenAsync()
     {
@@ -30,11 +28,18 @@ public class VacancyRepository
             .ToListAsync();
     }
 
-
     public async Task AddAsync(
         Vacancy vacancy)
     {
         await _context.Vacancies.AddAsync(vacancy);
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(
+        Vacancy vacancy)
+    {
+        _context.Vacancies.Update(vacancy);
 
         await _context.SaveChangesAsync();
     }
