@@ -31,7 +31,16 @@ public class MatchingRepository
         }
 
         return await _context.Vacancies
-            .Include(x => x.RequiredSkills)
             .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public virtual async Task<List<RequiredSkill>> GetRequiredSkillsAsync(
+        Guid vacancyId)
+    {
+        return await _context.RequiredSkills
+            .Where(x => x.VacancyId == vacancyId)
+            .OrderBy(x => x.Name)
+            .ThenBy(x => x.Id)
+            .ToListAsync();
     }
 }

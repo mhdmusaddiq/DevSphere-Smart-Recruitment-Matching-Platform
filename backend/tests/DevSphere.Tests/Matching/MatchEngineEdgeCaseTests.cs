@@ -13,7 +13,7 @@ public class MatchEngineEdgeCaseTests
 
         var engine = new MatchEngineService(repository);
 
-        await Assert.ThrowsAsync<Exception>(() =>
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             engine.CalculateAsync(
                 "invalid",
                 "vacancy"));
