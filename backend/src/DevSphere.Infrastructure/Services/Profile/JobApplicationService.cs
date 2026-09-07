@@ -1,3 +1,4 @@
+using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Repositories;
@@ -28,8 +29,7 @@ public class JobApplicationService : IJobApplicationService
 
         if (exists)
         {
-            throw new Exception(
-                "Application already exists.");
+            throw new ApplicationConflictException("Application already exists.");
         }
 
 

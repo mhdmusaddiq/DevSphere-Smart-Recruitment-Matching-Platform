@@ -1,3 +1,4 @@
+using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Repositories;
@@ -50,6 +51,14 @@ public class JobApplicationController : ControllerBase
 
             return Ok(result);
         }
+        catch (ApplicationConflictException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+
         catch (Exception ex)
         {
             return BadRequest(new
