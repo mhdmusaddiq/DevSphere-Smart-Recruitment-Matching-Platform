@@ -10,7 +10,7 @@ public interface IJobApplicationService
     Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId);
 
-    Task<List<JobApplicationDto>> GetByVacancyAsync(
+    Task<List<RankedApplicantDto>> GetByVacancyAsync(
         Guid vacancyId,
         string employerId);
 

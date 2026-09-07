@@ -9,13 +9,16 @@ public class JobApplicationService : IJobApplicationService
 {
     private readonly JobApplicationRepository _repository;
     private readonly INotificationService _notificationService;
+    private readonly IMatchEngine _matchEngine;
 
     public JobApplicationService(
-    JobApplicationRepository repository,
-    INotificationService notificationService)
+        JobApplicationRepository repository,
+        INotificationService notificationService,
+        IMatchEngine matchEngine)
     {
         _repository = repository;
         _notificationService = notificationService;
+        _matchEngine = matchEngine;
     }
 
 
@@ -73,21 +76,37 @@ public class JobApplicationService : IJobApplicationService
     .ToList();
     }
 
-    public async Task<List<JobApplicationDto>> GetByVacancyAsync(
+    public async Task<List<RankedApplicantDto>> GetByVacancyAsync(
         Guid vacancyId,
         string employerId)
     {
         var applications = await _repository
             .GetByVacancyAsync(vacancyId, employerId);
 
+        var rankedApplicants = new List<RankedApplicantDto>();
 
-        return applications
-            .Select(x => new JobApplicationDto
+        foreach (var application in applications)
+        {
+            var match = await _matchEngine.CalculateAsync(
+                application.CandidateId,
+                vacancyId.ToString());
+
+            rankedApplicants.Add(new RankedApplicantDto
             {
-                CandidateId = x.CandidateId,
-                VacancyId = x.VacancyId,
-                Status = x.Status.ToString()
-            })
+                CandidateId = application.CandidateId,
+                VacancyId = application.VacancyId,
+                Status = application.Status.ToString(),
+                MatchScore = match.TotalScore,
+                MatchedSkills = match.MatchedSkills,
+                MissingSkills = match.MissingSkills
+            });
+        }
+
+        return rankedApplicants
+            .OrderByDescending(x => x.MatchScore)
+            .ThenBy(
+                x => x.CandidateId,
+                StringComparer.Ordinal)
             .ToList();
     }
 
