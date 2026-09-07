@@ -74,10 +74,11 @@ public class JobApplicationService : IJobApplicationService
     }
 
     public async Task<List<JobApplicationDto>> GetByVacancyAsync(
-    Guid vacancyId)
+        Guid vacancyId,
+        string employerId)
     {
         var applications = await _repository
-            .GetByVacancyAsync(vacancyId);
+            .GetByVacancyAsync(vacancyId, employerId);
 
 
         return applications

@@ -90,8 +90,16 @@ public class JobApplicationController : ControllerBase
     public async Task<IActionResult> GetByVacancy(
         Guid vacancyId)
     {
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
         var result = await _service
-            .GetByVacancyAsync(vacancyId);
+            .GetByVacancyAsync(vacancyId, employerId);
 
         return Ok(result);
     }
