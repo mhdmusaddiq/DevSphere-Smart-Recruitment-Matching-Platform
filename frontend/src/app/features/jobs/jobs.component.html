@@ -1,0 +1,288 @@
+<div class="jobs-page">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+
+      <div>
+        <strong>DevSphere</strong>
+        <span>Smart Recruitment</span>
+      </div>
+    </div>
+
+    <nav>
+      <a routerLink="/jobs" class="active">Jobs</a>
+      <a routerLink="/applications">My Applications</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="hero">
+      <p class="eyebrow">SMART JOB MATCHING</p>
+
+      <h1>Find a role that matches your potential.</h1>
+
+      <p class="hero-text">
+        Explore open opportunities and compare your profile
+        against each vacancy using DevSphere's matching engine.
+      </p>
+
+      <div class="search-box">
+        <span>?</span>
+
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          placeholder="Search by job title, location or keyword"
+        />
+      </div>
+    </section>
+
+    <section class="content">
+
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">OPEN OPPORTUNITIES</p>
+          <h2>Available Jobs</h2>
+        </div>
+
+        @if (!loading) {
+          <span class="result-count">
+            {{ filteredVacancies.length }}
+            {{ filteredVacancies.length === 1 ? 'job' : 'jobs' }}
+          </span>
+        }
+      </div>
+
+      @if (errorMessage) {
+        <div class="alert">
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (loading) {
+
+        <div class="state-card">
+          <div class="spinner"></div>
+          <p>Loading opportunities...</p>
+        </div>
+
+      } @else {
+
+        <div class="job-grid">
+
+          @for (vacancy of filteredVacancies; track vacancy.id) {
+
+            <article class="job-card">
+
+              <div class="job-card-top">
+                <span class="status">
+                  Open
+                </span>
+
+                <span class="location">
+                  {{ vacancy.location }}
+                </span>
+              </div>
+
+              <h3>{{ vacancy.title }}</h3>
+
+              <p class="description">
+                {{ vacancy.description }}
+              </p>
+
+              <div class="job-meta">
+                <div>
+                  <span class="meta-label">
+                    Experience
+                  </span>
+
+                  <strong>
+                    {{ experienceLabel(vacancy.requiredExperienceMonths) }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span class="meta-label">
+                    Status
+                  </span>
+
+                  <strong>
+                    {{ vacancy.isOpen ? 'Accepting applications' : 'Closed' }}
+                  </strong>
+                </div>
+              </div>
+
+              <div class="card-actions">
+
+                <button
+                  class="match-button"
+                  type="button"
+                  [disabled]="matchLoadingId === vacancy.id"
+                  (click)="checkMatch(vacancy)"
+                >
+                  @if (matchLoadingId === vacancy.id) {
+                    Calculating...
+                  } @else {
+                    Check My Match
+                  }
+                </button>
+
+                <button
+                  class="apply-button"
+                  type="button"
+                  disabled
+                  title="Application workflow is enabled in the next step"
+                >
+                  Apply
+                </button>
+
+              </div>
+
+            </article>
+
+          } @empty {
+
+            <div class="state-card empty-state">
+              <h3>No jobs found</h3>
+              <p>
+                Try a different title, location or keyword.
+              </p>
+            </div>
+
+          }
+
+        </div>
+
+      }
+
+    </section>
+
+  </main>
+
+  @if (selectedVacancy) {
+
+    <div class="modal-backdrop" (click)="closeMatch()">
+
+      <section
+        class="match-panel"
+        (click)="$event.stopPropagation()"
+      >
+
+        <button
+          class="close-button"
+          type="button"
+          (click)="closeMatch()"
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+        <p class="eyebrow">PROFILE MATCH</p>
+
+        <h2>{{ selectedVacancy.title }}</h2>
+
+        <p class="match-location">
+          {{ selectedVacancy.location }}
+        </p>
+
+        @if (matchLoadingId === selectedVacancy.id) {
+
+          <div class="state-card">
+            <div class="spinner"></div>
+            <p>Calculating your match...</p>
+          </div>
+
+        } @else if (selectedMatch) {
+
+          <div class="total-score">
+            <strong>
+              {{ score(selectedMatch.totalScore) }}%
+            </strong>
+            <span>Overall Match</span>
+          </div>
+
+          <div class="score-grid">
+
+            <div class="score-card">
+              <span>Skills</span>
+              <strong>
+                {{ score(selectedMatch.skillsScore) }}%
+              </strong>
+            </div>
+
+            <div class="score-card">
+              <span>Experience</span>
+              <strong>
+                {{ score(selectedMatch.experienceScore) }}%
+              </strong>
+            </div>
+
+            <div class="score-card">
+              <span>Education</span>
+              <strong>
+                {{ score(selectedMatch.educationScore) }}%
+              </strong>
+            </div>
+
+            <div class="score-card">
+              <span>Location</span>
+              <strong>
+                {{ score(selectedMatch.locationScore) }}%
+              </strong>
+            </div>
+
+          </div>
+
+          <div class="skills-section">
+
+            <div>
+              <h3>Matched Skills</h3>
+
+              <div class="chips">
+                @for (
+                  skill of selectedMatch.matchedSkills;
+                  track skill
+                ) {
+                  <span class="chip matched">
+                    {{ skill }}
+                  </span>
+                } @empty {
+                  <span class="muted">
+                    No matched skills yet.
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div>
+              <h3>Skills to Improve</h3>
+
+              <div class="chips">
+                @for (
+                  skill of selectedMatch.missingSkills;
+                  track skill
+                ) {
+                  <span class="chip missing">
+                    {{ skill }}
+                  </span>
+                } @empty {
+                  <span class="muted">
+                    No missing skills.
+                  </span>
+                }
+              </div>
+            </div>
+
+          </div>
+
+        }
+
+      </section>
+
+    </div>
+
+  }
+
+</div>
