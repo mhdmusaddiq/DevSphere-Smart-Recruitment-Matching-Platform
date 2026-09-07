@@ -46,4 +46,17 @@ public class EmployerProfileController : ControllerBase
 
         return Ok(result);
     }
+    [HttpPut]
+    public async Task<IActionResult> Update(
+        EmployerProfileDto request)
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        var result = await _service
+            .UpdateAsync(userId!, request);
+
+        return Ok(result);
+    }
 }
