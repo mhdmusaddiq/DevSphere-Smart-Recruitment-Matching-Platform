@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { ProfileComponent } from './features/profile/profile.component';
+import { ResumeComponent } from './features/resume/resume.component';
 
 export const routes: Routes = [
   {
@@ -10,6 +11,10 @@ export const routes: Routes = [
   {
     path: 'profile',
     component: ProfileComponent
+  },
+  {
+    path: 'resume',
+    component: ResumeComponent
   },
   {
     path: '**',

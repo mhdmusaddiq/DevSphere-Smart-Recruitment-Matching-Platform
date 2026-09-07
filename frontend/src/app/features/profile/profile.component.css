@@ -251,3 +251,15 @@ button:disabled {
     flex-direction: column;
   }
 }
+
+.profile-nav {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 18px;
+}
+
+.profile-nav a {
+  color: #4f46e5;
+  font-weight: 700;
+  text-decoration: none;
+}

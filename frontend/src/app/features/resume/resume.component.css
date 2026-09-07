@@ -1,0 +1,285 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #172033;
+  font-family: Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page {
+  width: min(1000px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 30px 0 80px;
+}
+
+.top-nav {
+  margin-bottom: 24px;
+}
+
+.top-nav a {
+  color: #4f46e5;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.hero h1 {
+  margin: 4px 0 8px;
+  font-size: 34px;
+}
+
+.hero p {
+  margin: 0;
+  color: #687386;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: #4f46e5 !important;
+}
+
+.status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #be123c;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status.ready {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e7eaf0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, .05);
+}
+
+.section-heading {
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  margin: 0 0 5px;
+  font-size: 20px;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #7a8495;
+  line-height: 1.5;
+}
+
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px;
+  border: 2px dashed #d9dee8;
+  border-radius: 12px;
+  background: #fafbff;
+}
+
+input[type="file"] {
+  width: 100%;
+}
+
+.selected-file {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e7eaf0;
+  border-radius: 9px;
+}
+
+.selected-file div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selected-file span {
+  color: #687386;
+}
+
+button {
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.primary {
+  background: #4f46e5;
+  color: white;
+}
+
+.secondary {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.hint {
+  margin: 0;
+  color: #7a8495;
+  font-size: 13px;
+}
+
+.version-list {
+  border-top: 1px solid #edf0f5;
+}
+
+.version {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 4px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.version.current {
+  background: #fafaff;
+}
+
+.file-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.version-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.version-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.version-title h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+}
+
+.version-info p {
+  margin: 5px 0 0;
+  color: #687386;
+  font-size: 13px;
+}
+
+.current-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.content-type {
+  opacity: .8;
+}
+
+.alert {
+  padding: 12px 15px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.alert.success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.alert.error {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.empty {
+  color: #7a8495;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #687386;
+}
+
+.empty-state h3 {
+  margin: 12px 0 5px;
+  color: #172033;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.empty-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 800;
+}
+
+@media (max-width: 650px) {
+  .hero {
+    flex-direction: column;
+  }
+
+  .version {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .version .secondary {
+    margin-left: 64px;
+  }
+
+  .selected-file div {
+    flex-direction: column;
+  }
+}
