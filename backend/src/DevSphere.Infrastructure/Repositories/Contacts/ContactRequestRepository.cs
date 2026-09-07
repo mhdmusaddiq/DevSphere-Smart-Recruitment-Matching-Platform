@@ -32,6 +32,28 @@ public class ContactRequestRepository
     }
 
 
+    public async Task<ContactRequest?> GetForCandidateAsync(
+        Guid id,
+        string candidateId)
+    {
+        return await _context.ContactRequests
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.CandidateId == candidateId);
+    }
+
+
+    public async Task<bool> ExistsForApplicationAsync(
+        Guid jobApplicationId,
+        string employerId)
+    {
+        return await _context.ContactRequests
+            .AnyAsync(x =>
+                x.JobApplicationId == jobApplicationId &&
+                x.EmployerId == employerId);
+    }
+
+
     public async Task<List<ContactRequest>> GetByCandidateAsync(
         string candidateId)
     {

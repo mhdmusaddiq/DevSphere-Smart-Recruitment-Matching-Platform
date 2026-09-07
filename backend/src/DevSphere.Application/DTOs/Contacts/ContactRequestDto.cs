@@ -4,6 +4,8 @@ public class ContactRequestDto
 {
     public Guid Id { get; set; }
 
+    public Guid JobApplicationId { get; set; }
+
     public string EmployerId { get; set; } = string.Empty;
 
     public string CandidateId { get; set; } = string.Empty;

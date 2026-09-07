@@ -20,93 +20,115 @@ public class ContactRequestController : ControllerBase
     }
 
 
-    [HttpPost]
+    [HttpPost("applications/{jobApplicationId:guid}")]
     [Authorize(Roles = "Employer")]
     public async Task<IActionResult> Send(
-        ContactRequestDto request)
+        Guid jobApplicationId)
     {
-        var employerId = User.FindFirst(
-            ClaimTypes.NameIdentifier
-        )?.Value;
-
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(employerId))
         {
             return Unauthorized();
         }
 
+        try
+        {
+            var result = await _service.SendAsync(
+                jobApplicationId,
+                employerId);
 
-        request.EmployerId = employerId;
-
-
-        var result = await _service.SendAsync(request);
-
-
-        return Ok(result);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
-
 
 
     [HttpGet("candidate")]
     [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> GetCandidateRequests()
     {
-        var candidateId = User.FindFirst(
-            ClaimTypes.NameIdentifier
-        )?.Value;
-
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(candidateId))
         {
             return Unauthorized();
         }
 
-
         var result = await _service
             .GetByCandidateAsync(candidateId);
 
-
         return Ok(result);
     }
-
 
 
     [HttpGet("employer")]
     [Authorize(Roles = "Employer")]
     public async Task<IActionResult> GetEmployerRequests()
     {
-        var employerId = User.FindFirst(
-            ClaimTypes.NameIdentifier
-        )?.Value;
-
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrWhiteSpace(employerId))
         {
             return Unauthorized();
         }
 
-
         var result = await _service
             .GetByEmployerAsync(employerId);
-
 
         return Ok(result);
     }
 
 
-
-    [HttpPut("{id}/status")]
+    [HttpPut("{id:guid}/status")]
     [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> UpdateStatus(
         Guid id,
         ContactRequestDto request)
     {
-        var result = await _service
-            .UpdateStatusAsync(
-                id,
-                request.Status);
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
 
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
 
-        return Ok(result);
+        try
+        {
+            var result = await _service
+                .UpdateStatusAsync(
+                    id,
+                    request.Status,
+                    candidateId);
+
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 }

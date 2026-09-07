@@ -2,6 +2,8 @@ namespace DevSphere.Domain.Entities.Contacts;
 
 public class ContactRequest : BaseEntity
 {
+    public Guid JobApplicationId { get; set; }
+
     public string EmployerId { get; set; } = string.Empty;
 
     public string CandidateId { get; set; } = string.Empty;
