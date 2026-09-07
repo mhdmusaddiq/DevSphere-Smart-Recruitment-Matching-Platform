@@ -5,36 +5,42 @@ namespace DevSphere.Application.Interfaces;
 public interface ICandidateCareerService
 {
     Task<IReadOnlyCollection<WorkExperienceDto>> GetWorkExperiencesAsync(
-        Guid candidateProfileId,
+        string userId,
         CancellationToken cancellationToken = default);
 
-    Task<WorkExperienceDto> AddWorkExperienceAsync(
+    Task<WorkExperienceDto?> AddWorkExperienceAsync(
+        string userId,
         WorkExperienceDto request,
         CancellationToken cancellationToken = default);
 
     Task<WorkExperienceDto?> UpdateWorkExperienceAsync(
+        string userId,
         Guid id,
         WorkExperienceDto request,
         CancellationToken cancellationToken = default);
 
     Task<bool> DeleteWorkExperienceAsync(
+        string userId,
         Guid id,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<EducationRecordDto>> GetEducationAsync(
-        Guid candidateProfileId,
+        string userId,
         CancellationToken cancellationToken = default);
 
-    Task<EducationRecordDto> AddEducationAsync(
+    Task<EducationRecordDto?> AddEducationAsync(
+        string userId,
         EducationRecordDto request,
         CancellationToken cancellationToken = default);
 
     Task<EducationRecordDto?> UpdateEducationAsync(
+        string userId,
         Guid id,
         EducationRecordDto request,
         CancellationToken cancellationToken = default);
 
     Task<bool> DeleteEducationAsync(
+        string userId,
         Guid id,
         CancellationToken cancellationToken = default);
 

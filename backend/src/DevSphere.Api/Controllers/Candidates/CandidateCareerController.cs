@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DevSphere.Application.DTOs.Candidates;
 using DevSphere.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -17,24 +18,43 @@ public class CandidateCareerController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("work-experiences/{candidateProfileId:guid}")]
+    private string? CurrentUserId =>
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    [HttpGet("work-experiences")]
     public async Task<IActionResult> GetWorkExperiences(
-        Guid candidateProfileId,
-        CancellationToken cancellationToken) =>
-        Ok(await _service.GetWorkExperiencesAsync(
-            candidateProfileId,
+        CancellationToken cancellationToken)
+    {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
+        return Ok(await _service.GetWorkExperiencesAsync(
+            userId,
             cancellationToken));
+    }
 
     [HttpPost("work-experiences")]
     public async Task<IActionResult> AddWorkExperience(
         WorkExperienceDto request,
         CancellationToken cancellationToken)
     {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
         try
         {
-            return Ok(await _service.AddWorkExperienceAsync(
+            var result = await _service.AddWorkExperienceAsync(
+                userId,
                 request,
-                cancellationToken));
+                cancellationToken);
+
+            return result == null
+                ? NotFound("Candidate profile not found.")
+                : Ok(result);
         }
         catch (ArgumentException ex)
         {
@@ -48,9 +68,15 @@ public class CandidateCareerController : ControllerBase
         WorkExperienceDto request,
         CancellationToken cancellationToken)
     {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
         try
         {
             var result = await _service.UpdateWorkExperienceAsync(
+                userId,
                 id,
                 request,
                 cancellationToken);
@@ -68,31 +94,53 @@ public class CandidateCareerController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
         var deleted = await _service.DeleteWorkExperienceAsync(
+            userId,
             id,
             cancellationToken);
 
         return deleted ? NoContent() : NotFound();
     }
 
-    [HttpGet("education/{candidateProfileId:guid}")]
+    [HttpGet("education")]
     public async Task<IActionResult> GetEducation(
-        Guid candidateProfileId,
-        CancellationToken cancellationToken) =>
-        Ok(await _service.GetEducationAsync(
-            candidateProfileId,
+        CancellationToken cancellationToken)
+    {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
+        return Ok(await _service.GetEducationAsync(
+            userId,
             cancellationToken));
+    }
 
     [HttpPost("education")]
     public async Task<IActionResult> AddEducation(
         EducationRecordDto request,
         CancellationToken cancellationToken)
     {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
         try
         {
-            return Ok(await _service.AddEducationAsync(
+            var result = await _service.AddEducationAsync(
+                userId,
                 request,
-                cancellationToken));
+                cancellationToken);
+
+            return result == null
+                ? NotFound("Candidate profile not found.")
+                : Ok(result);
         }
         catch (ArgumentException ex)
         {
@@ -106,9 +154,15 @@ public class CandidateCareerController : ControllerBase
         EducationRecordDto request,
         CancellationToken cancellationToken)
     {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
         try
         {
             var result = await _service.UpdateEducationAsync(
+                userId,
                 id,
                 request,
                 cancellationToken);
@@ -126,7 +180,13 @@ public class CandidateCareerController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+            return Unauthorized();
+
         var deleted = await _service.DeleteEducationAsync(
+            userId,
             id,
             cancellationToken);
 

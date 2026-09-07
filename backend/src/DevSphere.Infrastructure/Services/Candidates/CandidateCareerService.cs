@@ -8,19 +8,28 @@ namespace DevSphere.Infrastructure.Services.Candidates;
 public class CandidateCareerService : ICandidateCareerService
 {
     private readonly CandidateCareerRepository _repository;
+    private readonly CandidateProfileRepository _profileRepository;
 
-    public CandidateCareerService(CandidateCareerRepository repository)
+    public CandidateCareerService(
+        CandidateCareerRepository repository,
+        CandidateProfileRepository profileRepository)
     {
         _repository = repository;
+        _profileRepository = profileRepository;
     }
 
     public async Task<IReadOnlyCollection<WorkExperienceDto>> GetWorkExperiencesAsync(
-        Guid candidateProfileId,
+        string userId,
         CancellationToken cancellationToken = default)
     {
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return Array.Empty<WorkExperienceDto>();
+
         var records = await _repository
             .GetByCandidateProfileIdAsync<WorkExperience>(
-                candidateProfileId,
+                profile.Id,
                 cancellationToken);
 
         return records
@@ -29,7 +38,8 @@ public class CandidateCareerService : ICandidateCareerService
             .ToList();
     }
 
-    public async Task<WorkExperienceDto> AddWorkExperienceAsync(
+    public async Task<WorkExperienceDto?> AddWorkExperienceAsync(
+        string userId,
         WorkExperienceDto request,
         CancellationToken cancellationToken = default)
     {
@@ -41,10 +51,18 @@ public class CandidateCareerService : ICandidateCareerService
         if (string.IsNullOrWhiteSpace(request.CompanyName))
             throw new ArgumentException("Company name is required.");
 
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return null;
+
         var entity = new WorkExperience
         {
             Id = Guid.NewGuid(),
-            CandidateProfileId = request.CandidateProfileId,
+
+            // Never trust CandidateProfileId from client.
+            CandidateProfileId = profile.Id,
+
             JobTitle = request.JobTitle.Trim(),
             CompanyName = request.CompanyName.Trim(),
             StartDate = request.StartDate,
@@ -59,6 +77,7 @@ public class CandidateCareerService : ICandidateCareerService
     }
 
     public async Task<WorkExperienceDto?> UpdateWorkExperienceAsync(
+        string userId,
         Guid id,
         WorkExperienceDto request,
         CancellationToken cancellationToken = default)
@@ -71,10 +90,15 @@ public class CandidateCareerService : ICandidateCareerService
         if (string.IsNullOrWhiteSpace(request.CompanyName))
             throw new ArgumentException("Company name is required.");
 
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return null;
+
         var entity = await _repository
             .GetByIdAsync<WorkExperience>(id, cancellationToken);
 
-        if (entity == null)
+        if (entity == null || entity.CandidateProfileId != profile.Id)
             return null;
 
         entity.JobTitle = request.JobTitle.Trim();
@@ -82,6 +106,7 @@ public class CandidateCareerService : ICandidateCareerService
         entity.StartDate = request.StartDate;
         entity.EndDate = request.EndDate;
         entity.Description = request.Description?.Trim() ?? string.Empty;
+        entity.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(entity, cancellationToken);
 
@@ -89,13 +114,19 @@ public class CandidateCareerService : ICandidateCareerService
     }
 
     public async Task<bool> DeleteWorkExperienceAsync(
+        string userId,
         Guid id,
         CancellationToken cancellationToken = default)
     {
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return false;
+
         var entity = await _repository
             .GetByIdAsync<WorkExperience>(id, cancellationToken);
 
-        if (entity == null)
+        if (entity == null || entity.CandidateProfileId != profile.Id)
             return false;
 
         await _repository.DeleteAsync(entity, cancellationToken);
@@ -104,12 +135,17 @@ public class CandidateCareerService : ICandidateCareerService
     }
 
     public async Task<IReadOnlyCollection<EducationRecordDto>> GetEducationAsync(
-        Guid candidateProfileId,
+        string userId,
         CancellationToken cancellationToken = default)
     {
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return Array.Empty<EducationRecordDto>();
+
         var records = await _repository
             .GetByCandidateProfileIdAsync<EducationRecord>(
-                candidateProfileId,
+                profile.Id,
                 cancellationToken);
 
         return records
@@ -118,7 +154,8 @@ public class CandidateCareerService : ICandidateCareerService
             .ToList();
     }
 
-    public async Task<EducationRecordDto> AddEducationAsync(
+    public async Task<EducationRecordDto?> AddEducationAsync(
+        string userId,
         EducationRecordDto request,
         CancellationToken cancellationToken = default)
     {
@@ -130,10 +167,18 @@ public class CandidateCareerService : ICandidateCareerService
         if (string.IsNullOrWhiteSpace(request.Qualification))
             throw new ArgumentException("Qualification is required.");
 
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return null;
+
         var entity = new EducationRecord
         {
             Id = Guid.NewGuid(),
-            CandidateProfileId = request.CandidateProfileId,
+
+            // Never trust CandidateProfileId from client.
+            CandidateProfileId = profile.Id,
+
             Institution = request.Institution.Trim(),
             Qualification = request.Qualification.Trim(),
             FieldOfStudy = request.FieldOfStudy?.Trim() ?? string.Empty,
@@ -148,6 +193,7 @@ public class CandidateCareerService : ICandidateCareerService
     }
 
     public async Task<EducationRecordDto?> UpdateEducationAsync(
+        string userId,
         Guid id,
         EducationRecordDto request,
         CancellationToken cancellationToken = default)
@@ -160,10 +206,15 @@ public class CandidateCareerService : ICandidateCareerService
         if (string.IsNullOrWhiteSpace(request.Qualification))
             throw new ArgumentException("Qualification is required.");
 
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return null;
+
         var entity = await _repository
             .GetByIdAsync<EducationRecord>(id, cancellationToken);
 
-        if (entity == null)
+        if (entity == null || entity.CandidateProfileId != profile.Id)
             return null;
 
         entity.Institution = request.Institution.Trim();
@@ -171,6 +222,7 @@ public class CandidateCareerService : ICandidateCareerService
         entity.FieldOfStudy = request.FieldOfStudy?.Trim() ?? string.Empty;
         entity.StartDate = request.StartDate;
         entity.EndDate = request.EndDate;
+        entity.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(entity, cancellationToken);
 
@@ -178,13 +230,19 @@ public class CandidateCareerService : ICandidateCareerService
     }
 
     public async Task<bool> DeleteEducationAsync(
+        string userId,
         Guid id,
         CancellationToken cancellationToken = default)
     {
+        var profile = await _profileRepository.GetByUserIdAsync(userId);
+
+        if (profile == null)
+            return false;
+
         var entity = await _repository
             .GetByIdAsync<EducationRecord>(id, cancellationToken);
 
-        if (entity == null)
+        if (entity == null || entity.CandidateProfileId != profile.Id)
             return false;
 
         await _repository.DeleteAsync(entity, cancellationToken);
