@@ -165,7 +165,8 @@ public class JobApplicationController : ControllerBase
             var result = await _service
                 .UpdateStatusAsync(
                     applicationId,
-                    request.Status);
+                    request.Status,
+                    employerId);
 
 
 

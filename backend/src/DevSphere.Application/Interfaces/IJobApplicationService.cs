@@ -17,6 +17,7 @@ public interface IJobApplicationService
 
     Task<JobApplicationDto> UpdateStatusAsync(
         Guid applicationId,
-        string status);
+        string status,
+        string changedByUserId);
 
 }
