@@ -9,4 +9,19 @@ public interface ICandidateProfileService
     Task<CandidateProfileDto> CreateAsync(
         string userId,
         CandidateProfileDto profile);
+
+    Task<CandidateProfileDto?> UpdateAsync(
+        string userId,
+        CandidateProfileDto profile);
+
+    Task<IReadOnlyCollection<CandidateSkillDto>> GetSkillsAsync(
+        string userId);
+
+    Task<CandidateSkillDto?> AddSkillAsync(
+        string userId,
+        AddCandidateSkillDto request);
+
+    Task<bool> DeleteSkillAsync(
+        string userId,
+        Guid skillId);
 }
