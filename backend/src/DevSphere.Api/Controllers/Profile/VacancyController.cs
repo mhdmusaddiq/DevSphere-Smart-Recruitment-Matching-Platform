@@ -18,14 +18,37 @@ public class VacancyController : ControllerBase
     }
 
     [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetOpen()
+[AllowAnonymous]
+public async Task<IActionResult> GetOpen(
+    [FromQuery(Name = "q")] string? query,
+    [FromQuery] string? location,
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 20)
+{
+    if (page < 1)
     {
-        var vacancies = await _service
-            .GetOpenVacanciesAsync();
-
-        return Ok(vacancies);
+        page = 1;
     }
+
+    if (pageSize < 1)
+    {
+        pageSize = 20;
+    }
+
+    if (pageSize > 100)
+    {
+        pageSize = 100;
+    }
+
+    var vacancies = await _service
+        .GetOpenVacanciesAsync(
+            query,
+            location,
+            page,
+            pageSize);
+
+    return Ok(vacancies);
+}
 
     [HttpGet("{vacancyId:guid}")]
     [AllowAnonymous]

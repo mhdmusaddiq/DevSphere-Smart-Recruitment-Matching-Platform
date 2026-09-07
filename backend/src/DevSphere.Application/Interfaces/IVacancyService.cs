@@ -4,7 +4,11 @@ namespace DevSphere.Application.Interfaces;
 
 public interface IVacancyService
 {
-    Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync();
+    Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync(
+    string? query,
+    string? location,
+    int page,
+    int pageSize);
 
     Task<VacancyDto?> GetByIdAsync(Guid vacancyId);
 

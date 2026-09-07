@@ -15,14 +15,23 @@ public class VacancyService : IVacancyService
         _repository = repository;
     }
 
-    public async Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync()
-    {
-        var vacancies = await _repository
-            .GetOpenAsync();
+    public async Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync(
+    string? query,
+    string? location,
+    int page,
+    int pageSize)
+{
+    var vacancies = await _repository
+        .GetOpenAsync(
+            query,
+            location,
+            page,
+            pageSize);
 
-        return vacancies
-            .Select(MapToDto)
-            .ToList();
+    return vacancies
+        .Select(MapToDto)
+        .ToList();
+
     }
 
     public async Task<VacancyDto?> GetByIdAsync(
