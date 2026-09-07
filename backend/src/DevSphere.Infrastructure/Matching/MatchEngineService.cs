@@ -17,11 +17,11 @@ public class MatchEngineService : IMatchEngine
 
 
     public async Task<MatchResultDto> CalculateAsync(
-        string candidateId,
+        string userId,
         string vacancyId)
     {
         var candidate = await _repository
-            .GetCandidateAsync(candidateId);
+            .GetCandidateAsync(userId);
 
         var vacancy = await _repository
             .GetVacancyAsync(vacancyId);

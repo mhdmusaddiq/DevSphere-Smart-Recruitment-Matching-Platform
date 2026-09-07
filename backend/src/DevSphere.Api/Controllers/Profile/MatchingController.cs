@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DevSphere.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,42 +7,34 @@ namespace DevSphere.Api.Controllers.Profile;
 
 [ApiController]
 [Route("api/matching")]
+[Authorize(Roles = "Job Seeker")]
 public class MatchingController : ControllerBase
 {
     private readonly IMatchEngine _engine;
 
-
-    public MatchingController(
-        IMatchEngine engine)
+    public MatchingController(IMatchEngine engine)
     {
         _engine = engine;
     }
 
-
-    [HttpGet("{candidateId}/{vacancyId}")]
-    [Authorize]
-    public async Task<IActionResult> Calculate(
-        string candidateId,
-        string vacancyId)
+    [HttpGet("vacancies/{vacancyId}")]
+    public async Task<IActionResult> Calculate(string vacancyId)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         try
         {
-            var result = await _engine
-                .CalculateAsync(
-                    candidateId,
-                    vacancyId);
-
+            var result = await _engine.CalculateAsync(userId, vacancyId);
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
         {
-            Console.WriteLine(ex.ToString());
-
-            return StatusCode(500, new
-            {
-                error = ex.Message,
-                detail = ex.InnerException?.Message
-            });
+            return NotFound(new { error = ex.Message });
         }
     }
 }

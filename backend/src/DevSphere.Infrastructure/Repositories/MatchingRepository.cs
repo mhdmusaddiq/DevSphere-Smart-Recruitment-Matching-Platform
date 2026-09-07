@@ -9,29 +9,29 @@ public class MatchingRepository
 {
     private readonly DevSphereDbContext _context;
 
-    public MatchingRepository(
-        DevSphereDbContext context)
+    public MatchingRepository(DevSphereDbContext context)
     {
         _context = context;
     }
 
-
     public virtual async Task<CandidateProfile?> GetCandidateAsync(
-    string candidateId)
+        string userId)
     {
         return await _context.CandidateProfiles
-     .Include(x => x.Skills)
-     .FirstOrDefaultAsync(x =>
-         x.Id.ToString() == candidateId);
+            .Include(x => x.Skills)
+            .FirstOrDefaultAsync(x => x.UserId == userId);
     }
 
-
     public virtual async Task<Vacancy?> GetVacancyAsync(
-    string vacancyId)
+        string vacancyId)
     {
+        if (!Guid.TryParse(vacancyId, out var id))
+        {
+            return null;
+        }
+
         return await _context.Vacancies
             .Include(x => x.RequiredSkills)
-            .FirstOrDefaultAsync(x =>
-                x.Id.ToString() == vacancyId);
+            .FirstOrDefaultAsync(x => x.Id == id);
     }
 }
