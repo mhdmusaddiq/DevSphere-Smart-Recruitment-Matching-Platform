@@ -128,4 +128,26 @@ public class ResumeController : ControllerBase
             download.FileName,
             enableRangeProcessing: true);
     }
+
+    [HttpPut("versions/{versionId:guid}/current")]
+    public async Task<IActionResult> SetCurrentVersion(
+        Guid versionId,
+        CancellationToken cancellationToken)
+    {
+        var userId = CurrentUserId;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var resume = await _service.SetCurrentVersionAsync(
+            userId,
+            versionId,
+            cancellationToken);
+
+        return resume == null
+            ? NotFound()
+            : Ok(resume);
+    }
 }

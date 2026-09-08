@@ -123,5 +123,41 @@ public class CandidateProfileController : ControllerBase
         }
 
         return NoContent();
-    }}
+    }
 
+    [HttpGet("readiness")]
+    public async Task<IActionResult> GetReadiness()
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _service
+            .GetProfileReadinessAsync(userId);
+
+        return Ok(result);
+    }
+
+    [HttpGet("application-readiness")]
+    public async Task<IActionResult> GetApplicationReadiness()
+    {
+        var userId = User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier
+        )?.Value;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _service
+            .GetApplicationReadinessAsync(userId);
+
+        return Ok(result);
+    }
+}

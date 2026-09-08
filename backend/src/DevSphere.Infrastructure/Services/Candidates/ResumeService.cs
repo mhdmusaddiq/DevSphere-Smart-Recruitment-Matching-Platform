@@ -115,6 +115,52 @@ public class ResumeService : IResumeService
         return Map(resume);
     }
 
+
+    public async Task<ResumeDto?> SetCurrentVersionAsync(
+        string userId,
+        Guid versionId,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = await _profileRepository
+            .GetByUserIdAsync(userId);
+
+        if (profile == null)
+        {
+            return null;
+        }
+
+        var resume = await _repository
+            .GetByCandidateProfileIdAsync(
+                profile.Id,
+                cancellationToken);
+
+        if (resume == null)
+        {
+            return null;
+        }
+
+        var selectedVersion = resume.Versions
+            .FirstOrDefault(x => x.Id == versionId);
+
+        if (selectedVersion == null)
+        {
+            return null;
+        }
+
+        foreach (var version in resume.Versions)
+        {
+            version.IsCurrent =
+                version.Id == selectedVersion.Id;
+        }
+
+        resume.CurrentVersionId = selectedVersion.Id;
+        resume.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.SaveChangesAsync(
+            cancellationToken);
+
+        return Map(resume);
+    }
     public async Task<ResumeDownloadDto?> DownloadOwnVersionAsync(
         string userId,
         Guid versionId,

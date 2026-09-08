@@ -264,3 +264,39 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
         builder.HasIndex(x => x.Key).IsUnique();
     }
 }
+
+public class LicenceRegistrationConfiguration
+    : CandidateRecordConfiguration<LicenceRegistration>
+{
+    public override void Configure(
+        EntityTypeBuilder<LicenceRegistration> builder)
+    {
+        base.Configure(builder);
+
+        builder.Property(x => x.Type)
+            .HasMaxLength(150);
+
+        builder.Property(x => x.Class)
+            .HasMaxLength(100);
+
+        builder.Property(x => x.Issuer)
+            .HasMaxLength(250);
+
+        builder.Property(x => x.Identifier)
+            .HasMaxLength(200);
+
+        builder.Property(x => x.Status)
+            .HasMaxLength(50);
+
+        builder.Property(x => x.VerificationStatus)
+            .HasMaxLength(50);
+
+        builder.HasIndex(x => new
+        {
+            x.CandidateProfileId,
+            x.Type,
+            x.Identifier
+        })
+        .IsUnique();
+    }
+}

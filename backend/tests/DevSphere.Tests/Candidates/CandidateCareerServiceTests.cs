@@ -71,4 +71,46 @@ public class CandidateCareerServiceTests
                 "candidate-user",
                 request));
     }
-}
+
+    [Fact]
+    public async Task AddLicence_Should_Reject_Expiry_Before_Issue()
+    {
+        var service = new CandidateCareerService(
+            null!,
+            null!);
+
+        var request = new LicenceRegistrationDto
+        {
+            Type = "Professional",
+            Issuer = "DevSphere Authority",
+            Identifier = "LIC-001",
+            IssuedOn = new DateOnly(2026, 9, 1),
+            ExpiresOn = new DateOnly(2026, 8, 1)
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.AddLicenceAsync(
+                "candidate-user",
+                request));
+    }
+
+    [Fact]
+    public async Task AddLicence_Should_Reject_Blank_Identifier()
+    {
+        var service = new CandidateCareerService(
+            null!,
+            null!);
+
+        var request = new LicenceRegistrationDto
+        {
+            Type = "Professional",
+            Issuer = "DevSphere Authority",
+            Identifier = " ",
+            IssuedOn = new DateOnly(2026, 9, 1)
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.AddLicenceAsync(
+                "candidate-user",
+                request));
+    }}
