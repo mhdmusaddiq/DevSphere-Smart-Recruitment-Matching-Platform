@@ -5,12 +5,16 @@ namespace DevSphere.Application.Interfaces;
 public interface IVacancyService
 {
     Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync(
-    string? query,
-    string? location,
-    int page,
-    int pageSize);
+        string? query,
+        string? location,
+        int page,
+        int pageSize);
 
-    Task<VacancyDto?> GetByIdAsync(Guid vacancyId);
+    Task<IEnumerable<VacancyDto>> GetMineAsync(
+        string employerId);
+
+    Task<VacancyDto?> GetByIdAsync(
+        Guid vacancyId);
 
     Task<VacancyDto> CreateAsync(
         string employerId,
@@ -20,6 +24,10 @@ public interface IVacancyService
         string employerId,
         Guid vacancyId,
         VacancyDto vacancy);
+
+    Task<VacancyDto> PublishAsync(
+        string employerId,
+        Guid vacancyId);
 
     Task<VacancyDto> CloseAsync(
         string employerId,

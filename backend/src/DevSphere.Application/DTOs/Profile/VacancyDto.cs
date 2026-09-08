@@ -26,6 +26,10 @@ public class VacancyDto
 
     public List<VacancyRequiredSkillDto> RequiredSkills { get; set; } = new();
 
+    public string LifecycleStatus { get; set; } = string.Empty;
+
+    // Compatibility projection:
+    // Draft = false, Published = true, Closed = false.
     public bool IsOpen { get; set; }
 }
 

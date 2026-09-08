@@ -2,6 +2,7 @@ using DevSphere.Application.DTOs.Profile;
 using DevSphere.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DevSphere.Api.Controllers.Profile;
 
@@ -50,6 +51,23 @@ public class VacancyController : ControllerBase
         return Ok(vacancies);
     }
 
+    [HttpGet("mine")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> GetMine()
+    {
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
+
+        var vacancies = await _service
+            .GetMineAsync(employerId);
+
+        return Ok(vacancies);
+    }
+
     [HttpGet("{vacancyId:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(
@@ -71,15 +89,18 @@ public class VacancyController : ControllerBase
     public async Task<IActionResult> Create(
         VacancyDto request)
     {
-        var employerId = User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier
-        )?.Value;
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
 
         try
         {
             var result = await _service
                 .CreateAsync(
-                    employerId!,
+                    employerId,
                     request);
 
             return StatusCode(
@@ -101,15 +122,18 @@ public class VacancyController : ControllerBase
         Guid vacancyId,
         VacancyDto request)
     {
-        var employerId = User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier
-        )?.Value;
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
 
         try
         {
             var result = await _service
                 .UpdateAsync(
-                    employerId!,
+                    employerId,
                     vacancyId,
                     request);
 
@@ -147,20 +171,23 @@ public class VacancyController : ControllerBase
         }
     }
 
-    [HttpPut("{vacancyId:guid}/close")]
+    [HttpPut("{vacancyId:guid}/publish")]
     [Authorize(Roles = "Employer")]
-    public async Task<IActionResult> Close(
+    public async Task<IActionResult> Publish(
         Guid vacancyId)
     {
-        var employerId = User.FindFirst(
-            System.Security.Claims.ClaimTypes.NameIdentifier
-        )?.Value;
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
 
         try
         {
             var result = await _service
-                .CloseAsync(
-                    employerId!,
+                .PublishAsync(
+                    employerId,
                     vacancyId);
 
             return Ok(result);
@@ -188,5 +215,57 @@ public class VacancyController : ControllerBase
                 message = ex.Message
             });
         }
+    }
+
+    [HttpPut("{vacancyId:guid}/close")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> Close(
+        Guid vacancyId)
+    {
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result = await _service
+                .CloseAsync(
+                    employerId,
+                    vacancyId);
+
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = ex.Message
+                });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    private string? GetEmployerId()
+    {
+        return User.FindFirst(
+            ClaimTypes.NameIdentifier)?.Value;
     }
 }

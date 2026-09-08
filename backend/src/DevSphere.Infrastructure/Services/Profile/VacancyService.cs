@@ -1,6 +1,7 @@
 using DevSphere.Application.DTOs.Profile;
 using DevSphere.Application.Interfaces;
 using DevSphere.Domain.Entities.Vacancies;
+using DevSphere.Domain.Enums;
 using DevSphere.Infrastructure.Repositories;
 
 namespace DevSphere.Infrastructure.Services.Profile;
@@ -8,11 +9,14 @@ namespace DevSphere.Infrastructure.Services.Profile;
 public class VacancyService : IVacancyService
 {
     private readonly VacancyRepository _repository;
+    private readonly IVacancyPolicyService? _policyService;
 
     public VacancyService(
-        VacancyRepository repository)
+        VacancyRepository repository,
+        IVacancyPolicyService? policyService = null)
     {
         _repository = repository;
+        _policyService = policyService;
     }
 
     public async Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync(
@@ -21,16 +25,25 @@ public class VacancyService : IVacancyService
         int page,
         int pageSize)
     {
-        var vacancies = await _repository
-            .GetOpenAsync(
-                query,
-                location,
-                page,
-                pageSize);
+        var vacancies = (await _repository.GetOpenAsync(
+            query,
+            location,
+            page,
+            pageSize)).ToList();
 
-        return vacancies
-            .Select(MapToDto)
+        return await MapManyAsync(vacancies);
+    }
+
+    public async Task<IEnumerable<VacancyDto>> GetMineAsync(
+        string employerId)
+    {
+        ValidateEmployerId(employerId);
+
+        var vacancies = (await _repository
+            .GetMineAsync(employerId))
             .ToList();
+
+        return await MapManyAsync(vacancies);
     }
 
     public async Task<VacancyDto?> GetByIdAsync(
@@ -44,51 +57,53 @@ public class VacancyService : IVacancyService
             return null;
         }
 
-        return MapToDto(vacancy);
+        var skills = await _repository
+            .GetRequiredSkillsAsync(vacancy.Id);
+
+        return MapToDto(vacancy, skills);
     }
 
     public async Task<VacancyDto> CreateAsync(
         string employerId,
         VacancyDto request)
     {
+        ValidateEmployerId(employerId);
         ValidateRequest(request);
 
         var vacancy = new Vacancy
         {
             Id = Guid.NewGuid(),
             EmployerId = employerId,
-            Title = request.Title,
+            Title = request.Title.Trim(),
             Description = request.Description,
             Location = request.Location,
-
-            MinExperienceMonths =
-                request.MinExperienceMonths,
-
-            MaxExperienceMonths =
-                request.MaxExperienceMonths,
-
+            MinExperienceMonths = request.MinExperienceMonths,
+            MaxExperienceMonths = request.MaxExperienceMonths,
             RequiredExperienceMonths =
                 request.MinExperienceMonths,
+            RequiredEducation = request.RequiredEducation,
+            SalaryMin = request.SalaryMin,
+            SalaryMax = request.SalaryMax,
+            ClosingDateUtc = request.ClosingDateUtc,
 
-            RequiredEducation =
-                request.RequiredEducation,
+            LifecycleStatus =
+                VacancyLifecycleStatus.Draft,
 
-            SalaryMin =
-                request.SalaryMin,
-
-            SalaryMax =
-                request.SalaryMax,
-
-            ClosingDateUtc =
-                request.ClosingDateUtc,
-
-            IsOpen = true,
+            IsOpen = false,
             CreatedAt = DateTime.UtcNow
         };
 
-        await _repository.AddAsync(vacancy);
+        var skills = CreateRequiredSkills(
+            vacancy.Id,
+            request.RequiredSkills);
 
-        return MapToDto(vacancy);
+        await _repository.AddAsync(
+            vacancy,
+            skills);
+
+        return MapToDto(
+            vacancy,
+            skills);
     }
 
     public async Task<VacancyDto> UpdateAsync(
@@ -96,22 +111,15 @@ public class VacancyService : IVacancyService
         Guid vacancyId,
         VacancyDto request)
     {
-        var vacancy = await _repository
-            .GetByIdAsync(vacancyId);
+        ValidateEmployerId(employerId);
 
-        if (vacancy == null)
-        {
-            throw new KeyNotFoundException(
-                "Vacancy not found.");
-        }
+        var vacancy = await GetOwnedVacancyAsync(
+            employerId,
+            vacancyId,
+            "update");
 
-        if (vacancy.EmployerId != employerId)
-        {
-            throw new UnauthorizedAccessException(
-                "You cannot update this vacancy.");
-        }
-
-        if (!vacancy.IsOpen)
+        if (vacancy.LifecycleStatus ==
+            VacancyLifecycleStatus.Closed)
         {
             throw new InvalidOperationException(
                 "Closed vacancies cannot be updated.");
@@ -119,47 +127,154 @@ public class VacancyService : IVacancyService
 
         ValidateRequest(request);
 
-        vacancy.Title =
-            request.Title;
+        var isMaterialChange =
+            await IsMaterialChangeAsync(
+                vacancy,
+                request);
 
-        vacancy.Description =
-            request.Description;
+        if (vacancy.LifecycleStatus ==
+                VacancyLifecycleStatus.Published &&
+            isMaterialChange)
+        {
+            if (await _repository.HasApplicationsAsync(
+                vacancy.Id))
+            {
+                throw new InvalidOperationException(
+                    "Material vacancy fields are locked after the first application.");
+            }
 
-        vacancy.Location =
-            request.Location;
+            if (_policyService != null)
+            {
+                await _policyService
+                    .EnsureMaterialRevisionForEditAsync(
+                        employerId,
+                        vacancy.Id);
+            }
+        }
 
+        vacancy.Title = request.Title.Trim();
+        vacancy.Description = request.Description;
+        vacancy.Location = request.Location;
         vacancy.MinExperienceMonths =
             request.MinExperienceMonths;
-
         vacancy.MaxExperienceMonths =
             request.MaxExperienceMonths;
-
         vacancy.RequiredExperienceMonths =
             request.MinExperienceMonths;
-
         vacancy.RequiredEducation =
             request.RequiredEducation;
-
-        vacancy.SalaryMin =
-            request.SalaryMin;
-
-        vacancy.SalaryMax =
-            request.SalaryMax;
-
+        vacancy.SalaryMin = request.SalaryMin;
+        vacancy.SalaryMax = request.SalaryMax;
         vacancy.ClosingDateUtc =
             request.ClosingDateUtc;
+        vacancy.UpdatedAt = DateTime.UtcNow;
 
-        vacancy.UpdatedAt =
-            DateTime.UtcNow;
+        var skills = CreateRequiredSkills(
+            vacancy.Id,
+            request.RequiredSkills);
+
+        await _repository.UpdateAsync(
+            vacancy,
+            skills);
+
+        return MapToDto(
+            vacancy,
+            skills);
+    }
+
+    public async Task<VacancyDto> PublishAsync(
+        string employerId,
+        Guid vacancyId)
+    {
+        ValidateEmployerId(employerId);
+
+        var vacancy = await GetOwnedVacancyAsync(
+            employerId,
+            vacancyId,
+            "publish");
+
+        if (vacancy.LifecycleStatus ==
+            VacancyLifecycleStatus.Published)
+        {
+            throw new InvalidOperationException(
+                "Vacancy is already published.");
+        }
+
+        if (vacancy.LifecycleStatus ==
+            VacancyLifecycleStatus.Closed)
+        {
+            throw new InvalidOperationException(
+                "Closed vacancies cannot be published.");
+        }
+
+        if (vacancy.ClosingDateUtc.HasValue &&
+            vacancy.ClosingDateUtc.Value <= DateTime.UtcNow)
+        {
+            throw new InvalidOperationException(
+                "A vacancy with an expired closing date cannot be published.");
+        }
+
+        vacancy.LifecycleStatus =
+            VacancyLifecycleStatus.Published;
+
+        vacancy.IsOpen = true;
+        vacancy.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(vacancy);
 
-        return MapToDto(vacancy);
+        var skills = await _repository
+            .GetRequiredSkillsAsync(vacancy.Id);
+
+        return MapToDto(
+            vacancy,
+            skills);
     }
 
     public async Task<VacancyDto> CloseAsync(
         string employerId,
         Guid vacancyId)
+    {
+        ValidateEmployerId(employerId);
+
+        var vacancy = await GetOwnedVacancyAsync(
+            employerId,
+            vacancyId,
+            "close");
+
+        if (vacancy.LifecycleStatus ==
+            VacancyLifecycleStatus.Closed)
+        {
+            throw new InvalidOperationException(
+                "Vacancy is already closed.");
+        }
+
+        if (vacancy.LifecycleStatus !=
+            VacancyLifecycleStatus.Published)
+        {
+            throw new InvalidOperationException(
+                "Only published vacancies can be closed.");
+        }
+
+        vacancy.LifecycleStatus =
+            VacancyLifecycleStatus.Closed;
+
+        vacancy.IsOpen = false;
+        vacancy.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.UpdateAsync(vacancy);
+
+        var skills = await _repository
+            .GetRequiredSkillsAsync(vacancy.Id);
+
+        return MapToDto(
+            vacancy,
+            skills);
+    }
+
+    private async Task<Vacancy> GetOwnedVacancyAsync(
+        string employerId,
+        Guid vacancyId,
+        string action)
     {
         var vacancy = await _repository
             .GetByIdAsync(vacancyId);
@@ -173,21 +288,126 @@ public class VacancyService : IVacancyService
         if (vacancy.EmployerId != employerId)
         {
             throw new UnauthorizedAccessException(
-                "You cannot close this vacancy.");
+                $"You cannot {action} this vacancy.");
         }
-        
-        if (!vacancy.IsOpen)
+
+        return vacancy;
+    }
+
+    private async Task<List<VacancyDto>> MapManyAsync(
+        IReadOnlyCollection<Vacancy> vacancies)
+    {
+        if (vacancies.Count == 0)
         {
-           throw new InvalidOperationException(
-               "Vacancy is already closed.");
+            return new List<VacancyDto>();
         }
 
-        vacancy.IsOpen = false;
-        vacancy.UpdatedAt = DateTime.UtcNow;
+        var skillsByVacancy = await _repository
+            .GetRequiredSkillsAsync(
+                vacancies.Select(x => x.Id));
 
-        await _repository.UpdateAsync(vacancy);
+        return vacancies
+            .Select(vacancy =>
+                MapToDto(
+                    vacancy,
+                    skillsByVacancy.TryGetValue(
+                        vacancy.Id,
+                        out var skills)
+                        ? skills
+                        : Array.Empty<RequiredSkill>()))
+            .ToList();
+    }
 
-        return MapToDto(vacancy);
+    private static List<RequiredSkill> CreateRequiredSkills(
+        Guid vacancyId,
+        IEnumerable<VacancyRequiredSkillDto> skills)
+    {
+        return skills
+            .Select(skill => new RequiredSkill
+            {
+                Id = Guid.NewGuid(),
+                VacancyId = vacancyId,
+                Name = skill.Name.Trim(),
+                Weight = skill.Weight,
+                CreatedAt = DateTime.UtcNow
+            })
+            .ToList();
+    }
+
+    private async Task<bool> IsMaterialChangeAsync(
+        Vacancy vacancy,
+        VacancyDto request)
+    {
+        if (vacancy.Location != request.Location ||
+            vacancy.MinExperienceMonths !=
+                request.MinExperienceMonths ||
+            vacancy.MaxExperienceMonths !=
+                request.MaxExperienceMonths ||
+            vacancy.RequiredEducation !=
+                request.RequiredEducation)
+        {
+            return true;
+        }
+
+        var existingSkills =
+            await _repository
+                .GetRequiredSkillsAsync(
+                    vacancy.Id);
+
+        var existing =
+            existingSkills
+                .Select(x => new
+                {
+                    Name = x.Name
+                        .Trim()
+                        .ToLowerInvariant(),
+                    x.Weight
+                })
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Weight)
+                .ToList();
+
+        var requested =
+            request.RequiredSkills
+                .Select(x => new
+                {
+                    Name = x.Name
+                        .Trim()
+                        .ToLowerInvariant(),
+                    x.Weight
+                })
+                .OrderBy(x => x.Name)
+                .ThenBy(x => x.Weight)
+                .ToList();
+
+        if (existing.Count != requested.Count)
+        {
+            return true;
+        }
+
+        for (var index = 0;
+             index < existing.Count;
+             index++)
+        {
+            if (existing[index].Name !=
+                    requested[index].Name ||
+                existing[index].Weight !=
+                    requested[index].Weight)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    private static void ValidateEmployerId(
+        string employerId)
+    {
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            throw new UnauthorizedAccessException(
+                "Authenticated employer is required.");
+        }
     }
 
     private static void ValidateRequest(
@@ -277,7 +497,8 @@ public class VacancyService : IVacancyService
     }
 
     private static VacancyDto MapToDto(
-        Vacancy vacancy)
+        Vacancy vacancy,
+        IEnumerable<RequiredSkill> requiredSkills)
     {
         return new VacancyDto
         {
@@ -307,7 +528,20 @@ public class VacancyService : IVacancyService
             ClosingDateUtc =
                 vacancy.ClosingDateUtc,
 
-            IsOpen = vacancy.IsOpen
+            LifecycleStatus =
+                vacancy.LifecycleStatus.ToString(),
+
+            IsOpen =
+                vacancy.IsOpen,
+
+            RequiredSkills = requiredSkills
+                .OrderBy(x => x.Name)
+                .Select(x => new VacancyRequiredSkillDto
+                {
+                    Name = x.Name,
+                    Weight = x.Weight
+                })
+                .ToList()
         };
     }
 }
