@@ -5,6 +5,7 @@ using DevSphere.Domain.Entities.Candidates;
 using DevSphere.Domain.Entities.Career;
 using DevSphere.Domain.Entities.Contacts;
 using DevSphere.Domain.Entities.Employers;
+using DevSphere.Domain.Entities.EmployerWorkflow;
 using DevSphere.Domain.Entities.Matching;
 using DevSphere.Domain.Entities.Resume;
 using DevSphere.Domain.Entities.Vacancies;
@@ -110,10 +111,16 @@ public class CompanyVerificationConfiguration : IEntityTypeConfiguration<Company
     {
         builder.Property(x => x.Status).HasMaxLength(50);
         builder.Property(x => x.EvidenceStorageKey).HasMaxLength(500);
+
         builder.HasOne<EmployerProfile>()
             .WithMany()
             .HasForeignKey(x => x.EmployerProfileId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<CompanyProfile>()
+            .WithMany()
+            .HasForeignKey(x => x.CompanyId)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
 
@@ -125,6 +132,26 @@ public class VacancyRequirementConfiguration : IEntityTypeConfiguration<VacancyR
             .WithMany()
             .HasForeignKey(x => x.VacancyId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<MatchingPolicyRevision>()
+            .WithMany()
+            .HasForeignKey(x => x.MatchingPolicyRevisionId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne<FamilyPolicy>()
+            .WithMany()
+            .HasForeignKey(x => x.FamilyPolicyId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne<AlternativeSet>()
+            .WithMany()
+            .HasForeignKey(x => x.AlternativeSetId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Property(x => x.CanonicalTargetKey).HasMaxLength(250);
+        builder.Property(x => x.RequiredValue).HasMaxLength(500);
+        builder.Property(x => x.QuestionText).HasMaxLength(1000);
+        builder.Property(x => x.ExpectedAnswer).HasMaxLength(500);
     }
 }
 
@@ -298,5 +325,207 @@ public class LicenceRegistrationConfiguration
             x.Identifier
         })
         .IsUnique();
+    }
+}
+
+public class CompanyProfileConfiguration : IEntityTypeConfiguration<CompanyProfile>
+{
+    public void Configure(EntityTypeBuilder<CompanyProfile> builder)
+    {
+        builder.Property(x => x.Name)
+            .HasMaxLength(250)
+            .IsRequired();
+
+        builder.Property(x => x.Website)
+            .HasMaxLength(1000);
+
+        builder.Property(x => x.Location)
+            .HasMaxLength(250);
+    }
+}
+
+public class CompanyMembershipConfiguration : IEntityTypeConfiguration<CompanyMembership>
+{
+    public void Configure(EntityTypeBuilder<CompanyMembership> builder)
+    {
+        builder.Property(x => x.EmployerUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        builder.HasOne<CompanyProfile>()
+            .WithMany()
+            .HasForeignKey(x => x.CompanyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => new
+        {
+            x.CompanyId,
+            x.EmployerUserId
+        }).IsUnique();
+    }
+}
+
+public class MatchingPolicyRevisionConfiguration : IEntityTypeConfiguration<MatchingPolicyRevision>
+{
+    public void Configure(EntityTypeBuilder<MatchingPolicyRevision> builder)
+    {
+        builder.HasOne<Vacancy>()
+            .WithMany()
+            .HasForeignKey(x => x.VacancyId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => new
+        {
+            x.VacancyId,
+            x.RevisionNumber
+        }).IsUnique();
+    }
+}
+
+public class FamilyPolicyConfiguration : IEntityTypeConfiguration<FamilyPolicy>
+{
+    public void Configure(EntityTypeBuilder<FamilyPolicy> builder)
+    {
+        builder.HasOne<MatchingPolicyRevision>()
+            .WithMany()
+            .HasForeignKey(x => x.MatchingPolicyRevisionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => new
+        {
+            x.MatchingPolicyRevisionId,
+            x.RequirementFamily
+        }).IsUnique();
+    }
+}
+
+public class AlternativeSetConfiguration : IEntityTypeConfiguration<AlternativeSet>
+{
+    public void Configure(EntityTypeBuilder<AlternativeSet> builder)
+    {
+        builder.HasOne<MatchingPolicyRevision>()
+            .WithMany()
+            .HasForeignKey(x => x.MatchingPolicyRevisionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<FamilyPolicy>()
+            .WithMany()
+            .HasForeignKey(x => x.FamilyPolicyId)
+            .OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+public class InterviewConfiguration :
+    IEntityTypeConfiguration<Interview>
+{
+    public void Configure(
+        EntityTypeBuilder<Interview> builder)
+    {
+        builder.Property(x => x.EmployerUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        builder.Property(x => x.Notes)
+            .HasMaxLength(2000);
+
+        builder.HasOne<JobApplication>()
+            .WithMany()
+            .HasForeignKey(x => x.JobApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class InterviewSlotConfiguration :
+    IEntityTypeConfiguration<InterviewSlot>
+{
+    public void Configure(
+        EntityTypeBuilder<InterviewSlot> builder)
+    {
+        builder.Property(x => x.LocationOrMeetingUrl)
+            .HasMaxLength(1000);
+
+        builder.HasOne<Interview>()
+            .WithMany()
+            .HasForeignKey(x => x.InterviewId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class ScorecardConfiguration :
+    IEntityTypeConfiguration<Scorecard>
+{
+    public void Configure(
+        EntityTypeBuilder<Scorecard> builder)
+    {
+        builder.Property(x => x.AssessorEmployerUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        builder.Property(x => x.Notes)
+            .HasMaxLength(4000);
+
+        builder.HasOne<JobApplication>()
+            .WithMany()
+            .HasForeignKey(x => x.JobApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<Interview>()
+            .WithMany()
+            .HasForeignKey(x => x.InterviewId)
+            .OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+public class OfferConfiguration :
+    IEntityTypeConfiguration<Offer>
+{
+    public void Configure(
+        EntityTypeBuilder<Offer> builder)
+    {
+        builder.Property(x => x.EmployerUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        builder.Property(x => x.OfferedSalary)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.Notes)
+            .HasMaxLength(4000);
+
+        builder.HasOne<JobApplication>()
+            .WithMany()
+            .HasForeignKey(x => x.JobApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class TalentPoolEntryConfiguration :
+    IEntityTypeConfiguration<TalentPoolEntry>
+{
+    public void Configure(
+        EntityTypeBuilder<TalentPoolEntry> builder)
+    {
+        builder.Property(x => x.CandidateUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        builder.Property(x => x.EmployerUserId)
+            .HasMaxLength(450)
+            .IsRequired();
+
+        builder.Property(x => x.Notes)
+            .HasMaxLength(2000);
+
+        builder.HasIndex(x => new
+        {
+            x.JobApplicationId,
+            x.EmployerUserId
+        })
+        .IsUnique();
+
+        builder.HasOne<JobApplication>()
+            .WithMany()
+            .HasForeignKey(x => x.JobApplicationId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
