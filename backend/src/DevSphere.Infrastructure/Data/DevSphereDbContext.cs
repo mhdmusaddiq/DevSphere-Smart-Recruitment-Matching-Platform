@@ -8,6 +8,7 @@ using DevSphere.Domain.Entities.Matching;
 using DevSphere.Domain.Entities.Notifications;
 using DevSphere.Domain.Entities.Resume;
 using DevSphere.Domain.Entities.Skills;
+using DevSphere.Domain.Entities.Taxonomy;
 using DevSphere.Domain.Entities.Vacancies;
 using DevSphere.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -26,6 +27,12 @@ public class DevSphereDbContext
 
 
     public DbSet<Skill> Skills { get; set; }
+
+    public DbSet<SkillConcept> SkillConcepts { get; set; }
+
+    public DbSet<SkillAlias> SkillAliases { get; set; }
+
+    public DbSet<OccupationConcept> OccupationConcepts { get; set; }
 
     public DbSet<CandidateProfile> CandidateProfiles { get; set; }
 
@@ -52,6 +59,7 @@ public class DevSphereDbContext
     public DbSet<ProjectRecord> ProjectRecords { get; set; }
 
     public DbSet<LanguageCapability> LanguageCapabilities { get; set; }
+    public DbSet<LicenceRegistration> LicenceRegistrations { get; set; }
 
     public DbSet<CompanyVerification> CompanyVerifications { get; set; }
 

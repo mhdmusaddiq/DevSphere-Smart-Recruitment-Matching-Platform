@@ -41,6 +41,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<TokenService>();
 
         services.AddScoped<ICandidateProfileService, CandidateProfileService>();
+        services.AddScoped<SkillTaxonomyService>();
 
         services.AddScoped<CandidateProfileRepository>();
 

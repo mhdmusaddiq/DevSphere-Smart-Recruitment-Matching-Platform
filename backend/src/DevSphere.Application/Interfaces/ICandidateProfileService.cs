@@ -21,6 +21,10 @@ public interface ICandidateProfileService
         string userId,
         AddCandidateSkillDto request);
 
+    Task<ApplicationReadinessDto> GetApplicationReadinessAsync(
+        string userId);
+    Task<ProfileReadinessDto> GetProfileReadinessAsync(
+        string userId);
     Task<bool> DeleteSkillAsync(
         string userId,
         Guid skillId);
