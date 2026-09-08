@@ -35,4 +35,3 @@ public interface IEmployerWorkflowService
         Guid interviewId,
         UpdateInterviewStatusRequest request);
 }
-

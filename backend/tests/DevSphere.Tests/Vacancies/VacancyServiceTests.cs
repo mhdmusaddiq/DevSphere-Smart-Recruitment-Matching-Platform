@@ -1,5 +1,6 @@
 using DevSphere.Application.DTOs.Profile;
 using DevSphere.Domain.Entities.Vacancies;
+using DevSphere.Domain.Enums;
 using DevSphere.Infrastructure.Data;
 using DevSphere.Infrastructure.Repositories;
 using DevSphere.Infrastructure.Services.Profile;
@@ -191,6 +192,7 @@ public class VacancyServiceTests
             Location = "Jaffna",
             MinExperienceMonths = 12,
             RequiredExperienceMonths = 12,
+            LifecycleStatus = VacancyLifecycleStatus.Published,
             IsOpen = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -224,6 +226,7 @@ public class VacancyServiceTests
             Location = "Jaffna",
             MinExperienceMonths = 12,
             RequiredExperienceMonths = 12,
+            LifecycleStatus = VacancyLifecycleStatus.Closed,
             IsOpen = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -262,6 +265,7 @@ public class VacancyServiceTests
             Location = "Jaffna",
             MinExperienceMonths = 12,
             RequiredExperienceMonths = 12,
+            LifecycleStatus = VacancyLifecycleStatus.Published,
             IsOpen = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -299,6 +303,7 @@ public class VacancyServiceTests
             Location = "Jaffna",
             MinExperienceMonths = 12,
             RequiredExperienceMonths = 12,
+            LifecycleStatus = VacancyLifecycleStatus.Closed,
             IsOpen = false,
             CreatedAt = DateTime.UtcNow
         };
@@ -333,7 +338,8 @@ public class VacancyServiceTests
                 Title = "Junior .NET Developer",
                 Description = "Build APIs",
                 Location = "Jaffna",
-                IsOpen = true,
+                LifecycleStatus = VacancyLifecycleStatus.Published,
+            IsOpen = true,
                 CreatedAt = DateTime.UtcNow
             },
             new Vacancy
@@ -343,7 +349,8 @@ public class VacancyServiceTests
                 Title = "Angular Developer",
                 Description = "Frontend work",
                 Location = "Colombo",
-                IsOpen = true,
+                LifecycleStatus = VacancyLifecycleStatus.Published,
+            IsOpen = true,
                 CreatedAt = DateTime.UtcNow
             },
             new Vacancy
@@ -353,7 +360,8 @@ public class VacancyServiceTests
                 Title = "Senior .NET Developer",
                 Description = "Closed vacancy",
                 Location = "Jaffna",
-                IsOpen = false,
+                LifecycleStatus = VacancyLifecycleStatus.Closed,
+            IsOpen = false,
                 CreatedAt = DateTime.UtcNow
             });
 
@@ -390,7 +398,8 @@ public class VacancyServiceTests
                 Title = "Vacancy 1",
                 Description = "Test",
                 Location = "Jaffna",
-                IsOpen = true,
+                LifecycleStatus = VacancyLifecycleStatus.Published,
+            IsOpen = true,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-3)
             },
             new Vacancy
@@ -400,7 +409,8 @@ public class VacancyServiceTests
                 Title = "Vacancy 2",
                 Description = "Test",
                 Location = "Jaffna",
-                IsOpen = true,
+                LifecycleStatus = VacancyLifecycleStatus.Published,
+            IsOpen = true,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-2)
             },
             new Vacancy
@@ -410,7 +420,8 @@ public class VacancyServiceTests
                 Title = "Vacancy 3",
                 Description = "Test",
                 Location = "Jaffna",
-                IsOpen = true,
+                LifecycleStatus = VacancyLifecycleStatus.Published,
+            IsOpen = true,
                 CreatedAt = DateTime.UtcNow.AddMinutes(-1)
             });
 
@@ -433,4 +444,138 @@ public class VacancyServiceTests
             "Vacancy 2",
             list[0].Title);
     }
-}
+
+    [Fact]
+    public async Task GetMine_Should_Return_Only_Own_Vacancies()
+    {
+        using var context = CreateContext();
+
+        var service = CreateService(context);
+
+        await service.CreateAsync(
+            "employer-1",
+            CreateValidRequest());
+
+        var otherRequest = CreateValidRequest();
+        otherRequest.Title = "Other Employer Vacancy";
+
+        await service.CreateAsync(
+            "employer-2",
+            otherRequest);
+
+        var mine = (await service.GetMineAsync(
+            "employer-1")).ToList();
+
+        Assert.Single(mine);
+        Assert.Equal(
+            "Junior .NET Developer",
+            mine[0].Title);
+    }
+
+    [Fact]
+    public async Task RequiredSkills_Should_RoundTrip_Create_Read_Update_Read()
+    {
+        using var context = CreateContext();
+
+        var service = CreateService(context);
+
+        var created = await service.CreateAsync(
+            "employer-1",
+            CreateValidRequest());
+
+        Assert.Equal(2, created.RequiredSkills.Count);
+
+        var storedAfterCreate = await context.RequiredSkills
+            .Where(x => x.VacancyId == created.Id)
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+
+        Assert.Equal(2, storedAfterCreate.Count);
+        Assert.Contains(
+            storedAfterCreate,
+            x => x.Name == "C#" && x.Weight == 3);
+        Assert.Contains(
+            storedAfterCreate,
+            x => x.Name == "ASP.NET Core" && x.Weight == 3);
+
+        var readAfterCreate = await service
+            .GetByIdAsync(created.Id);
+
+        Assert.NotNull(readAfterCreate);
+        Assert.Equal(
+            2,
+            readAfterCreate!.RequiredSkills.Count);
+
+        var updateRequest = CreateValidRequest();
+        updateRequest.Title = "Updated .NET Developer";
+        updateRequest.RequiredSkills = new List<VacancyRequiredSkillDto>
+        {
+            new()
+            {
+                Name = "Azure",
+                Weight = 4
+            },
+            new()
+            {
+                Name = "SQL",
+                Weight = 2
+            }
+        };
+
+        var updated = await service.UpdateAsync(
+            "employer-1",
+            created.Id,
+            updateRequest);
+
+        Assert.Equal(
+            "Updated .NET Developer",
+            updated.Title);
+
+        Assert.Equal(
+            2,
+            updated.RequiredSkills.Count);
+
+        var storedAfterUpdate = await context.RequiredSkills
+            .Where(x => x.VacancyId == created.Id)
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+
+        Assert.Equal(2, storedAfterUpdate.Count);
+
+        Assert.DoesNotContain(
+            storedAfterUpdate,
+            x => x.Name == "C#");
+
+        Assert.DoesNotContain(
+            storedAfterUpdate,
+            x => x.Name == "ASP.NET Core");
+
+        Assert.Contains(
+            storedAfterUpdate,
+            x => x.Name == "Azure" && x.Weight == 4);
+
+        Assert.Contains(
+            storedAfterUpdate,
+            x => x.Name == "SQL" && x.Weight == 2);
+
+        var readAfterUpdate = await service
+            .GetByIdAsync(created.Id);
+
+        Assert.NotNull(readAfterUpdate);
+
+        Assert.Equal(
+            "Updated .NET Developer",
+            readAfterUpdate!.Title);
+
+        Assert.Equal(
+            2,
+            readAfterUpdate.RequiredSkills.Count);
+
+        Assert.Contains(
+            readAfterUpdate.RequiredSkills,
+            x => x.Name == "Azure" && x.Weight == 4);
+
+        Assert.Contains(
+            readAfterUpdate.RequiredSkills,
+            x => x.Name == "SQL" && x.Weight == 2);
+    }}

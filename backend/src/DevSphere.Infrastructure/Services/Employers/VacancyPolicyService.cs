@@ -701,5 +701,3 @@ public class VacancyPolicyService :
         };
     }
 }
-
-
