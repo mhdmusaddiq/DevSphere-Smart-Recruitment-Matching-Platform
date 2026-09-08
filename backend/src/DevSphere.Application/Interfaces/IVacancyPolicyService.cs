@@ -27,4 +27,3 @@ public interface IVacancyPolicyService
         Guid vacancyId,
         AlternativeSetRequest request);
 }
-
