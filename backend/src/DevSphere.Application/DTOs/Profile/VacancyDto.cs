@@ -2,6 +2,8 @@ namespace DevSphere.Application.DTOs.Profile;
 
 public class VacancyDto
 {
+    public Guid Id { get; set; }
+
     public string Title { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
@@ -10,7 +12,30 @@ public class VacancyDto
 
     public int RequiredExperienceMonths { get; set; }
 
-    public bool IsOpen { get; set; }
+    public int MinExperienceMonths { get; set; }
 
-    public Guid Id { get; set; }
+    public int? MaxExperienceMonths { get; set; }
+
+    public string RequiredEducation { get; set; } = string.Empty;
+
+    public decimal? SalaryMin { get; set; }
+
+    public decimal? SalaryMax { get; set; }
+
+    public DateTime? ClosingDateUtc { get; set; }
+
+    public List<VacancyRequiredSkillDto> RequiredSkills { get; set; } = new();
+
+    public string LifecycleStatus { get; set; } = string.Empty;
+
+    // Compatibility projection:
+    // Draft = false, Published = true, Closed = false.
+    public bool IsOpen { get; set; }
+}
+
+public class VacancyRequiredSkillDto
+{
+    public string Name { get; set; } = string.Empty;
+
+    public int Weight { get; set; }
 }

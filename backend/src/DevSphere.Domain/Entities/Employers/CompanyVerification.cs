@@ -2,6 +2,11 @@ namespace DevSphere.Domain.Entities.Employers;
 
 public class CompanyVerification : BaseEntity
 {
+    // Professional company aggregate.
+    // Nullable during compatibility with the existing EmployerProfile flow.
+    public Guid? CompanyId { get; set; }
+
+    // Existing BRD/submission-core relationship kept for compatibility.
     public Guid EmployerProfileId { get; set; }
 
     public string Status { get; set; } = "Pending";

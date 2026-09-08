@@ -9,4 +9,8 @@ public interface IEmployerProfileService
     Task<EmployerProfileDto> CreateAsync(
         string userId,
         EmployerProfileDto profile);
+
+    Task<EmployerProfileDto> UpdateAsync(
+        string userId,
+        EmployerProfileDto profile);
 }
