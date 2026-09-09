@@ -43,7 +43,10 @@ public class CandidateProfileService : ICandidateProfileService
             PreferredWorkMode = NormalizeWorkMode(profile.PreferredWorkMode),
             PreferredLocation = profile.PreferredLocation?.Trim() ?? string.Empty,
             WillingToRelocate = profile.WillingToRelocate,
-            PreferredEmploymentType = profile.PreferredEmploymentType
+            PreferredEmploymentType = profile.PreferredEmploymentType,
+            AvailabilityStatus = profile.AvailabilityStatus,
+            AvailableFrom = profile.AvailableFrom,
+            NoticePeriodDays = profile.NoticePeriodDays
         };
     }
 
@@ -72,6 +75,9 @@ public class CandidateProfileService : ICandidateProfileService
             PreferredLocation = profile.PreferredLocation?.Trim() ?? string.Empty,
             WillingToRelocate = profile.WillingToRelocate,
             PreferredEmploymentType = NormalizeEmploymentType(profile.PreferredEmploymentType),
+            AvailabilityStatus = NormalizeAvailabilityStatus(profile.AvailabilityStatus),
+            AvailableFrom = profile.AvailableFrom,
+            NoticePeriodDays = NormalizeNoticePeriod(profile.NoticePeriodDays),
             CreatedAt = DateTime.UtcNow
         };
 
