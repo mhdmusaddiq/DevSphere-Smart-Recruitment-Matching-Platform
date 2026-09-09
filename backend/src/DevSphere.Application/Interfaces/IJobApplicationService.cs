@@ -5,6 +5,7 @@ namespace DevSphere.Application.Interfaces;
 public interface IJobApplicationService
 {
     Task<JobApplicationDto> ApplyAsync(
+        string candidateId,
         JobApplicationDto request);
 
     Task<List<JobApplicationDto>> GetByCandidateAsync(

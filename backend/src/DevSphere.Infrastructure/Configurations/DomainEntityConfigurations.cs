@@ -253,10 +253,34 @@ public class ApplicationSnapshotConfiguration : IEntityTypeConfiguration<Applica
             .WithMany()
             .HasForeignKey(x => x.JobApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne<ResumeVersion>()
             .WithMany()
             .HasForeignKey(x => x.ResumeVersionId)
             .OnDelete(DeleteBehavior.NoAction);
+
+
+        // One immutable application-time snapshot per application.
+        builder.HasIndex(x => x.JobApplicationId)
+            .IsUnique();
+
+        builder.Property(x => x.CompatibilityScore)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.RawCompatibilityScore)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.DisplayCompatibilityScore)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.CompatibilityStatus)
+            .HasMaxLength(50);
+
+        builder.Property(x => x.EligibilityStatus)
+            .HasMaxLength(50);
+
+        builder.Property(x => x.ApplyDecision)
+            .HasMaxLength(100);
     }
 }
 

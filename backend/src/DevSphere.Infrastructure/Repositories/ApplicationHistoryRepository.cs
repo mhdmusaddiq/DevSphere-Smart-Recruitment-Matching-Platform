@@ -19,6 +19,16 @@ public class ApplicationHistoryRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public Task<ApplicationSnapshot?> GetSnapshotAsync(
+        Guid jobApplicationId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ApplicationSnapshots
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                x => x.JobApplicationId == jobApplicationId,
+                cancellationToken);
+    }
     public async Task AddStatusAsync(ApplicationStatusHistory history, CancellationToken cancellationToken = default)
     {
         await _context.ApplicationStatusHistories.AddAsync(history, cancellationToken);

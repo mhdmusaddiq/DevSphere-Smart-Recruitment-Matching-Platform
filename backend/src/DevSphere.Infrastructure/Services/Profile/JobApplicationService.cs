@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
@@ -11,56 +12,359 @@ public class JobApplicationService : IJobApplicationService
     private readonly INotificationService _notificationService;
     private readonly IMatchEngine _matchEngine;
     private readonly IApplicationHistoryService _applicationHistoryService;
+    private readonly ICandidateProfileService _candidateProfileService;
+    private readonly CandidateProfileRepository _candidateProfileRepository;
+    private readonly ResumeRepository _resumeRepository;
+    private readonly VacancyRepository _vacancyRepository;
+    private readonly DevSphere.Infrastructure.Data.DevSphereDbContext _context;
 
     public JobApplicationService(
         JobApplicationRepository repository,
         INotificationService notificationService,
         IMatchEngine matchEngine,
-        IApplicationHistoryService applicationHistoryService)
+        IApplicationHistoryService applicationHistoryService,
+        ICandidateProfileService candidateProfileService,
+        CandidateProfileRepository candidateProfileRepository,
+        ResumeRepository resumeRepository,
+        VacancyRepository vacancyRepository,
+        DevSphere.Infrastructure.Data.DevSphereDbContext context)
     {
         _repository = repository;
         _notificationService = notificationService;
         _matchEngine = matchEngine;
         _applicationHistoryService = applicationHistoryService;
+        _candidateProfileService = candidateProfileService;
+        _candidateProfileRepository = candidateProfileRepository;
+        _resumeRepository = resumeRepository;
+        _vacancyRepository = vacancyRepository;
+        _context = context;
     }
 
 
     public async Task<JobApplicationDto> ApplyAsync(
+        string candidateId,
         JobApplicationDto request)
     {
-        var exists = await _repository.ExistsAsync(
-            request.CandidateId,
-            request.VacancyId);
+        if (request.VacancyId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Vacancy is required.",
+                nameof(request));
+        }
 
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            throw new UnauthorizedAccessException(
+                "Authenticated candidate is required.");
+        }
+
+        var accountIsActive = await _context.Users
+            .AsNoTracking()
+            .Where(x => x.Id == candidateId)
+            .Select(x => (bool?)x.IsActive)
+            .FirstOrDefaultAsync();
+
+        var accountStateBlocked =
+            !accountIsActive.HasValue ||
+            !accountIsActive.Value;
+
+        var exists = await _repository.ExistsAsync(
+            candidateId,
+            request.VacancyId);
 
         if (exists)
         {
-            throw new ApplicationConflictException("Application already exists.");
+            throw new ApplicationConflictException(
+                "Application already exists.");
+        }
+
+        var candidate =
+            await _candidateProfileRepository
+                .GetByUserIdWithSkillsAsync(
+                    candidateId);
+
+        if (candidate == null)
+        {
+            throw new InvalidOperationException(
+                "Candidate profile is required before applying.");
+        }
+
+        var vacancy =
+            await _vacancyRepository
+                .GetByIdAsync(request.VacancyId);
+
+        if (vacancy == null)
+        {
+            throw new KeyNotFoundException(
+                "Vacancy not found.");
         }
 
 
-        var application = new DevSphere.Domain.Entities.Applications.JobApplication
+        var resume =
+            await _resumeRepository
+                .GetByCandidateProfileIdAsync(
+                    candidate.Id);
+
+        var currentResume =
+            resume?.Versions
+                .Where(x => x.IsCurrent)
+                .OrderByDescending(x => x.VersionNumber)
+                .ThenByDescending(x => x.CreatedAt)
+                .FirstOrDefault();
+
+        var selectedResumeVersion =
+            resume != null &&
+            currentResume != null &&
+            resume.CurrentVersionId == currentResume.Id
+                ? currentResume
+                : null;
+
+        DevSphere.Application.DTOs.Application.MatchResultDto? match = null;
+        var calculationFailure = false;
+
+        try
         {
-            Id = Guid.NewGuid(),
-            CandidateId = request.CandidateId,
-            VacancyId = request.VacancyId,
-            Status = DevSphere.Domain.Enums.ApplicationStatus.Applied,
-            AppliedAt = DateTime.UtcNow,
-            CreatedAt = DateTime.UtcNow
+            match =
+                await _matchEngine.CalculateAsync(
+                    candidateId,
+                    request.VacancyId.ToString());
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            calculationFailure = true;
+        }
+
+        var currentPolicy =
+            await _context.MatchingPolicyRevisions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.VacancyId == request.VacancyId &&
+                    x.IsCurrent);
+        var readiness =
+            await _candidateProfileService
+                .GetApplicationReadinessAsync(candidateId);
+
+        var readinessMissingItems =
+            readiness.MissingItems.ToList();
+
+        var blockedByReadiness =
+            !readiness.IsReady;
+
+        // The selected CV must still be the canonical current version
+        // immediately before the final apply decision is persisted.
+        if (selectedResumeVersion != null &&
+            readiness.CurrentResumeVersionId.HasValue &&
+            readiness.CurrentResumeVersionId.Value !=
+                selectedResumeVersion.Id)
+        {
+            blockedByReadiness = true;
+
+            if (!readinessMissingItems.Contains(
+                    "Selected resume version is stale."))
+            {
+                readinessMissingItems.Add(
+                    "Selected resume version is stale.");
+            }
+        }
+
+        if (selectedResumeVersion == null)
+        {
+            blockedByReadiness = true;
+
+            if (!readinessMissingItems.Contains(
+                    "Current resume version"))
+            {
+                readinessMissingItems.Add(
+                    "Current resume version");
+            }
+        }
+
+        var regulatoryRequirements =
+            currentPolicy == null
+                ? new List<DevSphere.Domain.Entities.Vacancies.VacancyRequirement>()
+                : await _context.VacancyRequirements
+                    .AsNoTracking()
+                    .Where(x =>
+                        x.MatchingPolicyRevisionId ==
+                            currentPolicy.Id &&
+                        x.IsActive &&
+                        x.IsRegulatoryGate)
+                    .ToListAsync();
+
+        // Current runtime exposes regulatory metadata but does not yet
+        // expose the RM-2.1 criterion evaluation result. Do not invent
+        // a second evaluator here. The reducer supports the state when
+        // an authoritative regulatory result becomes available.
+        var blockedByRegulatoryGate = false;
+
+        // No relationship-block aggregate exists on this frozen base.
+        var relationshipBlocked = false;
+
+        // No baseline-acknowledgement aggregate exists on this frozen base.
+        var baselineAcknowledgedRequired = false;
+
+        var vacancyUnavailableOrSuppressed =
+            vacancy.LifecycleStatus !=
+                DevSphere.Domain.Enums.VacancyLifecycleStatus.Published ||
+            !vacancy.IsOpen ||
+            (vacancy.ClosingDateUtc.HasValue &&
+             vacancy.ClosingDateUtc.Value <= DateTime.UtcNow);
+
+        var decision = ResolveApplyDecision(
+            calculationFailure,
+            accountStateBlocked,
+            vacancyUnavailableOrSuppressed,
+            relationshipBlocked,
+            blockedByRegulatoryGate,
+            blockedByReadiness,
+            baselineAcknowledgedRequired);
+
+        var isEligible =
+            decision == "Allowed" ||
+            decision ==
+                "AllowedAfterBaselineAcknowledgement";
+
+        var rawCompatibilityScore =
+            Convert.ToDecimal(match?.TotalScore ?? 0);
+
+        var displayCompatibilityScore =
+            Math.Round(
+                rawCompatibilityScore,
+                2,
+                MidpointRounding.AwayFromZero);
+
+        var compatibilityStatus = "Calculated";
+
+        var eligibilityStatus = isEligible ? "Eligible" : decision;
+
+        var evidenceSummary = new
+        {
+            matchedSkills = match?.MatchedSkills ?? new List<string>(),
+            missingSkills = match?.MissingSkills ?? new List<string>(),
+            candidateExperienceMonths =
+                candidate.ExperienceMonths,
+            requiredExperienceMonths =
+                vacancy.MinExperienceMonths,
+            resumeVersionId = selectedResumeVersion?.Id,
+            readinessMissingItems,
+            regulatoryRequirementIds =
+                regulatoryRequirements.Select(x => x.Id),
+            compatibilityStatus,
+            eligibilityStatus,
+            applyDecision = decision
         };
+        if (!isEligible)
+        {
+            throw new InvalidOperationException(
+                $"Application blocked: {decision}.");
+        }
 
+        var now = DateTime.UtcNow;
 
-        await _repository.AddAsync(application);
+        var application =
+            new DevSphere.Domain.Entities.Applications.JobApplication
+            {
+                Id = Guid.NewGuid(),
+                CandidateId = candidateId,
+                VacancyId = request.VacancyId,
+                Status =
+                    DevSphere.Domain.Enums.ApplicationStatus.Applied,
+                AppliedAt = now,
+                CreatedAt = now
+            };
 
+        var snapshot =
+            new DevSphere.Domain.Entities.Applications.ApplicationSnapshot
+            {
+                Id = Guid.NewGuid(),
+                JobApplicationId = application.Id,
+                ResumeVersionId = selectedResumeVersion?.Id,
+                MatchingPolicyRevisionId =
+                    currentPolicy?.Id,
+                CompatibilityScore = displayCompatibilityScore,
+                RawCompatibilityScore = rawCompatibilityScore,
+                DisplayCompatibilityScore =
+                    displayCompatibilityScore,
+                CompatibilityStatus = compatibilityStatus,
+                EligibilityStatus = eligibilityStatus,
+                IsEligible = isEligible,
+                ApplyDecision = decision,
+                CandidateSnapshotJson =
+                    System.Text.Json.JsonSerializer.Serialize(
+                        new
+                        {
+                            candidate.Id,
+                            candidate.UserId,
+                            candidate.FullName,
+                            candidate.Location,
+                            candidate.ExperienceMonths,
+                            candidate.Education,
+                            candidate.PreferredWorkMode,
+                            candidate.PreferredLocation,
+                            candidate.WillingToRelocate,
+                            candidate.PreferredEmploymentType,
+                            candidate.AvailabilityStatus,
+                            candidate.AvailableFrom,
+                            candidate.NoticePeriodDays,
+                            skills = candidate.Skills
+                                .OrderBy(x => x.Name)
+                                .Select(x => new
+                                {
+                                    x.Id,
+                                    x.Name,
+                                    x.SkillConceptId
+                                })
+                        }),
+                VacancySnapshotJson =
+                    System.Text.Json.JsonSerializer.Serialize(
+                        new
+                        {
+                            vacancy.Id,
+                            vacancy.Title,
+                            vacancy.Description,
+                            vacancy.Location,
+                            vacancy.MinExperienceMonths,
+                            vacancy.MaxExperienceMonths,
+                            vacancy.RequiredEducation,
+                            vacancy.SalaryMin,
+                            vacancy.SalaryMax,
+                            vacancy.ClosingDateUtc,
+                            vacancy.LifecycleStatus,
+                            vacancy.IsOpen,
+                            matchingPolicyRevisionId =
+                                currentPolicy?.Id,
+                            matchingPolicyRevisionNumber =
+                                currentPolicy?.RevisionNumber
+                        }),
+                MatchedSkillsJson =
+                    System.Text.Json.JsonSerializer.Serialize(
+                        match?.MatchedSkills ?? new List<string>()),
+                GapSkillsJson =
+                    System.Text.Json.JsonSerializer.Serialize(
+                        match?.MissingSkills ?? new List<string>()),
+                EvidenceSummaryJson =
+                    System.Text.Json.JsonSerializer.Serialize(
+                        evidenceSummary),
+                CapturedAtUtc = now,
+                CreatedAt = now
+            };
+
+        await _repository.AddWithSnapshotAsync(
+            application,
+            snapshot);
 
         return new JobApplicationDto
         {
+            Id = application.Id,
             CandidateId = application.CandidateId,
             VacancyId = application.VacancyId,
             Status = application.Status.ToString()
         };
     }
-
 
     public async Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId)
@@ -206,5 +510,38 @@ public class JobApplicationService : IJobApplicationService
 
             _ => false
         };
+    }
+
+    internal static string ResolveApplyDecision(
+        bool calculationFailure,
+        bool accountStateBlocked,
+        bool vacancyUnavailableOrSuppressed,
+        bool relationshipBlocked,
+        bool blockedByRegulatoryGate,
+        bool blockedByReadiness,
+        bool baselineAcknowledgementRequired)
+    {
+        if (calculationFailure)
+            return "CalculationFailure";
+
+        if (accountStateBlocked)
+            return "AccountStateBlocked";
+
+        if (vacancyUnavailableOrSuppressed)
+            return "VacancyUnavailableOrSuppressed";
+
+        if (relationshipBlocked)
+            return "RelationshipBlocked";
+
+        if (blockedByRegulatoryGate)
+            return "BlockedByRegulatoryGate";
+
+        if (blockedByReadiness)
+            return "BlockedByReadiness";
+
+        if (baselineAcknowledgementRequired)
+            return "AllowedAfterBaselineAcknowledgement";
+
+        return "Allowed";
     }
 }
