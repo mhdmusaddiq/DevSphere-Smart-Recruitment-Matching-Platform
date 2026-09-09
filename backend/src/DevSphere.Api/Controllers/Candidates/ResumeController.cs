@@ -46,9 +46,9 @@ public class ResumeController : ControllerBase
 
     [HttpPost("versions")]
     [Consumes("multipart/form-data")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(6 * 1024 * 1024)]
     public async Task<IActionResult> UploadVersion(
-        [FromForm] IFormFile file,
+        IFormFile file,
         CancellationToken cancellationToken)
     {
         var userId = CurrentUserId;
