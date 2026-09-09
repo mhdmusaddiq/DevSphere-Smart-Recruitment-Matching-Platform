@@ -9,17 +9,18 @@ public class MatchEngineEdgeCaseTests
     [Fact]
     public async Task CalculateAsync_Should_Throw_When_Candidate_Not_Found()
     {
-        var repository = new FakeMissingRepository();
+        var repository =
+            new FakeMissingRepository();
 
-        var engine = new MatchEngineService(repository);
+        var engine =
+            new MatchEngineService(repository);
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             engine.CalculateAsync(
                 "invalid",
-                "vacancy"));
+                Guid.NewGuid().ToString()));
     }
 }
-
 
 public class FakeMissingRepository : MatchingRepository
 {
@@ -28,17 +29,12 @@ public class FakeMissingRepository : MatchingRepository
     {
     }
 
-
-    public override Task<DevSphere.Domain.Entities.Candidates.CandidateProfile?> GetCandidateAsync(
-        string candidateId)
+    public override Task<CandidateMatchingEvidence?>
+        GetCandidateEvidenceAsync(
+            string candidateId,
+            CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<DevSphere.Domain.Entities.Candidates.CandidateProfile?>(null);
-    }
-
-
-    public override Task<DevSphere.Domain.Entities.Vacancies.Vacancy?> GetVacancyAsync(
-        string vacancyId)
-    {
-        return Task.FromResult<DevSphere.Domain.Entities.Vacancies.Vacancy?>(null);
+        return Task.FromResult<CandidateMatchingEvidence?>(
+            null);
     }
 }
