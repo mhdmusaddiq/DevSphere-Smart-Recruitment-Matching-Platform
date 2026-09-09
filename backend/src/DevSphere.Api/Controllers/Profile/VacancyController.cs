@@ -2,6 +2,7 @@ using DevSphere.Application.DTOs.Profile;
 using DevSphere.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DevSphere.Api.Controllers.Profile;
 
@@ -17,32 +18,301 @@ public class VacancyController : ControllerBase
         _service = service;
     }
 
-
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetOpen()
+    public async Task<IActionResult> GetOpen(
+        [FromQuery(Name = "q")] string? query,
+        [FromQuery] string? location,
+        [FromQuery] string? district,
+        [FromQuery] string? skill,
+        [FromQuery] string? workMode,
+        [FromQuery] string? employmentType,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
+        if (page < 1)
+        {
+            page = 1;
+        }
+
+        if (pageSize < 1)
+        {
+            pageSize = 20;
+        }
+
+        if (pageSize > 100)
+        {
+            pageSize = 100;
+        }
+
         var vacancies = await _service
-            .GetOpenVacanciesAsync();
+            .GetOpenVacanciesAsync(
+                query,
+                string.IsNullOrWhiteSpace(location)
+                    ? district
+                    : location,
+                page,
+                pageSize,
+                skill,
+                workMode,
+                employmentType);
 
         return Ok(vacancies);
     }
 
+    [HttpGet("best-match")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> GetBestMatches(
+        [FromQuery(Name = "q")] string? query,
+        [FromQuery] string? location,
+        [FromQuery] string? district,
+        [FromQuery] string? skill,
+        [FromQuery] string? workMode,
+        [FromQuery] string? employmentType,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var vacancies = await _service.GetBestMatchesAsync(
+            candidateId,
+            query,
+            string.IsNullOrWhiteSpace(location)
+                ? district
+                : location,
+            page,
+            pageSize,
+            skill,
+            workMode,
+            employmentType);
+
+        return Ok(vacancies);
+    }
+
+    [HttpGet("mine")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> GetMine()
+    {
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
+
+        var vacancies = await _service
+            .GetMineAsync(employerId);
+
+        return Ok(vacancies);
+    }
+
+    [HttpGet("{vacancyId:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetById(
+        Guid vacancyId)
+    {
+        var vacancy = await _service
+            .GetByIdAsync(vacancyId);
+
+        if (vacancy == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(vacancy);
+    }
 
     [HttpPost]
     [Authorize(Roles = "Employer")]
     public async Task<IActionResult> Create(
         VacancyDto request)
     {
-        var employerId = User.FindFirst(
-    System.Security.Claims.ClaimTypes.NameIdentifier
-)?.Value;
+        var employerId = GetEmployerId();
 
-        var result = await _service
-            .CreateAsync(
-                employerId!,
-                request);
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
 
-        return Ok(result);
+        try
+        {
+            var result = await _service
+                .CreateAsync(
+                    employerId,
+                    request);
+
+            return StatusCode(
+                StatusCodes.Status201Created,
+                result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    [HttpPut("{vacancyId:guid}")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> Update(
+        Guid vacancyId,
+        VacancyDto request)
+    {
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result = await _service
+                .UpdateAsync(
+                    employerId,
+                    vacancyId,
+                    request);
+
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = ex.Message
+                });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    [HttpPut("{vacancyId:guid}/publish")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> Publish(
+        Guid vacancyId)
+    {
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result = await _service
+                .PublishAsync(
+                    employerId,
+                    vacancyId);
+
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = ex.Message
+                });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    [HttpPut("{vacancyId:guid}/close")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> Close(
+        Guid vacancyId)
+    {
+        var employerId = GetEmployerId();
+
+        if (employerId == null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var result = await _service
+                .CloseAsync(
+                    employerId,
+                    vacancyId);
+
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new
+                {
+                    message = ex.Message
+                });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new
+            {
+                message = ex.Message
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+    }
+
+    private string? GetEmployerId()
+    {
+        return User.FindFirst(
+            ClaimTypes.NameIdentifier)?.Value;
     }
 }

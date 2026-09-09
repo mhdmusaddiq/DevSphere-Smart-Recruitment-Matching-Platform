@@ -4,10 +4,12 @@ using DevSphere.Domain.Entities.Candidates;
 using DevSphere.Domain.Entities.Career;
 using DevSphere.Domain.Entities.Contacts;
 using DevSphere.Domain.Entities.Employers;
+using DevSphere.Domain.Entities.EmployerWorkflow;
 using DevSphere.Domain.Entities.Matching;
 using DevSphere.Domain.Entities.Notifications;
 using DevSphere.Domain.Entities.Resume;
 using DevSphere.Domain.Entities.Skills;
+using DevSphere.Domain.Entities.Taxonomy;
 using DevSphere.Domain.Entities.Vacancies;
 using DevSphere.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -26,6 +28,12 @@ public class DevSphereDbContext
 
 
     public DbSet<Skill> Skills { get; set; }
+
+    public DbSet<SkillConcept> SkillConcepts { get; set; }
+
+    public DbSet<SkillAlias> SkillAliases { get; set; }
+
+    public DbSet<OccupationConcept> OccupationConcepts { get; set; }
 
     public DbSet<CandidateProfile> CandidateProfiles { get; set; }
 
@@ -52,8 +60,24 @@ public class DevSphereDbContext
     public DbSet<ProjectRecord> ProjectRecords { get; set; }
 
     public DbSet<LanguageCapability> LanguageCapabilities { get; set; }
+    public DbSet<LicenceRegistration> LicenceRegistrations { get; set; }
+
+    public DbSet<CompanyProfile> CompanyProfiles { get; set; }
+    public DbSet<Interview> Interviews { get; set; }
+    public DbSet<InterviewSlot> InterviewSlots { get; set; }
+    public DbSet<Scorecard> Scorecards { get; set; }
+    public DbSet<Offer> Offers { get; set; }
+    public DbSet<TalentPoolEntry> TalentPoolEntries { get; set; }
+
+    public DbSet<CompanyMembership> CompanyMemberships { get; set; }
 
     public DbSet<CompanyVerification> CompanyVerifications { get; set; }
+
+    public DbSet<MatchingPolicyRevision> MatchingPolicyRevisions { get; set; }
+
+    public DbSet<FamilyPolicy> FamilyPolicies { get; set; }
+
+    public DbSet<AlternativeSet> AlternativeSets { get; set; }
 
     public DbSet<VacancyRequirement> VacancyRequirements { get; set; }
 

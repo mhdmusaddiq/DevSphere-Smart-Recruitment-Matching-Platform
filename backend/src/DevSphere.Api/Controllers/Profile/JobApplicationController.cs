@@ -1,3 +1,4 @@
+using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Repositories;
@@ -40,16 +41,21 @@ public class JobApplicationController : ControllerBase
         }
 
 
-        request.CandidateId = candidateId;
-
-
         try
         {
             var result = await _service
-                .ApplyAsync(request);
+                .ApplyAsync(candidateId, request);
 
             return Ok(result);
         }
+        catch (ApplicationConflictException ex)
+        {
+            return Conflict(new
+            {
+                message = ex.Message
+            });
+        }
+
         catch (Exception ex)
         {
             return BadRequest(new
@@ -83,6 +89,26 @@ public class JobApplicationController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("candidate/{applicationId:guid}")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> GetMyApplication(
+        Guid applicationId)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _service.GetCandidateApplicationAsync(
+            applicationId,
+            candidateId);
+
+        return result == null ? NotFound() : Ok(result);
+    }
+
 
 
     [HttpGet("vacancy/{vacancyId}")]
@@ -90,8 +116,16 @@ public class JobApplicationController : ControllerBase
     public async Task<IActionResult> GetByVacancy(
         Guid vacancyId)
     {
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
         var result = await _service
-            .GetByVacancyAsync(vacancyId);
+            .GetByVacancyAsync(vacancyId, employerId);
 
         return Ok(result);
     }
@@ -148,7 +182,8 @@ public class JobApplicationController : ControllerBase
             var result = await _service
                 .UpdateStatusAsync(
                     applicationId,
-                    request.Status);
+                    request.Status,
+                    employerId);
 
 
 
@@ -160,6 +195,58 @@ public class JobApplicationController : ControllerBase
             {
                 message = ex.Message
             });
+        }
+    }
+
+    [HttpGet("vacancy/{vacancyId}/compare")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> CompareCandidates(
+        Guid vacancyId)
+    {
+        var employerId =
+            User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
+        var candidates =
+            await _service.GetByVacancyAsync(
+                vacancyId,
+                employerId);
+
+        return Ok(candidates);
+    }
+
+    [HttpPut("{applicationId}/withdraw")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> Withdraw(
+        Guid applicationId)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var application = await _service.WithdrawAsync(
+                applicationId,
+                candidateId);
+
+            return Ok(application);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 }

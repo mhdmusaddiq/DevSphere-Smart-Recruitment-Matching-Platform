@@ -1,6 +1,7 @@
 using DevSphere.Domain.Entities.Applications;
 using DevSphere.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DevSphere.Infrastructure.Repositories;
 
@@ -39,16 +40,25 @@ public class JobApplicationRepository
         string candidateId)
     {
         return await _context.JobApplications
+            .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
             .Where(x => x.CandidateId == candidateId)
+            .OrderByDescending(x => x.AppliedAt)
+            .ThenBy(x => x.Id)
             .ToListAsync();
     }
 
 
     public async Task<IEnumerable<JobApplication>> GetByVacancyAsync(
-    Guid vacancyId)
+        Guid vacancyId,
+        string employerId)
     {
         return await _context.JobApplications
-            .Where(x => x.VacancyId == vacancyId)
+            .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
+            .Where(x =>
+                x.VacancyId == vacancyId &&
+                x.Vacancy.EmployerId == employerId)
             .ToListAsync();
     }
 
@@ -72,10 +82,79 @@ public class JobApplicationRepository
     Guid id)
     {
         return await _context.JobApplications
-            .Include(x => x.VacancyId)
+            .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 
 
 
+
+    public async Task AddWithSnapshotAsync(
+        JobApplication application,
+        ApplicationSnapshot snapshot,
+        CancellationToken cancellationToken = default)
+    {
+        IDbContextTransaction? transaction = null;
+        var ownsTransaction =
+            _context.Database.CurrentTransaction == null;
+
+        if (ownsTransaction)
+        {
+            transaction =
+                await _context.Database.BeginTransactionAsync(
+                    cancellationToken);
+        }
+
+        try
+        {
+            await _context.JobApplications.AddAsync(
+                application,
+                cancellationToken);
+
+            await _context.ApplicationSnapshots.AddAsync(
+                snapshot,
+                cancellationToken);
+
+            await _context.ApplicationStatusHistories.AddAsync(
+                new ApplicationStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    JobApplicationId = application.Id,
+                    PreviousStatus = null,
+                    NewStatus = application.Status,
+                    ChangedByUserId = application.CandidateId,
+                    ChangedAtUtc = application.AppliedAt,
+                    Notes = "Application submitted.",
+                    CreatedAt = application.AppliedAt
+                },
+                cancellationToken);
+
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(
+                    cancellationToken);
+            }
+        }
+        catch
+        {
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+            }
+
+            throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
+        }
+    }
 }

@@ -18,7 +18,12 @@ public class FileValidationService : IFileValidationService
     {
         if (fileSizeBytes <= 0 || fileSizeBytes > _options.MaximumFileSizeBytes)
         {
-            return Invalid("The file is empty or exceeds the configured size limit.");
+            return new FileValidationResult
+            {
+                IsValid = false,
+                TooLarge = fileSizeBytes > _options.MaximumFileSizeBytes,
+                Error = "The PDF is empty or exceeds the 5 MiB size limit."
+            };
         }
 
         var extension = Path.GetExtension(fileName);

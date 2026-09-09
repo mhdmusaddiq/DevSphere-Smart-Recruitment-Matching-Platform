@@ -5,18 +5,22 @@ namespace DevSphere.Application.Interfaces;
 public interface IContactRequestService
 {
     Task<ContactRequestDto> SendAsync(
-        ContactRequestDto request);
-
+        Guid jobApplicationId,
+        string employerId);
 
     Task<List<ContactRequestDto>> GetByCandidateAsync(
         string candidateId);
 
-
     Task<List<ContactRequestDto>> GetByEmployerAsync(
         string employerId);
 
-
     Task<ContactRequestDto> UpdateStatusAsync(
         Guid id,
-        string status);
+        string status,
+        string candidateId);
+
+    Task<ContactRequestDto> UpdateEmployerStatusAsync(
+        Guid id,
+        string status,
+        string employerId);
 }

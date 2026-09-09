@@ -65,4 +65,35 @@ public class EmployerProfileService : IEmployerProfileService
             Location = entity.Location
         };
     }
+
+
+    public async Task<EmployerProfileDto> UpdateAsync(
+        string userId,
+        EmployerProfileDto profile)
+    {
+        var entity = await _repository
+            .GetByUserIdAsync(userId);
+
+        if (entity == null)
+        {
+            throw new Exception(
+                "Employer profile not found.");
+        }
+
+        entity.CompanyName = profile.CompanyName;
+        entity.ContactEmail = profile.ContactEmail;
+        entity.Website = profile.Website;
+        entity.Location = profile.Location;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.UpdateAsync(entity);
+
+        return new EmployerProfileDto
+        {
+            CompanyName = entity.CompanyName,
+            ContactEmail = entity.ContactEmail,
+            Website = entity.Website,
+            Location = entity.Location
+        };
+    }
 }

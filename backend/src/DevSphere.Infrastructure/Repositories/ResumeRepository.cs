@@ -30,4 +30,15 @@ public class ResumeRepository
     {
         return _context.SaveChangesAsync(cancellationToken);
     }
+
+    public Task<ResumeVersion?> GetVersionAsync(
+        Guid versionId,
+        CancellationToken cancellationToken = default)
+    {
+        return _context.ResumeVersions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                x => x.Id == versionId,
+                cancellationToken);
+    }
 }

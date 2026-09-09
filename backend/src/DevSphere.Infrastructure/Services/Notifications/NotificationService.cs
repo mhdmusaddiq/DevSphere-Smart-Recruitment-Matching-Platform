@@ -57,9 +57,15 @@ public class NotificationService : INotificationService
 
 
 
-    public async Task MarkAsReadAsync(
-        Guid id)
+    public async Task<bool> MarkAsReadAsync(
+        Guid id,
+        string userId)
     {
-        await _repository.MarkAsReadAsync(id);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return false;
+        }
+
+        return await _repository.MarkAsReadAsync(id, userId);
     }
 }

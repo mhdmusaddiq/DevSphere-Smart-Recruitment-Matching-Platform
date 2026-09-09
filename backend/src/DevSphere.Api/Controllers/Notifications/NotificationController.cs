@@ -49,7 +49,22 @@ public class NotificationController : ControllerBase
     public async Task<IActionResult> MarkAsRead(
         Guid id)
     {
-        await _service.MarkAsReadAsync(id);
+        var userId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var updated = await _service.MarkAsReadAsync(
+            id,
+            userId);
+
+        if (!updated)
+        {
+            return NotFound();
+        }
 
         return Ok(new
         {

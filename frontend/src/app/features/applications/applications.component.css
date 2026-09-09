@@ -1,0 +1,294 @@
+:host {
+  display: block;
+}
+
+.applications-page {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+header {
+  height: 76px;
+  padding: 0 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.brand span {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: #2563eb;
+  border-radius: 11px;
+  font-weight: 800;
+}
+
+nav {
+  display: flex;
+  gap: 28px;
+}
+
+nav a {
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+nav a.active,
+nav a:hover {
+  color: #2563eb;
+}
+
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 65px 24px 90px;
+}
+
+.intro {
+  margin-bottom: 38px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.intro h1 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.intro > p:last-child {
+  max-width: 620px;
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.application-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.application-card {
+  padding: 25px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 8px 25px rgba(15, 23, 42, 0.04);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.label {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-rejected {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.status-selected {
+  color: #047857;
+  background: #ecfdf5;
+}
+
+.application-card h2 {
+  margin: 20px 0 5px;
+}
+
+.vacancy-id {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.progress {
+  margin: 28px 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+.step {
+  padding: 10px 5px;
+  color: #94a3b8;
+  text-align: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.step.done {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.application-card button,
+.browse-button {
+  padding: 11px 17px;
+  color: white;
+  background: #2563eb;
+  border: 0;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alert {
+  margin-bottom: 20px;
+  padding: 14px 17px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 11px;
+}
+
+.state {
+  padding: 55px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 18px;
+}
+
+.state p {
+  margin-bottom: 25px;
+  color: #64748b;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 15px;
+  border: 4px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, .65);
+}
+
+.history-panel {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 32px;
+  background: white;
+  border-radius: 22px;
+}
+
+.close {
+  position: absolute;
+  top: 17px;
+  right: 18px;
+  width: 35px;
+  height: 35px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.history-panel h2 {
+  margin-top: 0;
+}
+
+.timeline {
+  margin-top: 28px;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 0 0 28px 30px;
+  border-left: 2px solid #dbeafe;
+}
+
+.dot {
+  position: absolute;
+  left: -7px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  background: #2563eb;
+  border-radius: 50%;
+}
+
+.timeline-item p {
+  margin: 6px 0;
+  color: #64748b;
+}
+
+.timeline-item span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.empty-history {
+  color: #64748b;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  header {
+    height: auto;
+    padding: 18px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .intro h1 {
+    font-size: 34px;
+  }
+
+  .progress {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

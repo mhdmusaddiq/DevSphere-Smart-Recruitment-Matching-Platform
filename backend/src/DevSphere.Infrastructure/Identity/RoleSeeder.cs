@@ -19,11 +19,11 @@ public static class RoleSeeder
         {
             if(!await roleManager.RoleExistsAsync(role))
             {
-                await roleManager.CreateAsync(
+                EnsureSucceeded(await roleManager.CreateAsync(
                     new ApplicationRole
                     {
                         Name = role
-                    });
+                    }), $"create the {role} role");
             }
         }
 
@@ -42,13 +42,24 @@ public static class RoleSeeder
                 EmailConfirmed = true
             };
 
-            await userManager.CreateAsync(
+            EnsureSucceeded(await userManager.CreateAsync(
                 admin,
-                "Admin@123");
+                "Admin@DevSphere2026"), "create the bootstrap administrator");
 
-            await userManager.AddToRoleAsync(
+            EnsureSucceeded(await userManager.AddToRoleAsync(
                 admin,
-                AppRoles.Admin);
+                AppRoles.Admin), "assign the bootstrap administrator role");
         }
+    }
+
+    private static void EnsureSucceeded(IdentityResult result, string operation)
+    {
+        if (result.Succeeded)
+        {
+            return;
+        }
+
+        var errors = string.Join("; ", result.Errors.Select(error => error.Description));
+        throw new InvalidOperationException($"Unable to {operation}: {errors}");
     }
 }

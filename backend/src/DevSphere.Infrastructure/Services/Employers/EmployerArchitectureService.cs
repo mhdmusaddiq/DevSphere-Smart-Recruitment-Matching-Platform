@@ -58,6 +58,7 @@ public class EmployerArchitectureService : IEmployerArchitectureService
             VacancyId = request.VacancyId,
             Name = request.Name,
             MinimumExperienceMonths = request.MinimumExperienceMonths,
+            Weight = request.Weight,
             CreatedAt = DateTime.UtcNow
         };
 

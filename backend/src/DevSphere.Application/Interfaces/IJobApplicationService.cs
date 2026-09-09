@@ -5,17 +5,28 @@ namespace DevSphere.Application.Interfaces;
 public interface IJobApplicationService
 {
     Task<JobApplicationDto> ApplyAsync(
+        string candidateId,
         JobApplicationDto request);
 
     Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId);
 
-    Task<List<JobApplicationDto>> GetByVacancyAsync(
-    Guid vacancyId);
+    Task<JobApplicationDto?> GetCandidateApplicationAsync(
+        Guid applicationId,
+        string candidateId);
+
+    Task<List<RankedApplicantDto>> GetByVacancyAsync(
+        Guid vacancyId,
+        string employerId);
 
 
     Task<JobApplicationDto> UpdateStatusAsync(
         Guid applicationId,
-        string status);
+        string status,
+        string changedByUserId);
+
+    Task<JobApplicationDto> WithdrawAsync(
+        Guid applicationId,
+        string candidateId);
 
 }

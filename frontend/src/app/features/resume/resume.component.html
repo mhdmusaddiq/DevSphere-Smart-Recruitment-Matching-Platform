@@ -1,0 +1,139 @@
+<div class="page">
+
+  <nav class="top-nav">
+    <a routerLink="/candidate/profile">< Candidate Profile</a>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <p class="eyebrow">JOB SEEKER</p>
+      <h1>CV & Resume</h1>
+      <p>
+        Upload and manage the CV used for your job applications.
+      </p>
+    </div>
+
+    @if (resume?.currentVersionId) {
+      <span class="status ready">CV available</span>
+    } @else {
+      <span class="status">No CV uploaded</span>
+    }
+  </header>
+
+  @if (message) {
+    <div class="alert success">{{ message }}</div>
+  }
+
+  @if (error) {
+    <div class="alert error">{{ error }}</div>
+  }
+
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <h2>Upload CV</h2>
+        <p>
+          Select a CV file. The server validates the file before
+          storing it securely.
+        </p>
+      </div>
+    </div>
+
+    <div class="upload-area">
+      <input
+        id="resumeFile"
+        type="file"
+        (change)="onFileSelected($event)">
+
+      @if (selectedFile) {
+        <div class="selected-file">
+          <div>
+            <strong>{{ selectedFile.name }}</strong>
+            <span>{{ formatFileSize(selectedFile.size) }}</span>
+          </div>
+        </div>
+      }
+
+      <button
+        class="primary"
+        type="button"
+        [disabled]="!selectedFile || uploading"
+        (click)="upload()">
+        {{ uploading ? 'Uploading...' : 'Upload New Version' }}
+      </button>
+
+      <p class="hint">
+        Maximum upload size: 10 MB. Unsupported files will be
+        rejected by the server validation rules.
+      </p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <h2>CV Versions</h2>
+        <p>
+          Previous versions remain visible while the latest version
+          is marked as current.
+        </p>
+      </div>
+    </div>
+
+    @if (loading) {
+      <p class="empty">Loading CV information...</p>
+    } @else if (!resume || resume.versions.length === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">CV</div>
+        <h3>No CV versions yet</h3>
+        <p>Upload your first CV to get started.</p>
+      </div>
+    } @else {
+      <div class="version-list">
+        @for (
+          version of resume.versions;
+          track version.id
+        ) {
+          <article
+            class="version"
+            [class.current]="version.isCurrent">
+
+            <div class="file-icon">DOC</div>
+
+            <div class="version-info">
+              <div class="version-title">
+                <h3>{{ version.originalFileName }}</h3>
+
+                @if (version.isCurrent) {
+                  <span class="current-badge">Current</span>
+                }
+              </div>
+
+              <p>
+                Version {{ version.versionNumber }}
+                Â· {{ formatFileSize(version.fileSizeBytes) }}
+              </p>
+
+              <p class="content-type">
+                {{ version.contentType }}
+              </p>
+            </div>
+
+            <button
+              class="secondary"
+              type="button"
+              [disabled]="downloadingId === version.id"
+              (click)="download(version)">
+              {{
+                downloadingId === version.id
+                  ? 'Downloading...'
+                  : 'Download'
+              }}
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+</div>

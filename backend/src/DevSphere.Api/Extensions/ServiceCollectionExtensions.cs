@@ -34,13 +34,17 @@ public static class ServiceCollectionExtensions
                 configuration.GetConnectionString("DefaultConnection")));
 
         services
-            .AddIdentity<ApplicationUser, ApplicationRole>()
+            .AddIdentity<ApplicationUser, ApplicationRole>(options =>
+            {
+                options.Password.RequiredLength = 15;
+            })
             .AddEntityFrameworkStores<DevSphereDbContext>()
             ;
 
         services.AddScoped<TokenService>();
 
         services.AddScoped<ICandidateProfileService, CandidateProfileService>();
+        services.AddScoped<SkillTaxonomyService>();
 
         services.AddScoped<CandidateProfileRepository>();
 
@@ -71,6 +75,9 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ResumeRepository>();
         services.AddScoped<EmployerArchitectureRepository>();
+        services.AddScoped<CompanyTrustRepository>();
+        services.AddScoped<VacancyPolicyRepository>();
+        services.AddScoped<EmployerWorkflowRepository>();
         services.AddScoped<ApplicationHistoryRepository>();
         services.AddScoped<MatchResultRepository>();
         services.AddScoped<AdminRepository>();
@@ -79,6 +86,9 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IResumeService, ResumeService>();
         services.AddScoped<IEmployerArchitectureService, EmployerArchitectureService>();
+        services.AddScoped<ICompanyTrustService, CompanyTrustService>();
+        services.AddScoped<IVacancyPolicyService, VacancyPolicyService>();
+        services.AddScoped<IEmployerWorkflowService, EmployerWorkflowService>();
         services.AddScoped<IApplicationHistoryService, ApplicationHistoryService>();
         services.AddScoped<IMatchResultStore, MatchResultStore>();
         services.AddScoped<IAdminService, AdminService>();
