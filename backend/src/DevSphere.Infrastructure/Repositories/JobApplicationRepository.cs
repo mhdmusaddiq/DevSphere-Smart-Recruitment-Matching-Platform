@@ -82,4 +82,52 @@ public class JobApplicationRepository
 
 
 
+
+    public async Task AddWithSnapshotAsync(
+        JobApplication application,
+        ApplicationSnapshot snapshot,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction =
+            await _context.Database.BeginTransactionAsync(
+                cancellationToken);
+
+        try
+        {
+            await _context.JobApplications.AddAsync(
+                application,
+                cancellationToken);
+
+            await _context.ApplicationSnapshots.AddAsync(
+                snapshot,
+                cancellationToken);
+
+            await _context.ApplicationStatusHistories.AddAsync(
+                new ApplicationStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    JobApplicationId = application.Id,
+                    PreviousStatus = null,
+                    NewStatus = application.Status,
+                    ChangedByUserId = application.CandidateId,
+                    ChangedAtUtc = application.AppliedAt,
+                    Notes = "Application submitted.",
+                    CreatedAt = application.AppliedAt
+                },
+                cancellationToken);
+
+            await _context.SaveChangesAsync(
+                cancellationToken);
+
+            await transaction.CommitAsync(
+                cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(
+                cancellationToken);
+
+            throw;
+        }
+    }
 }

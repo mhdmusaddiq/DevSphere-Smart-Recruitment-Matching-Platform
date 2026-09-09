@@ -22,6 +22,17 @@ public class ApplicationHistoryService : IApplicationHistoryService
             Id = Guid.NewGuid(),
             JobApplicationId = request.JobApplicationId,
             ResumeVersionId = request.ResumeVersionId,
+            MatchingPolicyRevisionId = request.MatchingPolicyRevisionId,
+            CompatibilityScore = request.CompatibilityScore,
+            RawCompatibilityScore = request.RawCompatibilityScore,
+            DisplayCompatibilityScore = request.DisplayCompatibilityScore,
+            CompatibilityStatus = request.CompatibilityStatus,
+            EligibilityStatus = request.EligibilityStatus,
+            IsEligible = request.IsEligible,
+            ApplyDecision = request.ApplyDecision,
+            MatchedSkillsJson = request.MatchedSkillsJson,
+            GapSkillsJson = request.GapSkillsJson,
+            EvidenceSummaryJson = request.EvidenceSummaryJson,
             CandidateSnapshotJson = request.CandidateSnapshotJson,
             VacancySnapshotJson = request.VacancySnapshotJson,
             CapturedAtUtc = DateTime.UtcNow,
@@ -34,6 +45,41 @@ public class ApplicationHistoryService : IApplicationHistoryService
         return request;
     }
 
+    public async Task<ApplicationSnapshotDto?> GetSnapshotAsync(
+        Guid jobApplicationId,
+        CancellationToken cancellationToken = default)
+    {
+        var entity =
+            await _repository.GetSnapshotAsync(
+                jobApplicationId,
+                cancellationToken);
+
+        if (entity == null)
+        {
+            return null;
+        }
+
+        return new ApplicationSnapshotDto
+        {
+            Id = entity.Id,
+            JobApplicationId = entity.JobApplicationId,
+            ResumeVersionId = entity.ResumeVersionId,
+            MatchingPolicyRevisionId = entity.MatchingPolicyRevisionId,
+            CompatibilityScore = entity.CompatibilityScore,
+            RawCompatibilityScore = entity.RawCompatibilityScore,
+            DisplayCompatibilityScore = entity.DisplayCompatibilityScore,
+            CompatibilityStatus = entity.CompatibilityStatus,
+            EligibilityStatus = entity.EligibilityStatus,
+            IsEligible = entity.IsEligible,
+            ApplyDecision = entity.ApplyDecision,
+            MatchedSkillsJson = entity.MatchedSkillsJson,
+            GapSkillsJson = entity.GapSkillsJson,
+            EvidenceSummaryJson = entity.EvidenceSummaryJson,
+            CandidateSnapshotJson = entity.CandidateSnapshotJson,
+            VacancySnapshotJson = entity.VacancySnapshotJson,
+            CapturedAtUtc = entity.CapturedAtUtc
+        };
+    }
     public async Task<ApplicationStatusHistoryDto> RecordStatusAsync(ApplicationStatusHistoryDto request, CancellationToken cancellationToken = default)
     {
         if (!Enum.TryParse<ApplicationStatus>(request.NewStatus, true, out var newStatus))

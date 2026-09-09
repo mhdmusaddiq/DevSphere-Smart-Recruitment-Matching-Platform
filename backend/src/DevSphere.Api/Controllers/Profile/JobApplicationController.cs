@@ -41,13 +41,10 @@ public class JobApplicationController : ControllerBase
         }
 
 
-        request.CandidateId = candidateId;
-
-
         try
         {
             var result = await _service
-                .ApplyAsync(request);
+                .ApplyAsync(candidateId, request);
 
             return Ok(result);
         }
