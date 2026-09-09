@@ -18,4 +18,9 @@ public interface IContactRequestService
         Guid id,
         string status,
         string candidateId);
+
+    Task<ContactRequestDto> UpdateEmployerStatusAsync(
+        Guid id,
+        string status,
+        string employerId);
 }

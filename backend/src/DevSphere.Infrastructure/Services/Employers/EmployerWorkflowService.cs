@@ -413,6 +413,91 @@ public class EmployerWorkflowService :
         };
     }
 
+    public async Task<EmployerWorkflowSummaryDto> GetEmployerSummaryAsync(
+        string employerUserId,
+        Guid applicationId)
+    {
+        await GetOwnedApplicationAsync(
+            employerUserId,
+            applicationId);
+
+        return await BuildSummaryAsync(
+            applicationId,
+            candidateSafe: false);
+    }
+
+    public async Task<EmployerWorkflowSummaryDto> GetCandidateSummaryAsync(
+        string candidateUserId,
+        Guid applicationId)
+    {
+        var application = await _repository
+            .GetApplicationWithVacancyAsync(applicationId);
+
+        if (application == null ||
+            application.CandidateId != candidateUserId)
+        {
+            throw new KeyNotFoundException(
+                "Application not found.");
+        }
+
+        return await BuildSummaryAsync(
+            applicationId,
+            candidateSafe: true);
+    }
+
+    private async Task<EmployerWorkflowSummaryDto> BuildSummaryAsync(
+        Guid applicationId,
+        bool candidateSafe)
+    {
+        var summary = await _repository.GetSummaryAsync(applicationId);
+
+        return new EmployerWorkflowSummaryDto
+        {
+            JobApplicationId = applicationId,
+            Interviews = summary.Interviews
+                .Select(MapInterview)
+                .ToList(),
+            InterviewSlots = summary.Slots
+                .Select(x => new InterviewSlotDto
+                {
+                    Id = x.Id,
+                    InterviewId = x.InterviewId,
+                    StartsAtUtc = x.StartsAtUtc,
+                    EndsAtUtc = x.EndsAtUtc,
+                    LocationOrMeetingUrl = x.LocationOrMeetingUrl
+                })
+                .ToList(),
+            Scorecards = candidateSafe
+                ? new List<ScorecardDto>()
+                : summary.Scorecards.Select(x => new ScorecardDto
+                {
+                    Id = x.Id,
+                    JobApplicationId = x.JobApplicationId,
+                    InterviewId = x.InterviewId,
+                    OverallRating = x.OverallRating,
+                    Notes = x.Notes
+                }).ToList(),
+            Offers = summary.Offers
+                .Where(x => !candidateSafe ||
+                    x.Status != OfferStatus.Draft)
+                .Select(MapOffer)
+                .ToList(),
+            TalentPoolEntries = summary.TalentPoolEntries
+                .Where(x => !candidateSafe || x.HasCandidateConsent)
+                .Select(x => new TalentPoolEntryDto
+                {
+                    Id = x.Id,
+                    JobApplicationId = x.JobApplicationId,
+                    CandidateUserId = x.CandidateUserId,
+                    HasCandidateConsent = x.HasCandidateConsent,
+                    ConsentRecordedAtUtc = x.ConsentRecordedAtUtc,
+                    IsActive = x.IsActive,
+                    Notes = candidateSafe ? string.Empty : x.Notes
+                })
+                .ToList()
+        };
+    }
+
     private async Task<JobApplication>
         GetOwnedApplicationAsync(
             string employerUserId,

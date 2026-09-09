@@ -31,6 +31,15 @@ public class EmployerWorkflowController :
             true);
     }
 
+    [HttpGet("applications/{applicationId:guid}/summary")]
+    public async Task<IActionResult> GetSummary(Guid applicationId)
+    {
+        return await ExecuteAsync(() =>
+            _service.GetEmployerSummaryAsync(
+                GetEmployerUserId(),
+                applicationId));
+    }
+
     [HttpPut("interviews/{interviewId:guid}/status")]
     public async Task<IActionResult> UpdateInterviewStatus(
         Guid interviewId,

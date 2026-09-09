@@ -34,4 +34,12 @@ public interface IEmployerWorkflowService
         string employerUserId,
         Guid interviewId,
         UpdateInterviewStatusRequest request);
+
+    Task<EmployerWorkflowSummaryDto> GetEmployerSummaryAsync(
+        string employerUserId,
+        Guid applicationId);
+
+    Task<EmployerWorkflowSummaryDto> GetCandidateSummaryAsync(
+        string candidateUserId,
+        Guid applicationId);
 }

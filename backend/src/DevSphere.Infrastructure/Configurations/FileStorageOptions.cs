@@ -6,14 +6,12 @@ public class FileStorageOptions
 
     public string RootPath { get; set; } = "App_Data/Files";
 
-    public long MaximumFileSizeBytes { get; set; } = 10 * 1024 * 1024;
+    public long MaximumFileSizeBytes { get; set; } = 5 * 1024 * 1024;
 
-    public string[] AllowedExtensions { get; set; } = [".pdf", ".doc", ".docx"];
+    public string[] AllowedExtensions { get; set; } = [".pdf"];
 
     public string[] AllowedContentTypes { get; set; } =
     [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "application/pdf"
     ];
 }

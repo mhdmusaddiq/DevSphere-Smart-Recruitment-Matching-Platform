@@ -8,11 +8,17 @@ public class Vacancy : BaseEntity
 {
     public string EmployerId { get; set; } = string.Empty;
 
+    public Guid? CompanyId { get; set; }
+
     public string Title { get; set; } = string.Empty;
 
     public string Description { get; set; } = string.Empty;
 
     public string Location { get; set; } = string.Empty;
+
+    public string WorkMode { get; set; } = string.Empty;
+
+    public string EmploymentType { get; set; } = string.Empty;
 
     public int RequiredExperienceMonths { get; set; }
 
@@ -27,6 +33,8 @@ public class Vacancy : BaseEntity
     public decimal? SalaryMax { get; set; }
 
     public DateTime? ClosingDateUtc { get; set; }
+
+    public DateTime? PublishedAtUtc { get; set; }
 
     public VacancyLifecycleStatus LifecycleStatus { get; set; }
         = VacancyLifecycleStatus.Draft;

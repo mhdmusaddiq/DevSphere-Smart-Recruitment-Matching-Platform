@@ -11,4 +11,20 @@ public class ContactRequestDto
     public string CandidateId { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
+
+    public Guid VacancyId { get; set; }
+
+    public string VacancyTitle { get; set; } = string.Empty;
+
+    public Guid? CompanyId { get; set; }
+
+    public string CompanyName { get; set; } = string.Empty;
+
+    public string CandidateDisplayName { get; set; } = string.Empty;
+
+    public string EmployerDisplayName { get; set; } = string.Empty;
+
+    public bool CanDiscloseContact { get; set; }
+
+    public string? CandidateEmail { get; set; }
 }

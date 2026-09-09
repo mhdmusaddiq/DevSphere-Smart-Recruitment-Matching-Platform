@@ -8,17 +8,7 @@ public class FileValidationServiceTests
 {
     private static FileValidationService CreateService()
     {
-        var options = Options.Create(new FileStorageOptions
-        {
-            MaximumFileSizeBytes = 10 * 1024 * 1024,
-            AllowedExtensions = [".pdf", ".doc", ".docx"],
-            AllowedContentTypes =
-            [
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            ]
-        });
+        var options = Options.Create(new FileStorageOptions());
 
         return new FileValidationService(options);
     }
@@ -90,7 +80,21 @@ public class FileValidationServiceTests
         var result = service.Validate(
             "candidate-cv.pdf",
             "application/pdf",
-            (10 * 1024 * 1024) + 1);
+            (5 * 1024 * 1024) + 1);
+
+        Assert.False(result.IsValid);
+        Assert.True(result.TooLarge);
+    }
+
+    [Fact]
+    public void Validate_Should_Reject_Word_Cv()
+    {
+        var service = CreateService();
+
+        var result = service.Validate(
+            "candidate-cv.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            1024);
 
         Assert.False(result.IsValid);
     }

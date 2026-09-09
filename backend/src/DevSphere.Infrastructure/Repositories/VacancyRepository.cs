@@ -35,7 +35,11 @@ public class VacancyRepository
         string? query,
         string? location,
         int page,
-        int pageSize)
+        int pageSize,
+        string? skill = null,
+        string? workMode = null,
+        string? employmentType = null,
+        bool paginate = true)
     {
         var vacancies = _context.Vacancies
             .AsNoTracking()
@@ -60,12 +64,40 @@ public class VacancyRepository
                 x.Location.Contains(normalizedLocation));
         }
 
-        return await vacancies
-            .OrderByDescending(x => x.CreatedAt)
-            .ThenBy(x => x.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        if (!string.IsNullOrWhiteSpace(skill))
+        {
+            var normalizedSkill = skill.Trim();
+
+            vacancies = vacancies.Where(vacancy =>
+                _context.RequiredSkills.Any(required =>
+                    required.VacancyId == vacancy.Id &&
+                    required.Name.Contains(normalizedSkill)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(workMode))
+        {
+            var normalizedWorkMode = workMode.Trim();
+            vacancies = vacancies.Where(x =>
+                x.WorkMode == normalizedWorkMode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(employmentType))
+        {
+            var normalizedEmploymentType = employmentType.Trim();
+            vacancies = vacancies.Where(x =>
+                x.EmploymentType == normalizedEmploymentType);
+        }
+
+        var ordered = vacancies
+            .OrderByDescending(x => x.PublishedAtUtc ?? x.CreatedAt)
+            .ThenBy(x => x.Id);
+
+        return paginate
+            ? await ordered
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync()
+            : await ordered.ToListAsync();
     }
 
     public async Task<bool> HasApplicationsAsync(

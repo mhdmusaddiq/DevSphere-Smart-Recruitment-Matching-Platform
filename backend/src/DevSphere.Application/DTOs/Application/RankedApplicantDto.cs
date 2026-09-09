@@ -6,6 +6,8 @@ public class RankedApplicantDto
 
     public string CandidateId { get; set; } = string.Empty;
 
+    public string CandidateDisplayName { get; set; } = string.Empty;
+
     public Guid VacancyId { get; set; }
 
     public DateTime AppliedAt { get; set; }

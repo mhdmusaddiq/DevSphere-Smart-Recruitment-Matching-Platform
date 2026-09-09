@@ -326,7 +326,7 @@ public class JobApplicationService : IJobApplicationService
                 CandidateId = candidateId,
                 VacancyId = request.VacancyId,
                 Status =
-                    DevSphere.Domain.Enums.ApplicationStatus.Applied,
+                    DevSphere.Domain.Enums.ApplicationStatus.Submitted,
                 AppliedAt = now,
                 CreatedAt = now
             };
@@ -441,19 +441,48 @@ public class JobApplicationService : IJobApplicationService
     public async Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId)
     {
-        var applications = await _repository
-            .GetByCandidateAsync(candidateId);
+        var applications = (await _repository
+            .GetByCandidateAsync(candidateId)).ToList();
 
+        var companyIds = applications
+            .Where(x => x.Vacancy.CompanyId.HasValue)
+            .Select(x => x.Vacancy.CompanyId!.Value)
+            .Distinct()
+            .ToList();
+
+        var companyNames = await _context.CompanyProfiles
+            .AsNoTracking()
+            .Where(x => companyIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, x => x.Name);
 
         return applications
-    .Select(x => new JobApplicationDto
-    {
-        Id = x.Id,
-        CandidateId = x.CandidateId,
-        VacancyId = x.VacancyId,
-        Status = x.Status.ToString()
-    })
-    .ToList();
+            .Select(x => new JobApplicationDto
+            {
+                Id = x.Id,
+                CandidateId = x.CandidateId,
+                VacancyId = x.VacancyId,
+                VacancyTitle = x.Vacancy.Title,
+                CompanyId = x.Vacancy.CompanyId,
+                CompanyName = x.Vacancy.CompanyId.HasValue &&
+                    companyNames.TryGetValue(
+                        x.Vacancy.CompanyId.Value,
+                        out var companyName)
+                            ? companyName
+                            : string.Empty,
+                SubmittedAtUtc = x.AppliedAt,
+                Status = x.Status.ToString(),
+                FrozenAssessmentStatus =
+                    x.Snapshot?.CompatibilityStatus ??
+                    MatchAssessmentStatus.NotCalculated.ToString(),
+                DisplayCompatibility =
+                    x.Snapshot?.DisplayCompatibilityScore,
+                Eligibility =
+                    x.Snapshot?.EligibilityStatus ??
+                    MatchEligibilityStatus.IncompleteAssessment.ToString(),
+                ResumeVersionId = x.Snapshot?.ResumeVersionId,
+                CapturedAtUtc = x.Snapshot?.CapturedAtUtc
+            })
+            .ToList();
     }
 
     public async Task<List<RankedApplicantDto>> GetByVacancyAsync(
@@ -462,6 +491,16 @@ public class JobApplicationService : IJobApplicationService
     {
         var applications = await _repository
             .GetByVacancyAsync(vacancyId, employerId);
+
+        var candidateIds = applications
+            .Select(x => x.CandidateId)
+            .Distinct()
+            .ToList();
+
+        var candidateNames = await _context.CandidateProfiles
+            .AsNoTracking()
+            .Where(x => candidateIds.Contains(x.UserId))
+            .ToDictionaryAsync(x => x.UserId, x => x.FullName);
 
         var rankedApplicants = new List<RankedApplicantDto>();
 
@@ -473,6 +512,11 @@ public class JobApplicationService : IJobApplicationService
             {
                 ApplicationId = application.Id,
                 CandidateId = application.CandidateId,
+                CandidateDisplayName = candidateNames.TryGetValue(
+                    application.CandidateId,
+                    out var candidateName)
+                        ? candidateName
+                        : string.Empty,
                 VacancyId = application.VacancyId,
                 AppliedAt = application.AppliedAt,
                 Status = application.Status.ToString(),
@@ -524,6 +568,14 @@ public class JobApplicationService : IJobApplicationService
             .ToList();
     }
 
+    public async Task<JobApplicationDto?> GetCandidateApplicationAsync(
+        Guid applicationId,
+        string candidateId)
+    {
+        return (await GetByCandidateAsync(candidateId))
+            .SingleOrDefault(x => x.Id == applicationId);
+    }
+
 
 
     public async Task<JobApplicationDto> UpdateStatusAsync(
@@ -539,12 +591,18 @@ public class JobApplicationService : IJobApplicationService
         }
 
         var application = await _repository
-            .GetByIdAsync(applicationId);
+            .GetWithVacancyAsync(applicationId);
 
         if (application == null)
         {
             throw new KeyNotFoundException(
                 "Application not found.");
+        }
+
+        if (application.Vacancy.EmployerId != changedByUserId)
+        {
+            throw new UnauthorizedAccessException(
+                "Employer does not own this application.");
         }
 
         if (!Enum.TryParse<
@@ -567,24 +625,12 @@ public class JobApplicationService : IJobApplicationService
                 $"Invalid application status transition from {previousStatus} to {newStatus}.");
         }
 
-        application.Status = newStatus;
-        application.UpdatedAt = DateTime.UtcNow;
-
-        await _repository.UpdateAsync(application);
-
-        await _applicationHistoryService.RecordStatusAsync(
-            new ApplicationStatusHistoryDto
-            {
-                JobApplicationId = application.Id,
-                PreviousStatus = previousStatus.ToString(),
-                NewStatus = newStatus.ToString(),
-                ChangedByUserId = changedByUserId,
-                Notes = $"Status changed from {previousStatus} to {newStatus}."
-            });
-
-        await _notificationService.CreateAsync(
-            application.CandidateId,
-            $"Your application status has been updated to {newStatus}.");
+        await PersistStatusTransitionAsync(
+            application,
+            previousStatus,
+            newStatus,
+            changedByUserId,
+            notifyCandidate: true);
 
         return new JobApplicationDto
         {
@@ -595,14 +641,154 @@ public class JobApplicationService : IJobApplicationService
         };
     }
 
+    public async Task<JobApplicationDto> WithdrawAsync(
+        Guid applicationId,
+        string candidateId)
+    {
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            throw new UnauthorizedAccessException(
+                "Authenticated candidate is required.");
+        }
+
+        var application = await _repository
+            .GetByIdAsync(applicationId);
+
+        if (application == null ||
+            application.CandidateId != candidateId)
+        {
+            throw new KeyNotFoundException(
+                "Application not found.");
+        }
+
+        var previousStatus = application.Status;
+
+        if (!CanCandidateWithdraw(previousStatus))
+        {
+            throw new InvalidOperationException(
+                $"Application cannot be withdrawn from {previousStatus}.");
+        }
+
+        var withdrawn =
+            DevSphere.Domain.Enums.ApplicationStatus.Withdrawn;
+
+        await PersistStatusTransitionAsync(
+            application,
+            previousStatus,
+            withdrawn,
+            candidateId,
+            notifyCandidate: false);
+
+        return new JobApplicationDto
+        {
+            Id = application.Id,
+            CandidateId = application.CandidateId,
+            VacancyId = application.VacancyId,
+            Status = application.Status.ToString()
+        };
+    }
+
+    private async Task PersistStatusTransitionAsync(
+        DevSphere.Domain.Entities.Applications.JobApplication application,
+        DevSphere.Domain.Enums.ApplicationStatus previousStatus,
+        DevSphere.Domain.Enums.ApplicationStatus newStatus,
+        string changedByUserId,
+        bool notifyCandidate)
+    {
+        await using var transaction =
+            await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
+
+        await _context.Entry(application).ReloadAsync();
+
+        if (application.Status != previousStatus)
+        {
+            throw new InvalidOperationException(
+                "The application status changed; refresh and retry.");
+        }
+
+        var changedAt = DateTime.UtcNow;
+        application.Status = newStatus;
+        application.UpdatedAt = changedAt;
+
+        _context.ApplicationStatusHistories.Add(
+            new DevSphere.Domain.Entities.Applications.ApplicationStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                JobApplicationId = application.Id,
+                PreviousStatus = previousStatus,
+                NewStatus = newStatus,
+                ChangedByUserId = changedByUserId,
+                ChangedAtUtc = changedAt,
+                Notes =
+                    $"Status changed from {previousStatus} to {newStatus}.",
+                CreatedAt = changedAt
+            });
+
+        if (notifyCandidate)
+        {
+            _context.Notifications.Add(
+                new DevSphere.Domain.Entities.Notifications.Notification
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = application.CandidateId,
+                    Message =
+                        $"Your application status has been updated to {newStatus}.",
+                    IsRead = false,
+                    CreatedAtUtc = changedAt,
+                    CreatedAt = changedAt
+                });
+        }
+
+        if (newStatus is
+            DevSphere.Domain.Enums.ApplicationStatus.Rejected or
+            DevSphere.Domain.Enums.ApplicationStatus.Withdrawn)
+        {
+            var pendingContacts = await _context.ContactRequests
+                .Where(x =>
+                    x.JobApplicationId == application.Id &&
+                    x.Status == "Pending")
+                .ToListAsync();
+
+            foreach (var contact in pendingContacts)
+            {
+                contact.Status = "Cancelled";
+                contact.UpdatedAt = changedAt;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+    }
+
+    private static bool CanCandidateWithdraw(
+        DevSphere.Domain.Enums.ApplicationStatus current)
+    {
+        return current is
+            DevSphere.Domain.Enums.ApplicationStatus.Submitted or
+            DevSphere.Domain.Enums.ApplicationStatus.Screening or
+            DevSphere.Domain.Enums.ApplicationStatus.UnderReview or
+            DevSphere.Domain.Enums.ApplicationStatus.Shortlisted;
+    }
+
     public static bool IsValidTransition(
         DevSphere.Domain.Enums.ApplicationStatus current,
         DevSphere.Domain.Enums.ApplicationStatus next)
     {
         return current switch
         {
-            DevSphere.Domain.Enums.ApplicationStatus.Applied =>
-                next is DevSphere.Domain.Enums.ApplicationStatus.UnderReview or DevSphere.Domain.Enums.ApplicationStatus.Rejected,
+            DevSphere.Domain.Enums.ApplicationStatus.Submitted =>
+                next is
+                    DevSphere.Domain.Enums.ApplicationStatus.Screening or
+                    DevSphere.Domain.Enums.ApplicationStatus.UnderReview or
+                    DevSphere.Domain.Enums.ApplicationStatus.Shortlisted or
+                    DevSphere.Domain.Enums.ApplicationStatus.Rejected,
+
+            DevSphere.Domain.Enums.ApplicationStatus.Screening =>
+                next is
+                    DevSphere.Domain.Enums.ApplicationStatus.UnderReview or
+                    DevSphere.Domain.Enums.ApplicationStatus.Shortlisted or
+                    DevSphere.Domain.Enums.ApplicationStatus.Rejected,
 
             DevSphere.Domain.Enums.ApplicationStatus.UnderReview =>
                 next is DevSphere.Domain.Enums.ApplicationStatus.Shortlisted or DevSphere.Domain.Enums.ApplicationStatus.Rejected,
@@ -613,6 +799,8 @@ public class JobApplicationService : IJobApplicationService
             DevSphere.Domain.Enums.ApplicationStatus.Selected => false,
 
             DevSphere.Domain.Enums.ApplicationStatus.Rejected => false,
+
+            DevSphere.Domain.Enums.ApplicationStatus.Withdrawn => false,
 
             _ => false
         };

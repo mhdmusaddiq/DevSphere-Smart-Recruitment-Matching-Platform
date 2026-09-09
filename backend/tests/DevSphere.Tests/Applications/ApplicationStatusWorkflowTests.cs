@@ -8,7 +8,12 @@ public class ApplicationStatusWorkflowTests
 {
     [Theory]
     [InlineData(ApplicationStatus.Applied, ApplicationStatus.UnderReview)]
+    [InlineData(ApplicationStatus.Submitted, ApplicationStatus.Screening)]
+    [InlineData(ApplicationStatus.Submitted, ApplicationStatus.Shortlisted)]
     [InlineData(ApplicationStatus.Applied, ApplicationStatus.Rejected)]
+    [InlineData(ApplicationStatus.Screening, ApplicationStatus.UnderReview)]
+    [InlineData(ApplicationStatus.Screening, ApplicationStatus.Shortlisted)]
+    [InlineData(ApplicationStatus.Screening, ApplicationStatus.Rejected)]
     [InlineData(ApplicationStatus.UnderReview, ApplicationStatus.Shortlisted)]
     [InlineData(ApplicationStatus.UnderReview, ApplicationStatus.Rejected)]
     [InlineData(ApplicationStatus.Shortlisted, ApplicationStatus.Selected)]
@@ -25,7 +30,6 @@ public class ApplicationStatusWorkflowTests
 
     [Theory]
     [InlineData(ApplicationStatus.Applied, ApplicationStatus.Selected)]
-    [InlineData(ApplicationStatus.Applied, ApplicationStatus.Shortlisted)]
     [InlineData(ApplicationStatus.UnderReview, ApplicationStatus.Selected)]
     [InlineData(ApplicationStatus.Shortlisted, ApplicationStatus.UnderReview)]
     public void InvalidTransitions_ShouldBeRejected(

@@ -46,7 +46,7 @@ public class ResumeController : ControllerBase
 
     [HttpPost("versions")]
     [Consumes("multipart/form-data")]
-    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<IActionResult> UploadVersion(
         [FromForm] IFormFile file,
         CancellationToken cancellationToken)
@@ -73,13 +73,34 @@ public class ResumeController : ControllerBase
 
         if (!validation.IsValid)
         {
-            return BadRequest(new
+            var response = new
             {
                 message = validation.Error
-            });
+            };
+
+            return validation.TooLarge
+                ? StatusCode(
+                    StatusCodes.Status413PayloadTooLarge,
+                    response)
+                : BadRequest(response);
         }
 
         await using var stream = file.OpenReadStream();
+
+        var signature = new byte[5];
+        var bytesRead = await stream.ReadAsync(
+            signature,
+            cancellationToken);
+        stream.Position = 0;
+
+        if (bytesRead != signature.Length ||
+            !signature.SequenceEqual("%PDF-"u8.ToArray()))
+        {
+            return BadRequest(new
+            {
+                message = "The uploaded file is not a valid PDF."
+            });
+        }
 
         var resume = await _service.AddUploadedVersionAsync(
             userId,

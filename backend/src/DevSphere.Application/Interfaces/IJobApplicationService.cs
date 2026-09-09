@@ -11,6 +11,10 @@ public interface IJobApplicationService
     Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId);
 
+    Task<JobApplicationDto?> GetCandidateApplicationAsync(
+        Guid applicationId,
+        string candidateId);
+
     Task<List<RankedApplicantDto>> GetByVacancyAsync(
         Guid vacancyId,
         string employerId);
@@ -20,5 +24,9 @@ public interface IJobApplicationService
         Guid applicationId,
         string status,
         string changedByUserId);
+
+    Task<JobApplicationDto> WithdrawAsync(
+        Guid applicationId,
+        string candidateId);
 
 }

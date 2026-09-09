@@ -1,4 +1,5 @@
 using DevSphere.Application.DTOs.Profile;
+using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
 using DevSphere.Domain.Entities.Vacancies;
 using DevSphere.Domain.Enums;
@@ -13,30 +14,118 @@ public class VacancyService : IVacancyService
     private readonly VacancyRepository _repository;
     private readonly IVacancyPolicyService? _policyService;
     private readonly DevSphereDbContext? _context;
+    private readonly IMatchEngine? _matchEngine;
 
     public VacancyService(
         VacancyRepository repository,
         IVacancyPolicyService? policyService = null,
-        DevSphereDbContext? context = null)
+        DevSphereDbContext? context = null,
+        IMatchEngine? matchEngine = null)
     {
         _repository = repository;
         _policyService = policyService;
         _context = context;
+        _matchEngine = matchEngine;
     }
 
     public async Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync(
         string? query,
         string? location,
         int page,
-        int pageSize)
+        int pageSize,
+        string? skill = null,
+        string? workMode = null,
+        string? employmentType = null)
     {
         var vacancies = (await _repository.GetOpenAsync(
             query,
             location,
             page,
-            pageSize)).ToList();
+            pageSize,
+            skill,
+            workMode,
+            employmentType)).ToList();
 
         return await MapManyAsync(vacancies);
+    }
+
+    public async Task<IEnumerable<VacancyDto>> GetBestMatchesAsync(
+        string candidateId,
+        string? query,
+        string? location,
+        int page,
+        int pageSize,
+        string? skill = null,
+        string? workMode = null,
+        string? employmentType = null)
+    {
+        if (_matchEngine == null)
+        {
+            throw new InvalidOperationException(
+                "Candidate matching is unavailable.");
+        }
+
+        var vacancies = (await _repository.GetOpenAsync(
+            query,
+            location,
+            page,
+            pageSize,
+            skill,
+            workMode,
+            employmentType,
+            paginate: false)).ToList();
+        var results = await MapManyAsync(vacancies);
+
+        foreach (var result in results)
+        {
+            var match = await _matchEngine.CalculateAsync(
+                candidateId,
+                result.Id.ToString());
+            var calculated = match.AssessmentStatus ==
+                MatchAssessmentStatus.Calculated;
+
+            result.AssessmentStatus =
+                match.AssessmentStatus.ToString();
+            result.Eligibility = match.Eligibility.ToString();
+            result.RawCompatibility = calculated
+                ? match.RawCompatibility
+                : null;
+            result.DisplayCompatibility = calculated
+                ? match.DisplayCompatibility
+                : null;
+            result.HighTierAggregate = calculated
+                ? match.HighTierAggregate
+                : null;
+            result.MediumTierAggregate = calculated
+                ? match.MediumTierAggregate
+                : null;
+            result.Coverage = match.Coverage;
+        }
+
+        return results
+            .OrderBy(x => GetEligibilityRank(x.Eligibility))
+            .ThenBy(x => x.AssessmentStatus ==
+                MatchAssessmentStatus.Calculated.ToString() ? 0 : 1)
+            .ThenByDescending(x => x.RawCompatibility)
+            .ThenByDescending(x => x.HighTierAggregate)
+            .ThenByDescending(x => x.MediumTierAggregate)
+            .ThenByDescending(x => x.PublishedAtUtc)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private static int GetEligibilityRank(string eligibility)
+    {
+        return eligibility switch
+        {
+            nameof(MatchEligibilityStatus.MeetsBaseline) => 0,
+            nameof(MatchEligibilityStatus.PendingVerification) => 1,
+            nameof(MatchEligibilityStatus.IncompleteAssessment) => 2,
+            nameof(MatchEligibilityStatus.DoesNotMeetBaseline) => 3,
+            _ => 4
+        };
     }
 
     public async Task<IEnumerable<VacancyDto>> GetMineAsync(
@@ -62,10 +151,8 @@ public class VacancyService : IVacancyService
             return null;
         }
 
-        var skills = await _repository
-            .GetRequiredSkillsAsync(vacancy.Id);
-
-        return MapToDto(vacancy, skills);
+        return (await MapManyAsync(new[] { vacancy }))
+            .Single();
     }
 
     public async Task<VacancyDto> CreateAsync(
@@ -79,9 +166,12 @@ public class VacancyService : IVacancyService
         {
             Id = Guid.NewGuid(),
             EmployerId = employerId,
+            CompanyId = request.CompanyId,
             Title = request.Title.Trim(),
             Description = request.Description,
             Location = request.Location,
+            WorkMode = request.WorkMode,
+            EmploymentType = request.EmploymentType,
             MinExperienceMonths = request.MinExperienceMonths,
             MaxExperienceMonths = request.MaxExperienceMonths,
             RequiredExperienceMonths =
@@ -160,6 +250,8 @@ public class VacancyService : IVacancyService
         vacancy.Title = request.Title.Trim();
         vacancy.Description = request.Description;
         vacancy.Location = request.Location;
+        vacancy.WorkMode = request.WorkMode;
+        vacancy.EmploymentType = request.EmploymentType;
         vacancy.MinExperienceMonths =
             request.MinExperienceMonths;
         vacancy.MaxExperienceMonths =
@@ -219,12 +311,15 @@ public class VacancyService : IVacancyService
                 "A vacancy with an expired closing date cannot be published.");
         }
 
-        await EnsureCanPublishAsync(employerId, vacancy);
+        vacancy.CompanyId = await EnsureCanPublishAsync(
+            employerId,
+            vacancy);
 
         vacancy.LifecycleStatus =
             VacancyLifecycleStatus.Published;
 
         vacancy.IsOpen = true;
+        vacancy.PublishedAtUtc ??= DateTime.UtcNow;
         vacancy.UpdatedAt = DateTime.UtcNow;
 
         await _repository.UpdateAsync(vacancy);
@@ -237,7 +332,7 @@ public class VacancyService : IVacancyService
             skills);
     }
 
-    private async Task EnsureCanPublishAsync(
+    private async Task<Guid> EnsureCanPublishAsync(
         string employerId,
         Vacancy vacancy)
     {
@@ -276,15 +371,22 @@ public class VacancyService : IVacancyService
             .ThenByDescending(x => x.CreatedAt)
             .ToListAsync();
 
-        var hasVerifiedCompany = verificationRows
+        var verifiedCompanyIds = verificationRows
             .GroupBy(x => x.CompanyId!.Value)
             .Select(x => x.First())
-            .Any(x => string.Equals(
-                x.Status,
-                CompanyVerificationStatus.Verified.ToString(),
-                StringComparison.OrdinalIgnoreCase));
+            .Where(x => string.Equals(
+                    x.Status,
+                    CompanyVerificationStatus.Verified.ToString(),
+                    StringComparison.OrdinalIgnoreCase))
+            .Select(x => x.CompanyId!.Value)
+            .ToHashSet();
 
-        if (!hasVerifiedCompany)
+        var publishCompanyId = vacancy.CompanyId.HasValue &&
+            verifiedCompanyIds.Contains(vacancy.CompanyId.Value)
+                ? vacancy.CompanyId.Value
+                : companyIds.FirstOrDefault(verifiedCompanyIds.Contains);
+
+        if (publishCompanyId == Guid.Empty)
         {
             throw new InvalidOperationException(
                 "A verified, unsuspended company and verified membership are required to publish.");
@@ -305,6 +407,8 @@ public class VacancyService : IVacancyService
             throw new InvalidOperationException(
                 "A valid vacancy matching policy is required to publish.");
         }
+
+        return publishCompanyId;
     }
 
     public async Task<VacancyDto> CloseAsync(
@@ -383,7 +487,7 @@ public class VacancyService : IVacancyService
             .GetRequiredSkillsAsync(
                 vacancies.Select(x => x.Id));
 
-        return vacancies
+        var results = vacancies
             .Select(vacancy =>
                 MapToDto(
                     vacancy,
@@ -393,6 +497,52 @@ public class VacancyService : IVacancyService
                         ? skills
                         : Array.Empty<RequiredSkill>()))
             .ToList();
+
+        if (_context == null)
+        {
+            return results;
+        }
+
+        var companyIds = vacancies
+            .Where(x => x.CompanyId.HasValue)
+            .Select(x => x.CompanyId!.Value)
+            .Distinct()
+            .ToList();
+
+        var companies = await _context.CompanyProfiles
+            .AsNoTracking()
+            .Where(x => companyIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id);
+
+        var verificationRows = await _context.CompanyVerifications
+            .AsNoTracking()
+            .Where(x =>
+                x.CompanyId.HasValue &&
+                companyIds.Contains(x.CompanyId.Value))
+            .OrderByDescending(x => x.SubmittedAtUtc)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        var verifications = verificationRows
+            .GroupBy(x => x.CompanyId!.Value)
+            .ToDictionary(x => x.Key, x => x.First().Status);
+
+        foreach (var result in results.Where(x => x.CompanyId.HasValue))
+        {
+            if (companies.TryGetValue(result.CompanyId!.Value, out var company))
+            {
+                result.CompanyName = company.Name;
+            }
+
+            if (verifications.TryGetValue(
+                    result.CompanyId.Value,
+                    out var verification))
+            {
+                result.CompanyVerificationStatus = verification;
+            }
+        }
+
+        return results;
     }
 
     private static List<RequiredSkill> CreateRequiredSkills(
@@ -581,9 +731,12 @@ public class VacancyService : IVacancyService
         return new VacancyDto
         {
             Id = vacancy.Id,
+            CompanyId = vacancy.CompanyId,
             Title = vacancy.Title,
             Description = vacancy.Description,
             Location = vacancy.Location,
+            WorkMode = vacancy.WorkMode,
+            EmploymentType = vacancy.EmploymentType,
 
             RequiredExperienceMonths =
                 vacancy.RequiredExperienceMonths,
@@ -605,6 +758,9 @@ public class VacancyService : IVacancyService
 
             ClosingDateUtc =
                 vacancy.ClosingDateUtc,
+
+            PublishedAtUtc =
+                vacancy.PublishedAtUtc,
 
             LifecycleStatus =
                 vacancy.LifecycleStatus.ToString(),

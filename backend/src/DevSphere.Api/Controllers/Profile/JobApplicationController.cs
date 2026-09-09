@@ -89,6 +89,26 @@ public class JobApplicationController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("candidate/{applicationId:guid}")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> GetMyApplication(
+        Guid applicationId)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        var result = await _service.GetCandidateApplicationAsync(
+            applicationId,
+            candidateId);
+
+        return result == null ? NotFound() : Ok(result);
+    }
+
 
 
     [HttpGet("vacancy/{vacancyId}")]
@@ -197,5 +217,36 @@ public class JobApplicationController : ControllerBase
                 employerId);
 
         return Ok(candidates);
+    }
+
+    [HttpPut("{applicationId}/withdraw")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> Withdraw(
+        Guid applicationId)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            var application = await _service.WithdrawAsync(
+                applicationId,
+                candidateId);
+
+            return Ok(application);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
     }
 }

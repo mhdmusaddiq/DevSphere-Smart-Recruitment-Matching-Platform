@@ -8,7 +8,25 @@ public class JobApplicationDto
 
     public Guid VacancyId { get; set; }
 
+    public string VacancyTitle { get; set; } = string.Empty;
+
+    public Guid? CompanyId { get; set; }
+
+    public string CompanyName { get; set; } = string.Empty;
+
+    public DateTime SubmittedAtUtc { get; set; }
+
     public string Status { get; set; } = string.Empty;
+
+    public string FrozenAssessmentStatus { get; set; } = string.Empty;
+
+    public decimal? DisplayCompatibility { get; set; }
+
+    public string Eligibility { get; set; } = string.Empty;
+
+    public Guid? ResumeVersionId { get; set; }
+
+    public DateTime? CapturedAtUtc { get; set; }
 
     public ApplyDecisionDto? ApplyDecision { get; set; }
 }

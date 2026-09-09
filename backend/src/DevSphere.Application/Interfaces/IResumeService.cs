@@ -24,4 +24,9 @@ public interface IResumeService
         string userId,
         Guid versionId,
         CancellationToken cancellationToken = default);
+
+    Task<ResumeDownloadDto?> DownloadApplicationVersionAsync(
+        string employerId,
+        Guid applicationId,
+        CancellationToken cancellationToken = default);
 }

@@ -10,15 +10,18 @@ public class ResumeService : IResumeService
     private readonly ResumeRepository _repository;
     private readonly CandidateProfileRepository _profileRepository;
     private readonly IFileStorageService _storage;
+    private readonly JobApplicationRepository _applicationRepository;
 
     public ResumeService(
         ResumeRepository repository,
         CandidateProfileRepository profileRepository,
-        IFileStorageService storage)
+        IFileStorageService storage,
+        JobApplicationRepository applicationRepository)
     {
         _repository = repository;
         _profileRepository = profileRepository;
         _storage = storage;
+        _applicationRepository = applicationRepository;
     }
 
     public async Task<ResumeDto?> GetOwnAsync(
@@ -201,6 +204,40 @@ public class ResumeService : IResumeService
             ContentType = string.IsNullOrWhiteSpace(version.ContentType)
                 ? "application/octet-stream"
                 : version.ContentType
+        };
+    }
+
+    public async Task<ResumeDownloadDto?> DownloadApplicationVersionAsync(
+        string employerId,
+        Guid applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        var application = await _applicationRepository
+            .GetWithVacancyAsync(applicationId);
+
+        if (application == null ||
+            application.Vacancy.EmployerId != employerId ||
+            application.Snapshot?.ResumeVersionId == null)
+        {
+            return null;
+        }
+
+        var version = await _repository.GetVersionAsync(
+            application.Snapshot!.ResumeVersionId!.Value,
+            cancellationToken);
+
+        if (version == null)
+        {
+            return null;
+        }
+
+        return new ResumeDownloadDto
+        {
+            Content = await _storage.OpenReadAsync(
+                version.StorageKey,
+                cancellationToken),
+            FileName = version.OriginalFileName,
+            ContentType = "application/pdf"
         };
     }
 

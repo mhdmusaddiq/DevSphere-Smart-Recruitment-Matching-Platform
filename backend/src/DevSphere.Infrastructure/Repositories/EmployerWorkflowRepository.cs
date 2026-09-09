@@ -91,4 +91,47 @@ public class EmployerWorkflowRepository
     {
         await _context.SaveChangesAsync();
     }
+
+    public async Task<(
+        List<Interview> Interviews,
+        List<InterviewSlot> Slots,
+        List<Scorecard> Scorecards,
+        List<Offer> Offers,
+        List<TalentPoolEntry> TalentPoolEntries)> GetSummaryAsync(
+            Guid applicationId)
+    {
+        var interviews = await _context.Interviews
+            .AsNoTracking()
+            .Where(x => x.JobApplicationId == applicationId)
+            .OrderBy(x => x.CreatedAt)
+            .ToListAsync();
+        var interviewIds = interviews.Select(x => x.Id).ToList();
+        var slots = await _context.InterviewSlots
+            .AsNoTracking()
+            .Where(x => interviewIds.Contains(x.InterviewId))
+            .OrderBy(x => x.StartsAtUtc)
+            .ToListAsync();
+        var scorecards = await _context.Scorecards
+            .AsNoTracking()
+            .Where(x => x.JobApplicationId == applicationId)
+            .OrderBy(x => x.CreatedAt)
+            .ToListAsync();
+        var offers = await _context.Offers
+            .AsNoTracking()
+            .Where(x => x.JobApplicationId == applicationId)
+            .OrderBy(x => x.CreatedAt)
+            .ToListAsync();
+        var talentPoolEntries = await _context.TalentPoolEntries
+            .AsNoTracking()
+            .Where(x => x.JobApplicationId == applicationId)
+            .OrderBy(x => x.CreatedAt)
+            .ToListAsync();
+
+        return (
+            interviews,
+            slots,
+            scorecards,
+            offers,
+            talentPoolEntries);
+    }
 }

@@ -34,19 +34,24 @@ public class NotificationRepository
     }
 
 
-    public async Task MarkAsReadAsync(
-        Guid id)
+    public async Task<bool> MarkAsReadAsync(
+        Guid id,
+        string userId)
     {
         var notification = await _context.Notifications
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.UserId == userId);
 
         if (notification == null)
         {
-            return;
+            return false;
         }
 
         notification.IsRead = true;
 
         await _context.SaveChangesAsync();
+
+        return true;
     }
 }

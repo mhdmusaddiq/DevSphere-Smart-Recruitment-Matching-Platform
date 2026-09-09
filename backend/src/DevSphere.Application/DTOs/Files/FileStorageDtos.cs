@@ -16,4 +16,6 @@ public class FileValidationResult
     public bool IsValid { get; set; }
 
     public string? Error { get; set; }
+
+    public bool TooLarge { get; set; }
 }

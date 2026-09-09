@@ -8,7 +8,20 @@ public interface IVacancyService
         string? query,
         string? location,
         int page,
-        int pageSize);
+        int pageSize,
+        string? skill = null,
+        string? workMode = null,
+        string? employmentType = null);
+
+    Task<IEnumerable<VacancyDto>> GetBestMatchesAsync(
+        string candidateId,
+        string? query,
+        string? location,
+        int page,
+        int pageSize,
+        string? skill = null,
+        string? workMode = null,
+        string? employmentType = null);
 
     Task<IEnumerable<VacancyDto>> GetMineAsync(
         string employerId);

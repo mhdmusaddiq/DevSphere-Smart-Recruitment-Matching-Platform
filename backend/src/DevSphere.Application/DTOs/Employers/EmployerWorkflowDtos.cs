@@ -93,3 +93,13 @@ public class UpdateInterviewStatusRequest
 {
     public string Status { get; set; } = string.Empty;
 }
+
+public class EmployerWorkflowSummaryDto
+{
+    public Guid JobApplicationId { get; set; }
+    public List<InterviewDto> Interviews { get; set; } = new();
+    public List<InterviewSlotDto> InterviewSlots { get; set; } = new();
+    public List<ScorecardDto> Scorecards { get; set; } = new();
+    public List<OfferDto> Offers { get; set; } = new();
+    public List<TalentPoolEntryDto> TalentPoolEntries { get; set; } = new();
+}

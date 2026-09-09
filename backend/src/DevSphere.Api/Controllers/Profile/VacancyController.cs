@@ -23,6 +23,10 @@ public class VacancyController : ControllerBase
     public async Task<IActionResult> GetOpen(
         [FromQuery(Name = "q")] string? query,
         [FromQuery] string? location,
+        [FromQuery] string? district,
+        [FromQuery] string? skill,
+        [FromQuery] string? workMode,
+        [FromQuery] string? employmentType,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -44,9 +48,52 @@ public class VacancyController : ControllerBase
         var vacancies = await _service
             .GetOpenVacanciesAsync(
                 query,
-                location,
+                string.IsNullOrWhiteSpace(location)
+                    ? district
+                    : location,
                 page,
-                pageSize);
+                pageSize,
+                skill,
+                workMode,
+                employmentType);
+
+        return Ok(vacancies);
+    }
+
+    [HttpGet("best-match")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> GetBestMatches(
+        [FromQuery(Name = "q")] string? query,
+        [FromQuery] string? location,
+        [FromQuery] string? district,
+        [FromQuery] string? skill,
+        [FromQuery] string? workMode,
+        [FromQuery] string? employmentType,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var vacancies = await _service.GetBestMatchesAsync(
+            candidateId,
+            query,
+            string.IsNullOrWhiteSpace(location)
+                ? district
+                : location,
+            page,
+            pageSize,
+            skill,
+            workMode,
+            employmentType);
 
         return Ok(vacancies);
     }

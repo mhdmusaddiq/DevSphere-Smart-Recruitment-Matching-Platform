@@ -131,4 +131,35 @@ public class ContactRequestController : ControllerBase
             return Conflict(new { message = ex.Message });
         }
     }
+
+    [HttpPut("{id:guid}/employer-status")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> UpdateEmployerStatus(
+        Guid id,
+        ContactRequestDto request)
+    {
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await _service.UpdateEmployerStatusAsync(
+                id,
+                request.Status,
+                employerId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
 }

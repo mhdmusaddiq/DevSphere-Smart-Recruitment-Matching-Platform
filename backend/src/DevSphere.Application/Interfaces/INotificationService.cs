@@ -13,6 +13,7 @@ public interface INotificationService
         string userId);
 
 
-    Task MarkAsReadAsync(
-        Guid id);
+    Task<bool> MarkAsReadAsync(
+        Guid id,
+        string userId);
 }

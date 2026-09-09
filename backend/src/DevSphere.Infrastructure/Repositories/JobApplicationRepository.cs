@@ -40,7 +40,11 @@ public class JobApplicationRepository
         string candidateId)
     {
         return await _context.JobApplications
+            .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
             .Where(x => x.CandidateId == candidateId)
+            .OrderByDescending(x => x.AppliedAt)
+            .ThenBy(x => x.Id)
             .ToListAsync();
     }
 
@@ -79,6 +83,7 @@ public class JobApplicationRepository
     {
         return await _context.JobApplications
             .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
             .FirstOrDefaultAsync(x => x.Id == id);
     }
 
