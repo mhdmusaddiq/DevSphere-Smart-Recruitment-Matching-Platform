@@ -62,6 +62,51 @@ public class BackendClosureContractTests
         Assert.Contains("EmployerWorkflowSummaryDto", workflow);
     }
 
+    [Fact]
+    public void Company_Verification_Should_Advance_Membership_Trust()
+    {
+        var source = Read("src", "DevSphere.Infrastructure", "Repositories",
+            "AdminRepository.cs");
+
+        Assert.Contains("CompanyMembershipStatus.Verified", source);
+        Assert.Contains("CompanyMembershipStatus.Rejected", source);
+        Assert.Contains("x.Status != CompanyMembershipStatus.Revoked", source);
+    }
+
+    [Fact]
+    public void Candidate_Create_And_Skill_Write_Should_Persist_Readiness()
+    {
+        var service = Read("src", "DevSphere.Infrastructure", "Services",
+            "Profile", "CandidateProfileService.cs");
+        var repository = Read("src", "DevSphere.Infrastructure",
+            "Repositories", "CandidateProfileRepository.cs");
+
+        Assert.Contains("AvailabilityStatus = NormalizeAvailabilityStatus", service);
+        Assert.Contains("NoticePeriodDays = NormalizeNoticePeriod", service);
+        Assert.Contains("_context.Skills.Add(skill)", repository);
+    }
+
+    [Fact]
+    public void Structured_Apply_Decision_Should_Not_Be_Length_Limited()
+    {
+        var configuration = Read("src", "DevSphere.Infrastructure",
+            "Configurations", "DomainEntityConfigurations.cs");
+
+        Assert.Contains("builder.Property(x => x.ApplyDecision);", configuration);
+        Assert.DoesNotContain("x.ApplyDecision)\n            .HasMaxLength",
+            configuration.Replace("\r\n", "\n"));
+    }
+
+    [Fact]
+    public void Bootstrap_Seeder_Should_Enforce_Identity_Results()
+    {
+        var source = Read("src", "DevSphere.Infrastructure", "Identity",
+            "RoleSeeder.cs");
+
+        Assert.Contains("EnsureSucceeded", source);
+        Assert.Contains("Admin@DevSphere2026", source);
+    }
+
     private static string Read(params string[] parts)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
