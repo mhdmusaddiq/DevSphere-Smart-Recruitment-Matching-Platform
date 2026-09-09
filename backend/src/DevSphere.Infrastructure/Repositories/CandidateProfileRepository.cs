@@ -55,6 +55,7 @@ public class CandidateProfileRepository
         Skill skill)
     {
         profile.Skills.Add(skill);
+        _context.Skills.Add(skill);
 
         await _context.SaveChangesAsync();
 

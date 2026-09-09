@@ -1,6 +1,7 @@
 using DevSphere.Domain.Entities.Administration;
 using DevSphere.Domain.Entities.Employers;
 using DevSphere.Domain.Entities.Taxonomy;
+using DevSphere.Domain.Enums;
 using DevSphere.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -206,6 +207,30 @@ public class AdminRepository
         string actorUserId,
         CancellationToken cancellationToken = default)
     {
+        if (verification.CompanyId.HasValue)
+        {
+            var memberships = await _context.CompanyMemberships
+                .Where(x =>
+                    x.CompanyId == verification.CompanyId.Value &&
+                    x.Status != CompanyMembershipStatus.Revoked)
+                .ToListAsync(cancellationToken);
+
+            var membershipStatus = verification.Status switch
+            {
+                nameof(CompanyVerificationStatus.Verified) =>
+                    CompanyMembershipStatus.Verified,
+                nameof(CompanyVerificationStatus.Rejected) =>
+                    CompanyMembershipStatus.Rejected,
+                _ => CompanyMembershipStatus.Pending
+            };
+
+            foreach (var membership in memberships)
+            {
+                membership.Status = membershipStatus;
+                membership.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
         _context.AuditEvents.Add(
             new AuditEvent
             {
