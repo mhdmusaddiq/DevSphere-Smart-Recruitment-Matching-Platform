@@ -76,7 +76,11 @@ public class SecondBrainSecurityContractTests
             "AuthController.cs");
 
         Assert.Contains(
-            "user == null || !user.IsActive",
+            "!user.IsActive ||",
+            source);
+
+        Assert.Contains(
+            "!user.EmailConfirmed",
             source);
     }
 
@@ -95,11 +99,53 @@ public class SecondBrainSecurityContractTests
             source);
 
         Assert.Contains(
-            "AccountState = user.IsActive",
+            "\"PendingEmailVerification\"",
+            source);
+
+        Assert.Contains(
+            "EmailVerified = user.EmailConfirmed",
             source);
 
         Assert.Contains(
             "return \"JobSeeker\";",
+            source);
+    }
+
+    [Fact]
+    public void Auth_Register_Should_Not_Issue_Protected_Token_Before_Verification()
+    {
+        var source = ReadBackendFile(
+            "src",
+            "DevSphere.Api",
+            "Controllers",
+            "Auth",
+            "AuthController.cs");
+
+        var registerStart = source.IndexOf(
+            "Task<IActionResult> Register",
+            StringComparison.Ordinal);
+        var loginStart = source.IndexOf(
+            "Task<IActionResult> Login",
+            registerStart,
+            StringComparison.Ordinal);
+        var register = source[registerStart..loginStart];
+
+        Assert.Contains("_emailVerification.IssueAsync", register);
+        Assert.Contains("PendingEmailVerification", register);
+        Assert.DoesNotContain("CreateToken", register);
+    }
+
+    [Fact]
+    public void Identity_Should_Require_Fifteen_Character_Passwords()
+    {
+        var source = ReadBackendFile(
+            "src",
+            "DevSphere.Api",
+            "Extensions",
+            "ServiceCollectionExtensions.cs");
+
+        Assert.Contains(
+            "options.Password.RequiredLength = 15",
             source);
     }
 

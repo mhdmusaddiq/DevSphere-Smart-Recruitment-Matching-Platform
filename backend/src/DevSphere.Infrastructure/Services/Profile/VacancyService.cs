@@ -2,7 +2,9 @@ using DevSphere.Application.DTOs.Profile;
 using DevSphere.Application.Interfaces;
 using DevSphere.Domain.Entities.Vacancies;
 using DevSphere.Domain.Enums;
+using DevSphere.Infrastructure.Data;
 using DevSphere.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevSphere.Infrastructure.Services.Profile;
 
@@ -10,13 +12,16 @@ public class VacancyService : IVacancyService
 {
     private readonly VacancyRepository _repository;
     private readonly IVacancyPolicyService? _policyService;
+    private readonly DevSphereDbContext? _context;
 
     public VacancyService(
         VacancyRepository repository,
-        IVacancyPolicyService? policyService = null)
+        IVacancyPolicyService? policyService = null,
+        DevSphereDbContext? context = null)
     {
         _repository = repository;
         _policyService = policyService;
+        _context = context;
     }
 
     public async Task<IEnumerable<VacancyDto>> GetOpenVacanciesAsync(
@@ -214,6 +219,8 @@ public class VacancyService : IVacancyService
                 "A vacancy with an expired closing date cannot be published.");
         }
 
+        await EnsureCanPublishAsync(employerId, vacancy);
+
         vacancy.LifecycleStatus =
             VacancyLifecycleStatus.Published;
 
@@ -228,6 +235,76 @@ public class VacancyService : IVacancyService
         return MapToDto(
             vacancy,
             skills);
+    }
+
+    private async Task EnsureCanPublishAsync(
+        string employerId,
+        Vacancy vacancy)
+    {
+        if (_context == null || _policyService == null)
+        {
+            throw new InvalidOperationException(
+                "Vacancy publication prerequisites cannot be verified.");
+        }
+
+        var employer = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == employerId);
+
+        if (employer == null ||
+            !employer.IsActive ||
+            !employer.EmailConfirmed)
+        {
+            throw new InvalidOperationException(
+                "An active, email-verified employer account is required to publish.");
+        }
+
+        var companyIds = await _context.CompanyMemberships
+            .AsNoTracking()
+            .Where(x =>
+                x.EmployerUserId == employerId &&
+                x.Status == CompanyMembershipStatus.Verified)
+            .Select(x => x.CompanyId)
+            .ToListAsync();
+
+        var verificationRows = await _context.CompanyVerifications
+            .AsNoTracking()
+            .Where(x =>
+                x.CompanyId.HasValue &&
+                companyIds.Contains(x.CompanyId.Value))
+            .OrderByDescending(x => x.SubmittedAtUtc)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        var hasVerifiedCompany = verificationRows
+            .GroupBy(x => x.CompanyId!.Value)
+            .Select(x => x.First())
+            .Any(x => string.Equals(
+                x.Status,
+                CompanyVerificationStatus.Verified.ToString(),
+                StringComparison.OrdinalIgnoreCase));
+
+        if (!hasVerifiedCompany)
+        {
+            throw new InvalidOperationException(
+                "A verified, unsuspended company and verified membership are required to publish.");
+        }
+
+        var currentPolicy = await _policyService
+            .GetCurrentRevisionAsync(employerId, vacancy.Id);
+
+        var hasPolicyInputs =
+            await _context.VacancyRequirements.AnyAsync(x =>
+                x.MatchingPolicyRevisionId == currentPolicy.Id &&
+                x.IsActive) ||
+            await _context.RequiredSkills.AnyAsync(x =>
+                x.VacancyId == vacancy.Id);
+
+        if (!hasPolicyInputs)
+        {
+            throw new InvalidOperationException(
+                "A valid vacancy matching policy is required to publish.");
+        }
     }
 
     public async Task<VacancyDto> CloseAsync(

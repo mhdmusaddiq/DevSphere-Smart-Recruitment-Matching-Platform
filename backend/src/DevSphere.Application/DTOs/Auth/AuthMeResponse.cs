@@ -11,4 +11,6 @@ public class AuthMeResponse
     public string Role { get; set; } = string.Empty;
 
     public string AccountState { get; set; } = string.Empty;
+
+    public bool EmailVerified { get; set; }
 }

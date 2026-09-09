@@ -76,3 +76,68 @@ public class UpdateAccountStatusRequest
 {
     public bool IsActive { get; set; }
 }
+public class AdminSkillAliasDto
+{
+    public Guid Id { get; set; }
+
+    public Guid SkillConceptId { get; set; }
+
+    public string SkillConceptName { get; set; } = string.Empty;
+
+    public string Alias { get; set; } = string.Empty;
+
+    public bool IsActive { get; set; }
+
+    public bool SkillConceptIsActive { get; set; }
+}
+
+public class AdminSkillConceptDto
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public bool IsActive { get; set; }
+
+    public IReadOnlyList<AdminSkillAliasDto> Aliases { get; set; }
+        = Array.Empty<AdminSkillAliasDto>();
+}
+
+public class AdminOccupationConceptDto
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public bool IsActive { get; set; }
+}
+
+public class UpdateCatalogueStatusRequest
+{
+    public bool IsActive { get; set; }
+}
+public class AdminCompanyVerificationDto
+{
+    public Guid Id { get; set; }
+
+    public Guid? CompanyId { get; set; }
+
+    public string CompanyName { get; set; } = string.Empty;
+
+    public string Status { get; set; } = string.Empty;
+
+    public string EvidenceStorageKey { get; set; } = string.Empty;
+
+    public string Notes { get; set; } = string.Empty;
+
+    public DateTime SubmittedAtUtc { get; set; }
+
+    public DateTime? ReviewedAtUtc { get; set; }
+
+    public string? ReviewedByUserId { get; set; }
+}
+
+public class ReviewCompanyVerificationRequest
+{
+    public string Decision { get; set; } = string.Empty;
+}

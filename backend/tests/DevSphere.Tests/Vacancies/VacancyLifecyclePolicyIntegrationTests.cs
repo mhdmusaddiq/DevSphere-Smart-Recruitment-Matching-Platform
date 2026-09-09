@@ -1,7 +1,9 @@
 using DevSphere.Application.DTOs.Profile;
 using DevSphere.Domain.Entities.Applications;
+using DevSphere.Domain.Entities.Employers;
 using DevSphere.Domain.Enums;
 using DevSphere.Infrastructure.Data;
+using DevSphere.Infrastructure.Identity;
 using DevSphere.Infrastructure.Repositories;
 using DevSphere.Infrastructure.Services.Employers;
 using DevSphere.Infrastructure.Services.Profile;
@@ -25,6 +27,47 @@ public class VacancyLifecyclePolicyIntegrationTests
     private static VacancyService CreateService(
         DevSphereDbContext context)
     {
+        var companyId = Guid.NewGuid();
+        var employerProfileId = Guid.NewGuid();
+
+        context.Users.Add(new ApplicationUser
+        {
+            Id = "employer-1",
+            UserName = "employer@example.com",
+            NormalizedUserName = "EMPLOYER@EXAMPLE.COM",
+            Email = "employer@example.com",
+            NormalizedEmail = "EMPLOYER@EXAMPLE.COM",
+            IsActive = true,
+            EmailConfirmed = true
+        });
+        context.EmployerProfiles.Add(new EmployerProfile
+        {
+            Id = employerProfileId,
+            UserId = "employer-1",
+            CompanyName = "Verified Company"
+        });
+        context.CompanyProfiles.Add(new CompanyProfile
+        {
+            Id = companyId,
+            Name = "Verified Company"
+        });
+        context.CompanyMemberships.Add(new CompanyMembership
+        {
+            Id = Guid.NewGuid(),
+            CompanyId = companyId,
+            EmployerUserId = "employer-1",
+            Status = CompanyMembershipStatus.Verified
+        });
+        context.CompanyVerifications.Add(new CompanyVerification
+        {
+            Id = Guid.NewGuid(),
+            CompanyId = companyId,
+            EmployerProfileId = employerProfileId,
+            Status = CompanyVerificationStatus.Verified.ToString(),
+            SubmittedAtUtc = DateTime.UtcNow
+        });
+        context.SaveChanges();
+
         var vacancyRepository =
             new VacancyRepository(context);
 
@@ -34,7 +77,8 @@ public class VacancyLifecyclePolicyIntegrationTests
 
         return new VacancyService(
             vacancyRepository,
-            policyService);
+            policyService,
+            context);
     }
 
     private static VacancyDto CreateRequest()

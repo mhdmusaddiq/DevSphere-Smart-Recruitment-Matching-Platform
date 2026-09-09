@@ -34,7 +34,10 @@ public static class ServiceCollectionExtensions
                 configuration.GetConnectionString("DefaultConnection")));
 
         services
-            .AddIdentity<ApplicationUser, ApplicationRole>()
+            .AddIdentity<ApplicationUser, ApplicationRole>(options =>
+            {
+                options.Password.RequiredLength = 15;
+            })
             .AddEntityFrameworkStores<DevSphereDbContext>()
             ;
 
