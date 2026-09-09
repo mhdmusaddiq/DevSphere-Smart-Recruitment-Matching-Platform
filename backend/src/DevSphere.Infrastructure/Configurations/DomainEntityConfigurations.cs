@@ -167,6 +167,25 @@ public class RequiredSkillConfiguration : IEntityTypeConfiguration<RequiredSkill
     }
 }
 
+public class VacancyConfiguration : IEntityTypeConfiguration<Vacancy>
+{
+    public void Configure(EntityTypeBuilder<Vacancy> builder)
+    {
+        builder.Property(x => x.Title).HasMaxLength(250);
+        builder.Property(x => x.Location).HasMaxLength(250);
+        builder.Property(x => x.WorkMode).HasMaxLength(50);
+        builder.Property(x => x.EmploymentType).HasMaxLength(50);
+        builder.Property(x => x.RequiredEducation).HasMaxLength(250);
+        builder.Property(x => x.SalaryMin).HasPrecision(18, 2);
+        builder.Property(x => x.SalaryMax).HasPrecision(18, 2);
+
+        builder.HasOne<CompanyProfile>()
+            .WithMany()
+            .HasForeignKey(x => x.CompanyId)
+            .OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
 public class MatchResultConfiguration : IEntityTypeConfiguration<MatchResult>
 {
     public void Configure(EntityTypeBuilder<MatchResult> builder)
@@ -292,8 +311,7 @@ public class ApplicationSnapshotConfiguration : IEntityTypeConfiguration<Applica
         builder.Property(x => x.EligibilityReason)
             .HasMaxLength(250);
 
-        builder.Property(x => x.ApplyDecision)
-            .HasMaxLength(100);
+        builder.Property(x => x.ApplyDecision);
     }
 }
 
