@@ -97,20 +97,57 @@ public class JobApplicationService : IJobApplicationService
 
             rankedApplicants.Add(new RankedApplicantDto
             {
+                ApplicationId = application.Id,
                 CandidateId = application.CandidateId,
                 VacancyId = application.VacancyId,
+                AppliedAt = application.AppliedAt,
                 Status = application.Status.ToString(),
-                MatchScore = match.TotalScore,
-                MatchedSkills = match.MatchedSkills,
-                MissingSkills = match.MissingSkills
+                RawCompatibility = match.RawCompatibility,
+                MatchScore = match.DisplayCompatibility,
+                AssessmentStatus = match.AssessmentStatus,
+                Eligibility = match.Eligibility,
+                EligibilityReason = match.EligibilityReason,
+                HighTierAggregate = match.HighTierAggregate,
+                MediumTierAggregate = match.MediumTierAggregate,
+                Coverage = match.Coverage,
+                MatchedSkills = match.MatchedSkills.ToList(),
+                MissingSkills = match.MissingSkills.ToList(),
+                MissingInputs = match.MissingInputs.ToList(),
+                Families = match.Families
+                    .Select(family => new MatchFamilyResultDto
+                    {
+                        Family = family.Family,
+                        Importance = family.Importance,
+                        RawScore = family.RawScore,
+                        DisplayScore = family.DisplayScore,
+                        Criteria = family.Criteria
+                            .Select(criterion => new MatchCriterionResultDto
+                            {
+                                RequirementId = criterion.RequirementId,
+                                AlternativeSetId = criterion.AlternativeSetId,
+                                Family = criterion.Family,
+                                Mode = criterion.Mode,
+                                Importance = criterion.Importance,
+                                State = criterion.State,
+                                Score = criterion.Score,
+                                IsRegulatoryGate = criterion.IsRegulatoryGate,
+                                Label = criterion.Label
+                            })
+                            .ToList()
+                    })
+                    .ToList()
             });
         }
 
         return rankedApplicants
-            .OrderByDescending(x => x.MatchScore)
-            .ThenBy(
-                x => x.CandidateId,
-                StringComparer.Ordinal)
+            .OrderByDescending(x => x.RawCompatibility.HasValue)
+            .ThenByDescending(x => x.RawCompatibility)
+            .ThenByDescending(x => x.HighTierAggregate.HasValue)
+            .ThenByDescending(x => x.HighTierAggregate)
+            .ThenByDescending(x => x.MediumTierAggregate.HasValue)
+            .ThenByDescending(x => x.MediumTierAggregate)
+            .ThenBy(x => x.AppliedAt)
+            .ThenBy(x => x.ApplicationId)
             .ToList();
     }
 
