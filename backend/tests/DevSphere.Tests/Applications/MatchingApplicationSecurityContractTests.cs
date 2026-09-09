@@ -156,11 +156,15 @@ public class MatchingApplicationSecurityContractTests
             "JobApplicationService.cs");
 
         Assert.Contains(
-            ".OrderByDescending(x => x.MatchScore)",
+            ".OrderByDescending(x => x.RawCompatibility.HasValue)",
             source);
 
         Assert.Contains(
-            "StringComparer.Ordinal",
+            ".ThenBy(x => x.AppliedAt)",
+            source);
+
+        Assert.Contains(
+            ".ThenBy(x => x.ApplicationId)",
             source);
     }
 
@@ -200,5 +204,189 @@ public class MatchingApplicationSecurityContractTests
             JobApplicationService.IsValidTransition(
                 current,
                 next));
+    }
+
+    [Fact]
+    public void EmployerCompare_Should_Be_Authorized_OwnershipScoped_And_ReadOnly()
+    {
+        var controller = ReadSource(
+            "backend",
+            "src",
+            "DevSphere.Api",
+            "Controllers",
+            "Profile",
+            "JobApplicationController.cs");
+
+        var compareStart = controller.IndexOf(
+            "public async Task<IActionResult> CompareCandidates",
+            StringComparison.Ordinal);
+
+        Assert.True(
+            compareStart >= 0,
+            "CompareCandidates action was not found.");
+
+        var compareSection = controller.Substring(compareStart);
+
+        Assert.Contains(
+            "[HttpGet(\"vacancy/{vacancyId}/compare\")]",
+            controller);
+
+        Assert.Contains(
+            "[Authorize(Roles = \"Employer\")]",
+            controller);
+
+        Assert.Contains(
+            "ClaimTypes.NameIdentifier",
+            compareSection);
+
+        Assert.Contains(
+            "GetByVacancyAsync(",
+            compareSection);
+
+        Assert.Contains(
+            "vacancyId",
+            compareSection);
+
+        Assert.Contains(
+            "employerId",
+            compareSection);
+
+        Assert.DoesNotContain(
+            "ApplyAsync(",
+            compareSection);
+
+        Assert.DoesNotContain(
+            "UpdateStatusAsync(",
+            compareSection);
+
+        Assert.DoesNotContain(
+            "SaveChanges",
+            compareSection);
+
+        Assert.DoesNotContain(
+            "ApplicationSnapshot",
+            compareSection);
+    }
+
+
+    [Fact]
+    public void EmployerCompare_Should_Use_Real_Applications_Only()
+    {
+        var repository = ReadSource(
+            "backend",
+            "src",
+            "DevSphere.Infrastructure",
+            "Repositories",
+            "JobApplicationRepository.cs");
+
+        Assert.Contains(
+            "_context.JobApplications",
+            repository);
+
+        Assert.Contains(
+            "x.VacancyId == vacancyId",
+            repository);
+
+        Assert.Contains(
+            "x.Vacancy.EmployerId == employerId",
+            repository);
+
+        Assert.DoesNotContain(
+            "_context.CandidateProfiles",
+            repository);
+    }
+
+
+    [Fact]
+    public void EmployerCompare_Should_Expose_Canonical_Assessment_Evidence()
+    {
+        var dto = ReadSource(
+            "backend",
+            "src",
+            "DevSphere.Application",
+            "DTOs",
+            "Application",
+            "RankedApplicantDto.cs");
+
+        var service = ReadSource(
+            "backend",
+            "src",
+            "DevSphere.Infrastructure",
+            "Services",
+            "Profile",
+            "JobApplicationService.cs");
+
+        Assert.Contains(
+            "MatchAssessmentStatus AssessmentStatus",
+            dto);
+
+        Assert.Contains(
+            "MatchEligibilityStatus Eligibility",
+            dto);
+
+        Assert.Contains(
+            "EligibilityReason",
+            dto);
+
+        Assert.Contains(
+            "decimal Coverage",
+            dto);
+
+        Assert.Contains(
+            "MissingInputs",
+            dto);
+
+        Assert.Contains(
+            "List<MatchFamilyResultDto> Families",
+            dto);
+
+        Assert.Contains(
+            "RawCompatibility = match.RawCompatibility",
+            service);
+
+        Assert.Contains(
+            "Eligibility = match.Eligibility",
+            service);
+
+        Assert.Contains(
+            "EligibilityReason = match.EligibilityReason",
+            service);
+
+        Assert.Contains(
+            "Coverage = match.Coverage",
+            service);
+
+        Assert.Contains(
+            "Families = match.Families",
+            service);
+    }
+
+
+    [Fact]
+    public void EmployerCompare_Should_Preserve_Deterministic_Ranking_TieBreak()
+    {
+        var source = ReadSource(
+            "backend",
+            "src",
+            "DevSphere.Infrastructure",
+            "Services",
+            "Profile",
+            "JobApplicationService.cs");
+
+        var rawIndex = source.IndexOf(
+            ".OrderByDescending(x => x.RawCompatibility.HasValue)",
+            StringComparison.Ordinal);
+
+        var appliedAtIndex = source.IndexOf(
+            ".ThenBy(x => x.AppliedAt)",
+            StringComparison.Ordinal);
+
+        var applicationIdIndex = source.IndexOf(
+            ".ThenBy(x => x.ApplicationId)",
+            StringComparison.Ordinal);
+
+        Assert.True(rawIndex >= 0);
+        Assert.True(appliedAtIndex > rawIndex);
+        Assert.True(applicationIdIndex > appliedAtIndex);
     }
 }

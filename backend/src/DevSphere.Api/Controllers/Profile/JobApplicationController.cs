@@ -180,4 +180,25 @@ public class JobApplicationController : ControllerBase
             });
         }
     }
+
+    [HttpGet("vacancy/{vacancyId}/compare")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> CompareCandidates(
+        Guid vacancyId)
+    {
+        var employerId =
+            User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
+        var candidates =
+            await _service.GetByVacancyAsync(
+                vacancyId,
+                employerId);
+
+        return Ok(candidates);
+    }
 }
