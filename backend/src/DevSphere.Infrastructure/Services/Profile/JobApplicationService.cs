@@ -3,6 +3,8 @@ using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
 using DevSphere.Infrastructure.Repositories;
+using System.Data;
+using System.Text.Json;
 
 namespace DevSphere.Infrastructure.Services.Profile;
 
@@ -119,7 +121,21 @@ public class JobApplicationService : IJobApplicationService
                 ? currentResume
                 : null;
 
-        DevSphere.Application.DTOs.Application.MatchResultDto? match = null;
+        await using var applyTransaction =
+            await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
+
+        // Re-evaluate mutable eligibility inputs and duplicate state inside
+        // the final persistence transaction. The client decision is advisory.
+        if (await _repository.ExistsAsync(candidateId, request.VacancyId))
+        {
+            throw new ApplicationConflictException(
+                "Application already exists.");
+        }
+
+        await _context.Entry(vacancy).ReloadAsync();
+
+        MatchResultDto? match = null;
         var calculationFailure = false;
 
         try
@@ -195,17 +211,26 @@ public class JobApplicationService : IJobApplicationService
                         x.IsRegulatoryGate)
                     .ToListAsync();
 
-        // Current runtime exposes regulatory metadata but does not yet
-        // expose the RM-2.1 criterion evaluation result. Do not invent
-        // a second evaluator here. The reducer supports the state when
-        // an authoritative regulatory result becomes available.
-        var blockedByRegulatoryGate = false;
+        var blockedByRegulatoryGate =
+            match?.Families
+                .SelectMany(x => x.Criteria)
+                .Any(x =>
+                    x.IsRegulatoryGate &&
+                    x.State == MatchCriterionState.NotMet) == true;
 
         // No relationship-block aggregate exists on this frozen base.
         var relationshipBlocked = false;
 
-        // No baseline-acknowledgement aggregate exists on this frozen base.
-        var baselineAcknowledgedRequired = false;
+        var baselineAcknowledgedRequired =
+            !blockedByRegulatoryGate &&
+            match?.Eligibility ==
+                MatchEligibilityStatus.DoesNotMeetBaseline;
+
+        blockedByReadiness =
+            blockedByReadiness ||
+            match?.Eligibility is
+                MatchEligibilityStatus.IncompleteAssessment or
+                MatchEligibilityStatus.PendingVerification;
 
         var vacancyUnavailableOrSuppressed =
             vacancy.LifecycleStatus !=
@@ -214,7 +239,12 @@ public class JobApplicationService : IJobApplicationService
             (vacancy.ClosingDateUtc.HasValue &&
              vacancy.ClosingDateUtc.Value <= DateTime.UtcNow);
 
-        var decision = ResolveApplyDecision(
+        calculationFailure =
+            calculationFailure ||
+            match?.AssessmentStatus ==
+                MatchAssessmentStatus.CalculationFailure;
+
+        var decisionCode = ResolveApplyDecision(
             calculationFailure,
             accountStateBlocked,
             vacancyUnavailableOrSuppressed,
@@ -223,23 +253,37 @@ public class JobApplicationService : IJobApplicationService
             blockedByReadiness,
             baselineAcknowledgedRequired);
 
-        var isEligible =
-            decision == "Allowed" ||
-            decision ==
-                "AllowedAfterBaselineAcknowledgement";
+        var decision = CreateApplyDecision(
+            decisionCode,
+            request.VacancyId,
+            currentPolicy?.Id,
+            currentPolicy?.RevisionNumber,
+            selectedResumeVersion?.Id,
+            readinessMissingItems,
+            match?.EligibilityReason);
+
+        var isEligible = decision.CanSubmit;
 
         var rawCompatibilityScore =
-            Convert.ToDecimal(match?.TotalScore ?? 0);
+            match?.RawCompatibility;
 
-        var displayCompatibilityScore =
-            Math.Round(
-                rawCompatibilityScore,
-                2,
-                MidpointRounding.AwayFromZero);
+        decimal? displayCompatibilityScore =
+            rawCompatibilityScore.HasValue
+                ? decimal.Round(
+                    rawCompatibilityScore.Value,
+                    1,
+                    MidpointRounding.AwayFromZero)
+                : null;
 
-        var compatibilityStatus = "Calculated";
+        var compatibilityStatus =
+            calculationFailure
+                ? MatchAssessmentStatus.CalculationFailure.ToString()
+                : (match?.AssessmentStatus ??
+                    MatchAssessmentStatus.NotCalculated).ToString();
 
-        var eligibilityStatus = isEligible ? "Eligible" : decision;
+        var eligibilityStatus =
+            (match?.Eligibility ??
+                MatchEligibilityStatus.IncompleteAssessment).ToString();
 
         var evidenceSummary = new
         {
@@ -255,12 +299,22 @@ public class JobApplicationService : IJobApplicationService
                 regulatoryRequirements.Select(x => x.Id),
             compatibilityStatus,
             eligibilityStatus,
+            assessmentStatus = compatibilityStatus,
+            eligibility = eligibilityStatus,
+            eligibilityReason = match?.EligibilityReason,
+            rawCompatibility = rawCompatibilityScore,
+            displayCompatibility = displayCompatibilityScore,
+            highTierAggregate = match?.HighTierAggregate,
+            mediumTierAggregate = match?.MediumTierAggregate,
+            coverage = match?.Coverage ?? 0m,
+            missingInputs = match?.MissingInputs ?? new List<string>(),
+            families = match?.Families ?? new List<MatchFamilyResultDto>(),
             applyDecision = decision
         };
         if (!isEligible)
         {
             throw new InvalidOperationException(
-                $"Application blocked: {decision}.");
+                $"Application blocked: {decision.PrimaryCode}.");
         }
 
         var now = DateTime.UtcNow;
@@ -292,7 +346,11 @@ public class JobApplicationService : IJobApplicationService
                 CompatibilityStatus = compatibilityStatus,
                 EligibilityStatus = eligibilityStatus,
                 IsEligible = isEligible,
-                ApplyDecision = decision,
+                HighTierAggregateScore = match?.HighTierAggregate,
+                MediumTierAggregateScore = match?.MediumTierAggregate,
+                Coverage = match?.Coverage ?? 0m,
+                EligibilityReason = match?.EligibilityReason,
+                ApplyDecision = JsonSerializer.Serialize(decision),
                 CandidateSnapshotJson =
                     System.Text.Json.JsonSerializer.Serialize(
                         new
@@ -347,8 +405,19 @@ public class JobApplicationService : IJobApplicationService
                     System.Text.Json.JsonSerializer.Serialize(
                         match?.MissingSkills ?? new List<string>()),
                 EvidenceSummaryJson =
-                    System.Text.Json.JsonSerializer.Serialize(
+                    JsonSerializer.Serialize(
                         evidenceSummary),
+                MatchResultJson =
+                    JsonSerializer.Serialize(
+                        match ?? new MatchResultDto
+                        {
+                            AssessmentStatus =
+                                MatchAssessmentStatus.NotCalculated,
+                            Eligibility =
+                                MatchEligibilityStatus.IncompleteAssessment,
+                            EligibilityReason =
+                                "Matching result unavailable."
+                        }),
                 CapturedAtUtc = now,
                 CreatedAt = now
             };
@@ -357,12 +426,15 @@ public class JobApplicationService : IJobApplicationService
             application,
             snapshot);
 
+        await applyTransaction.CommitAsync();
+
         return new JobApplicationDto
         {
             Id = application.Id,
             CandidateId = application.CandidateId,
             VacancyId = application.VacancyId,
-            Status = application.Status.ToString()
+            Status = application.Status.ToString(),
+            ApplyDecision = decision
         };
     }
 
@@ -395,26 +467,60 @@ public class JobApplicationService : IJobApplicationService
 
         foreach (var application in applications)
         {
-            var match = await _matchEngine.CalculateAsync(
-                application.CandidateId,
-                vacancyId.ToString());
+            var match = ReadSnapshotMatch(application.Snapshot);
 
             rankedApplicants.Add(new RankedApplicantDto
             {
+                ApplicationId = application.Id,
                 CandidateId = application.CandidateId,
                 VacancyId = application.VacancyId,
+                AppliedAt = application.AppliedAt,
                 Status = application.Status.ToString(),
-                MatchScore = match.TotalScore,
-                MatchedSkills = match.MatchedSkills,
-                MissingSkills = match.MissingSkills
+                RawCompatibility = match.RawCompatibility,
+                MatchScore = match.DisplayCompatibility,
+                AssessmentStatus = match.AssessmentStatus,
+                Eligibility = match.Eligibility,
+                EligibilityReason = match.EligibilityReason,
+                HighTierAggregate = match.HighTierAggregate,
+                MediumTierAggregate = match.MediumTierAggregate,
+                Coverage = match.Coverage,
+                MatchedSkills = match.MatchedSkills.ToList(),
+                MissingSkills = match.MissingSkills.ToList(),
+                MissingInputs = match.MissingInputs.ToList(),
+                Families = match.Families
+                    .Select(family => new MatchFamilyResultDto
+                    {
+                        Family = family.Family,
+                        Importance = family.Importance,
+                        RawScore = family.RawScore,
+                        DisplayScore = family.DisplayScore,
+                        Criteria = family.Criteria
+                            .Select(criterion => new MatchCriterionResultDto
+                            {
+                                RequirementId = criterion.RequirementId,
+                                AlternativeSetId = criterion.AlternativeSetId,
+                                Family = criterion.Family,
+                                Mode = criterion.Mode,
+                                Importance = criterion.Importance,
+                                State = criterion.State,
+                                Score = criterion.Score,
+                                IsRegulatoryGate = criterion.IsRegulatoryGate,
+                                Label = criterion.Label
+                            })
+                            .ToList()
+                    })
+                    .ToList()
             });
         }
 
         return rankedApplicants
-            .OrderByDescending(x => x.MatchScore)
-            .ThenBy(
-                x => x.CandidateId,
-                StringComparer.Ordinal)
+            .OrderBy(x => GetEligibilityRank(x.Eligibility))
+            .ThenBy(x => GetAssessmentRank(x.AssessmentStatus))
+            .ThenByDescending(x => x.RawCompatibility)
+            .ThenByDescending(x => x.HighTierAggregate)
+            .ThenByDescending(x => x.MediumTierAggregate)
+            .ThenBy(x => x.AppliedAt)
+            .ThenBy(x => x.ApplicationId)
             .ToList();
     }
 
@@ -543,5 +649,203 @@ public class JobApplicationService : IJobApplicationService
             return "AllowedAfterBaselineAcknowledgement";
 
         return "Allowed";
+    }
+
+    private static ApplyDecisionDto CreateApplyDecision(
+        string primaryCode,
+        Guid vacancyId,
+        Guid? matchingPolicyRevisionId,
+        int? matchingPolicyRevisionNumber,
+        Guid? resumeVersionId,
+        IReadOnlyCollection<string> readinessMissingItems,
+        string? eligibilityReason)
+    {
+        var canSubmit =
+            primaryCode is
+                "Allowed" or
+                "AllowedAfterBaselineAcknowledgement";
+
+        var reasons = new List<ApplyDecisionReasonDto>();
+
+        if (primaryCode != "Allowed")
+        {
+            reasons.Add(new ApplyDecisionReasonDto
+            {
+                Code = primaryCode,
+                Message = GetApplyDecisionMessage(
+                    primaryCode,
+                    readinessMissingItems,
+                    eligibilityReason),
+                TargetCta = GetApplyDecisionTargetCta(primaryCode)
+            });
+        }
+
+        return new ApplyDecisionDto
+        {
+            CanSubmit = canSubmit,
+            RequiresBaselineAcknowledgement =
+                primaryCode ==
+                    "AllowedAfterBaselineAcknowledgement",
+            PrimaryCode = primaryCode,
+            Reasons = reasons,
+            EvaluatedAtUtc = DateTime.UtcNow,
+            VacancyId = vacancyId,
+            MatchingPolicyRevisionId = matchingPolicyRevisionId,
+            MatchingPolicyRevisionNumber = matchingPolicyRevisionNumber,
+            ResumeVersionId = resumeVersionId
+        };
+    }
+
+    private static string GetApplyDecisionMessage(
+        string primaryCode,
+        IReadOnlyCollection<string> readinessMissingItems,
+        string? eligibilityReason)
+    {
+        return primaryCode switch
+        {
+            "CalculationFailure" =>
+                "Matching could not be evaluated. Try again.",
+            "AccountStateBlocked" =>
+                "Your account is not active.",
+            "VacancyUnavailableOrSuppressed" =>
+                "This vacancy is not available for applications.",
+            "RelationshipBlocked" =>
+                "This application is not permitted.",
+            "BlockedByRegulatoryGate" =>
+                "A required regulatory condition is not met.",
+            "BlockedByReadiness" =>
+                readinessMissingItems.Count > 0
+                    ? $"Complete application readiness: {string.Join(", ", readinessMissingItems)}."
+                    : eligibilityReason ??
+                        "Complete the required candidate information.",
+            "AllowedAfterBaselineAcknowledgement" =>
+                eligibilityReason ??
+                    "You may apply after acknowledging the baseline mismatch.",
+            _ => "Application is allowed."
+        };
+    }
+
+    private static string GetApplyDecisionTargetCta(string primaryCode)
+    {
+        return primaryCode switch
+        {
+            "CalculationFailure" => "Retry",
+            "AccountStateBlocked" => "ContactSupport",
+            "VacancyUnavailableOrSuppressed" => "ViewJobs",
+            "RelationshipBlocked" => "ViewJobs",
+            "BlockedByRegulatoryGate" => "ReviewRequirements",
+            "BlockedByReadiness" => "CompleteProfile",
+            "AllowedAfterBaselineAcknowledgement" =>
+                "AcknowledgeAndApply",
+            _ => "Apply"
+        };
+    }
+
+    private static MatchResultDto ReadSnapshotMatch(
+        DevSphere.Domain.Entities.Applications.ApplicationSnapshot? snapshot)
+    {
+        if (snapshot == null)
+        {
+            return new MatchResultDto
+            {
+                AssessmentStatus =
+                    MatchAssessmentStatus.NotCalculated,
+                Eligibility =
+                    MatchEligibilityStatus.IncompleteAssessment,
+                EligibilityReason =
+                    "Application snapshot is unavailable."
+            };
+        }
+
+        if (!string.IsNullOrWhiteSpace(snapshot.MatchResultJson))
+        {
+            try
+            {
+                var stored = JsonSerializer.Deserialize<MatchResultDto>(
+                    snapshot.MatchResultJson);
+
+                if (stored != null)
+                {
+                    return stored;
+                }
+            }
+            catch (JsonException)
+            {
+                // Fall back to the explicit immutable snapshot columns.
+            }
+        }
+
+        Enum.TryParse(
+            snapshot.CompatibilityStatus,
+            true,
+            out MatchAssessmentStatus assessmentStatus);
+        Enum.TryParse(
+            snapshot.EligibilityStatus,
+            true,
+            out MatchEligibilityStatus eligibility);
+
+        return new MatchResultDto
+        {
+            AssessmentStatus = assessmentStatus == 0
+                ? MatchAssessmentStatus.NotCalculated
+                : assessmentStatus,
+            Eligibility = eligibility == 0
+                ? MatchEligibilityStatus.IncompleteAssessment
+                : eligibility,
+            EligibilityReason = snapshot.EligibilityReason,
+            RawCompatibility = snapshot.RawCompatibilityScore,
+            DisplayCompatibility = snapshot.DisplayCompatibilityScore,
+            HighTierAggregate = snapshot.HighTierAggregateScore,
+            MediumTierAggregate = snapshot.MediumTierAggregateScore,
+            Coverage = snapshot.Coverage,
+            MatchedSkills = DeserializeStringList(
+                snapshot.MatchedSkillsJson),
+            MissingSkills = DeserializeStringList(
+                snapshot.GapSkillsJson)
+        };
+    }
+
+    private static List<string> DeserializeStringList(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return new List<string>();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(json) ??
+                new List<string>();
+        }
+        catch (JsonException)
+        {
+            return new List<string>();
+        }
+    }
+
+    private static int GetEligibilityRank(
+        MatchEligibilityStatus eligibility)
+    {
+        return eligibility switch
+        {
+            MatchEligibilityStatus.MeetsBaseline => 0,
+            MatchEligibilityStatus.PendingVerification => 1,
+            MatchEligibilityStatus.IncompleteAssessment => 2,
+            MatchEligibilityStatus.DoesNotMeetBaseline => 3,
+            _ => 4
+        };
+    }
+
+    private static int GetAssessmentRank(
+        MatchAssessmentStatus assessmentStatus)
+    {
+        return assessmentStatus switch
+        {
+            MatchAssessmentStatus.Calculated => 0,
+            MatchAssessmentStatus.Provisional => 1,
+            MatchAssessmentStatus.NotCalculated => 2,
+            MatchAssessmentStatus.CalculationFailure => 3,
+            _ => 4
+        };
     }
 }

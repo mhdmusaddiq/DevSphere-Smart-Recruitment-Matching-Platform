@@ -161,13 +161,18 @@ public class ApplicationSnapshotApplyDecisionTests
             "CompatibilityScore",
             "RawCompatibilityScore",
             "DisplayCompatibilityScore",
+            "HighTierAggregateScore",
+            "MediumTierAggregateScore",
+            "Coverage",
             "CompatibilityStatus",
             "EligibilityStatus",
+            "EligibilityReason",
             "IsEligible",
             "ApplyDecision",
             "MatchedSkillsJson",
             "GapSkillsJson",
             "EvidenceSummaryJson",
+            "MatchResultJson",
             "CandidateSnapshotJson",
             "VacancySnapshotJson",
             "CapturedAtUtc"
@@ -402,7 +407,7 @@ public class ApplicationSnapshotApplyDecisionTests
     }
 
     [Fact]
-    public void Compatibility_Status_Should_Not_Invent_Score_Bands()
+    public void Compatibility_Status_Should_Preserve_Authoritative_Assessment()
     {
         var service = ReadSource(
             "backend",
@@ -413,9 +418,22 @@ public class ApplicationSnapshotApplyDecisionTests
             "JobApplicationService.cs");
 
         Assert.Contains(
-            "compatibilityStatus = " +
-            "\"Calculated\"",
+            "match?.AssessmentStatus",
             service);
+
+        Assert.Contains(
+            "MatchAssessmentStatus.NotCalculated",
+            service);
+
+        Assert.Contains(
+            "decimal.Round(",
+            service);
+
+        Assert.Contains(
+            "MidpointRounding.AwayFromZero",
+            service);
+
+        Assert.DoesNotContain("TotalScore", service);
 
         Assert.DoesNotContain(
             "\"Strong\"",

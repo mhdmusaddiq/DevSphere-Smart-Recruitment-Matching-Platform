@@ -1,6 +1,7 @@
 using DevSphere.Domain.Entities.Applications;
 using DevSphere.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DevSphere.Infrastructure.Repositories;
 
@@ -50,6 +51,7 @@ public class JobApplicationRepository
     {
         return await _context.JobApplications
             .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
             .Where(x =>
                 x.VacancyId == vacancyId &&
                 x.Vacancy.EmployerId == employerId)
@@ -88,9 +90,16 @@ public class JobApplicationRepository
         ApplicationSnapshot snapshot,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction =
-            await _context.Database.BeginTransactionAsync(
-                cancellationToken);
+        IDbContextTransaction? transaction = null;
+        var ownsTransaction =
+            _context.Database.CurrentTransaction == null;
+
+        if (ownsTransaction)
+        {
+            transaction =
+                await _context.Database.BeginTransactionAsync(
+                    cancellationToken);
+        }
 
         try
         {
@@ -119,15 +128,28 @@ public class JobApplicationRepository
             await _context.SaveChangesAsync(
                 cancellationToken);
 
-            await transaction.CommitAsync(
-                cancellationToken);
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(
+                    cancellationToken);
+            }
         }
         catch
         {
-            await transaction.RollbackAsync(
-                cancellationToken);
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+            }
 
             throw;
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
 }

@@ -13,6 +13,8 @@ public class JobApplication : BaseEntity
 
     public Vacancy Vacancy { get; set; } = null!;
 
+    public ApplicationSnapshot? Snapshot { get; set; }
+
 
     public ApplicationStatus Status { get; set; } = ApplicationStatus.Applied;
 

@@ -250,8 +250,9 @@ public class ApplicationSnapshotConfiguration : IEntityTypeConfiguration<Applica
     public void Configure(EntityTypeBuilder<ApplicationSnapshot> builder)
     {
         builder.HasOne<JobApplication>()
-            .WithMany()
-            .HasForeignKey(x => x.JobApplicationId)
+            .WithOne(x => x.Snapshot)
+            .HasForeignKey<ApplicationSnapshot>(
+                x => x.JobApplicationId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<ResumeVersion>()
@@ -273,11 +274,23 @@ public class ApplicationSnapshotConfiguration : IEntityTypeConfiguration<Applica
         builder.Property(x => x.DisplayCompatibilityScore)
             .HasPrecision(18, 2);
 
+        builder.Property(x => x.HighTierAggregateScore)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.MediumTierAggregateScore)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.Coverage)
+            .HasPrecision(18, 4);
+
         builder.Property(x => x.CompatibilityStatus)
             .HasMaxLength(50);
 
         builder.Property(x => x.EligibilityStatus)
             .HasMaxLength(50);
+
+        builder.Property(x => x.EligibilityReason)
+            .HasMaxLength(250);
 
         builder.Property(x => x.ApplyDecision)
             .HasMaxLength(100);
