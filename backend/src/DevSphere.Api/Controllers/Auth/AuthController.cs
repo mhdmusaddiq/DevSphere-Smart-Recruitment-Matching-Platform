@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
+using DevSphere.Infrastructure.Services.Auth;
+
 namespace DevSphere.Api.Controllers.Auth;
 
 [ApiController]
@@ -14,13 +16,22 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly TokenService _tokenService;
+    private readonly EmailVerificationChallengeService _emailVerification;
+    private readonly PasswordRecoveryChallengeService _passwordRecovery;
+    private readonly IAuthChallengeDelivery _challengeDelivery;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
-        TokenService tokenService)
+        TokenService tokenService,
+        EmailVerificationChallengeService emailVerification,
+        PasswordRecoveryChallengeService passwordRecovery,
+        IAuthChallengeDelivery challengeDelivery)
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _emailVerification = emailVerification;
+        _passwordRecovery = passwordRecovery;
+        _challengeDelivery = challengeDelivery;
     }
 
     [HttpPost("register")]
@@ -116,6 +127,277 @@ public class AuthController : ControllerBase
         });
     }
 
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification(
+        ResendEmailVerificationRequest request)
+    {
+        var genericResponse = new
+        {
+            message =
+                "If the account exists, a verification challenge has been processed."
+        };
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return Ok(genericResponse);
+        }
+
+        var user =
+            await _userManager.FindByEmailAsync(
+                request.Email.Trim());
+
+        if (user == null)
+        {
+            return Ok(genericResponse);
+        }
+
+        var issue =
+            await _emailVerification.IssueAsync(
+                user,
+                HttpContext.RequestAborted);
+
+        if (!issue.Accepted)
+        {
+            return Ok(genericResponse);
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                issue.DevelopmentCode))
+        {
+            await _challengeDelivery.DeliverAsync(
+                "EmailVerification",
+                user.Email ?? string.Empty,
+                issue.DevelopmentCode,
+                HttpContext.RequestAborted);
+        }
+        if (HttpContext.RequestServices
+            .GetRequiredService<IHostEnvironment>()
+            .IsDevelopment())
+        {
+            return Ok(new
+            {
+                genericResponse.message,
+                developmentCode =
+                    issue.DevelopmentCode
+            });
+        }
+
+        return Ok(genericResponse);
+    }
+
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail(
+        VerifyEmailRequest request)
+    {
+        const string invalidMessage =
+            "The verification challenge is invalid or expired.";
+
+        if (string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Code))
+        {
+            return BadRequest(new
+            {
+                message = invalidMessage
+            });
+        }
+
+        var user =
+            await _userManager.FindByEmailAsync(
+                request.Email.Trim());
+
+        if (user == null)
+        {
+            return BadRequest(new
+            {
+                message = invalidMessage
+            });
+        }
+
+        var result =
+            await _emailVerification.VerifyAsync(
+                user,
+                request.Code,
+                HttpContext.RequestAborted);
+
+        return result switch
+        {
+            EmailVerificationConsumeResult.Verified =>
+                Ok(new
+                {
+                    message =
+                        "Email verified successfully."
+                }),
+
+            EmailVerificationConsumeResult.AlreadyVerified =>
+                Ok(new
+                {
+                    message =
+                        "Email is already verified."
+                }),
+
+            _ =>
+                BadRequest(new
+                {
+                    message = invalidMessage
+                })
+        };
+    }
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(
+        ForgotPasswordRequest request)
+    {
+        var genericResponse = new
+        {
+            message =
+                "If the account exists, a password recovery challenge has been processed."
+        };
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return Ok(genericResponse);
+        }
+
+        var user =
+            await _userManager.FindByEmailAsync(
+                request.Email.Trim());
+
+        if (user == null)
+        {
+            return Ok(genericResponse);
+        }
+
+        var issue =
+            await _passwordRecovery.IssueAsync(
+                user,
+                HttpContext.RequestAborted);
+
+        if (!issue.Accepted)
+        {
+            return Ok(genericResponse);
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                issue.DevelopmentCode))
+        {
+            await _challengeDelivery.DeliverAsync(
+                "PasswordRecovery",
+                user.Email ?? string.Empty,
+                issue.DevelopmentCode,
+                HttpContext.RequestAborted);
+        }
+        if (!string.IsNullOrWhiteSpace(
+                issue.DevelopmentCode) &&
+            HttpContext.RequestServices
+                .GetRequiredService<IHostEnvironment>()
+                .IsDevelopment())
+        {
+            return Ok(new
+            {
+                genericResponse.message,
+                developmentCode =
+                    issue.DevelopmentCode
+            });
+        }
+
+        return Ok(genericResponse);
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(
+        ResetPasswordRequest request)
+    {
+        const string invalidMessage =
+            "The password recovery challenge is invalid or expired.";
+
+        if (string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Code))
+        {
+            return BadRequest(new
+            {
+                message = invalidMessage
+            });
+        }
+
+        var user =
+            await _userManager.FindByEmailAsync(
+                request.Email.Trim());
+
+        if (user == null)
+        {
+            return BadRequest(new
+            {
+                message = invalidMessage
+            });
+        }
+
+        var result =
+            await _passwordRecovery.ResetAsync(
+                user,
+                request.Code,
+                request.NewPassword,
+                HttpContext.RequestAborted);
+
+        return result.Status switch
+        {
+            PasswordRecoveryConsumeResult.Reset =>
+                Ok(new
+                {
+                    message =
+                        "Password reset successfully."
+                }),
+
+            PasswordRecoveryConsumeResult.PasswordRejected =>
+                BadRequest(new
+                {
+                    message =
+                        "The new password does not meet password requirements.",
+                    errors = result.Errors
+                }),
+
+            _ =>
+                BadRequest(new
+                {
+                    message = invalidMessage
+                })
+        };
+    }
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
+    {
+        var userId = User.FindFirst(
+            ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+
+        var result = await _userManager
+            .UpdateSecurityStampAsync(user);
+
+        if (!result.Succeeded)
+        {
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    message = "Logout could not be completed."
+                });
+        }
+
+        return Ok(new
+        {
+            message = "Logged out. Discard the bearer token."
+        });
+    }
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> Me()
