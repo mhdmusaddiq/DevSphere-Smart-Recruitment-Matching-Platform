@@ -26,7 +26,8 @@ public class VacancyPolicyServiceTests
         DevSphereDbContext context)
     {
         return new VacancyPolicyService(
-            new VacancyPolicyRepository(context));
+            new VacancyPolicyRepository(context),
+            context);
     }
 
     private static async Task<Vacancy> SeedVacancyAsync(

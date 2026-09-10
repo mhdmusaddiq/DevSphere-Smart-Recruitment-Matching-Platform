@@ -73,7 +73,8 @@ public class VacancyLifecyclePolicyIntegrationTests
 
         var policyService =
             new VacancyPolicyService(
-                new VacancyPolicyRepository(context));
+                new VacancyPolicyRepository(context),
+                context);
 
         return new VacancyService(
             vacancyRepository,
@@ -202,7 +203,8 @@ public class VacancyLifecyclePolicyIntegrationTests
 
         var policyService =
             new VacancyPolicyService(
-                new VacancyPolicyRepository(context));
+                new VacancyPolicyRepository(context),
+                context);
 
         var revision1 =
             await policyService.GetCurrentRevisionAsync(
@@ -252,7 +254,8 @@ public class VacancyLifecyclePolicyIntegrationTests
 
         var policyService =
             new VacancyPolicyService(
-                new VacancyPolicyRepository(context));
+                new VacancyPolicyRepository(context),
+                context);
 
         await policyService.GetCurrentRevisionAsync(
             "employer-1",

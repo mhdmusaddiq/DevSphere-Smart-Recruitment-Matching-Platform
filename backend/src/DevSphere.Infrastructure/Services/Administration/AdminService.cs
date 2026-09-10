@@ -65,6 +65,9 @@ public class AdminService : IAdminService
     }
 
     public async Task<AdminUserPageDto> GetUsersAsync(
+        string? q,
+        string? role,
+        bool? isActive,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
@@ -72,21 +75,18 @@ public class AdminService : IAdminService
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = _userManager.Users
-            .AsNoTracking()
-            .OrderByDescending(x => x.CreatedAtUtc);
-
-        var totalCount = await query.CountAsync(
+        var internalRole = NormalizeRoleFilter(role);
+        var result = await _repository.GetUsersAsync(
+            q,
+            internalRole,
+            isActive,
+            page,
+            pageSize,
             cancellationToken);
-
-        var users = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
 
         var items = new List<AdminUserDto>();
 
-        foreach (var user in users)
+        foreach (var user in result.Users)
         {
             items.Add(await MapUserAsync(user));
         }
@@ -95,7 +95,7 @@ public class AdminService : IAdminService
         {
             Page = page,
             PageSize = pageSize,
-            TotalCount = totalCount,
+            TotalCount = result.TotalCount,
             Items = items
         };
     }
@@ -308,6 +308,19 @@ public class AdminService : IAdminService
         return occupation == null
             ? null
             : MapOccupation(occupation);
+    }
+
+    public async Task<AdminSkillAliasDto?> SetSkillAliasStatusAsync(
+        Guid aliasId,
+        bool isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var alias = await _repository.SetSkillAliasStatusAsync(
+            aliasId,
+            isActive,
+            cancellationToken);
+
+        return alias == null ? null : MapSkillAlias(alias);
     }
 
     private static AdminSkillConceptDto MapSkillConcept(
@@ -627,5 +640,33 @@ public class AdminService : IAdminService
             StringComparison.OrdinalIgnoreCase)
             ? "JobSeeker"
             : internalRole;
+    }
+
+    private static string? NormalizeRoleFilter(string? role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return null;
+        }
+
+        var normalized = role.Trim();
+
+        if (normalized.Equals("JobSeeker", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Equals(AppRoles.Candidate, StringComparison.OrdinalIgnoreCase))
+        {
+            return AppRoles.Candidate;
+        }
+
+        if (normalized.Equals(AppRoles.Employer, StringComparison.OrdinalIgnoreCase))
+        {
+            return AppRoles.Employer;
+        }
+
+        if (normalized.Equals(AppRoles.Admin, StringComparison.OrdinalIgnoreCase))
+        {
+            return AppRoles.Admin;
+        }
+
+        throw new ArgumentException("Invalid role filter.", nameof(role));
     }
 }

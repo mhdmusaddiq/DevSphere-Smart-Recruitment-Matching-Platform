@@ -30,6 +30,28 @@ public class VacancyPolicyController :
                 vacancyId));
     }
 
+    [HttpGet("current/full")]
+    public async Task<IActionResult> GetCurrentFull(
+        Guid vacancyId)
+    {
+        return await ExecuteAsync(
+            () => _service.GetCurrentAggregateAsync(
+                GetEmployerUserId(),
+                vacancyId));
+    }
+
+    [HttpPut("current")]
+    public async Task<IActionResult> ReplaceCurrent(
+        Guid vacancyId,
+        VacancyPolicyAggregateUpdateRequest request)
+    {
+        return await ExecuteAsync(
+            () => _service.ReplaceCurrentAggregateAsync(
+                GetEmployerUserId(),
+                vacancyId,
+                request));
+    }
+
     [HttpPost("families")]
     public async Task<IActionResult> AddFamily(
         Guid vacancyId,

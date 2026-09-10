@@ -12,6 +12,15 @@ public interface IVacancyPolicyService
         string employerUserId,
         Guid vacancyId);
 
+    Task<VacancyPolicyAggregateDto> GetCurrentAggregateAsync(
+        string employerUserId,
+        Guid vacancyId);
+
+    Task<VacancyPolicyAggregateDto> ReplaceCurrentAggregateAsync(
+        string employerUserId,
+        Guid vacancyId,
+        VacancyPolicyAggregateUpdateRequest request);
+
     Task<FamilyPolicyDto> AddFamilyPolicyAsync(
         string employerUserId,
         Guid vacancyId,

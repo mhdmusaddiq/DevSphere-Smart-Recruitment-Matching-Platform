@@ -45,7 +45,7 @@ public class JobApplicationService : IJobApplicationService
 
     public async Task<JobApplicationDto> ApplyAsync(
         string candidateId,
-        JobApplicationDto request)
+        ApplyApplicationRequest request)
     {
         if (request.VacancyId == Guid.Empty)
         {
@@ -218,9 +218,6 @@ public class JobApplicationService : IJobApplicationService
                     x.IsRegulatoryGate &&
                     x.State == MatchCriterionState.NotMet) == true;
 
-        // No relationship-block aggregate exists on this frozen base.
-        var relationshipBlocked = false;
-
         var baselineAcknowledgedRequired =
             !blockedByRegulatoryGate &&
             match?.Eligibility ==
@@ -244,23 +241,9 @@ public class JobApplicationService : IJobApplicationService
             match?.AssessmentStatus ==
                 MatchAssessmentStatus.CalculationFailure;
 
-        var decisionCode = ResolveApplyDecision(
-            calculationFailure,
-            accountStateBlocked,
-            vacancyUnavailableOrSuppressed,
-            relationshipBlocked,
-            blockedByRegulatoryGate,
-            blockedByReadiness,
-            baselineAcknowledgedRequired);
-
-        var decision = CreateApplyDecision(
-            decisionCode,
-            request.VacancyId,
-            currentPolicy?.Id,
-            currentPolicy?.RevisionNumber,
-            selectedResumeVersion?.Id,
-            readinessMissingItems,
-            match?.EligibilityReason);
+        var decision = await EvaluateApplyDecisionCoreAsync(
+            candidateId,
+            request.VacancyId);
 
         var isEligible = decision.CanSubmit;
 
@@ -313,8 +296,15 @@ public class JobApplicationService : IJobApplicationService
         };
         if (!isEligible)
         {
-            throw new InvalidOperationException(
+            throw new ApplicationConflictException(
                 $"Application blocked: {decision.PrimaryCode}.");
+        }
+
+        if (decision.RequiresBaselineAcknowledgement &&
+            !request.BaselineAcknowledged)
+        {
+            throw new ApplicationConflictException(
+                "Baseline acknowledgement is required before applying.");
         }
 
         var now = DateTime.UtcNow;
@@ -438,6 +428,176 @@ public class JobApplicationService : IJobApplicationService
         };
     }
 
+    public async Task<ApplyDecisionDto> GetApplyDecisionAsync(
+        string candidateId,
+        Guid vacancyId)
+    {
+        if (await _repository.ExistsAsync(candidateId, vacancyId))
+        {
+            throw new ApplicationConflictException(
+                "Application already exists.");
+        }
+
+        return await EvaluateApplyDecisionCoreAsync(
+            candidateId,
+            vacancyId);
+    }
+
+    private async Task<ApplyDecisionDto> EvaluateApplyDecisionCoreAsync(
+        string candidateId,
+        Guid vacancyId)
+    {
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            throw new UnauthorizedAccessException(
+                "Authenticated candidate is required.");
+        }
+
+        if (vacancyId == Guid.Empty)
+        {
+            throw new ArgumentException("Vacancy is required.", nameof(vacancyId));
+        }
+
+        var accountIsActive = await _context.Users
+            .AsNoTracking()
+            .Where(x => x.Id == candidateId)
+            .Select(x => (bool?)x.IsActive)
+            .FirstOrDefaultAsync();
+        var accountStateBlocked = accountIsActive != true;
+
+        var candidate = await _candidateProfileRepository
+            .GetByUserIdWithSkillsAsync(candidateId)
+            ?? throw new InvalidOperationException(
+                "Candidate profile is required before applying.");
+        var vacancy = await _vacancyRepository.GetByIdAsync(vacancyId)
+            ?? throw new KeyNotFoundException("Vacancy not found.");
+
+        var resume = await _resumeRepository
+            .GetByCandidateProfileIdAsync(candidate.Id);
+        var currentResume = resume?.Versions
+            .Where(x => x.IsCurrent)
+            .OrderByDescending(x => x.VersionNumber)
+            .ThenByDescending(x => x.CreatedAt)
+            .FirstOrDefault();
+        var selectedResumeVersion = resume != null &&
+            currentResume != null &&
+            resume.CurrentVersionId == currentResume.Id
+                ? currentResume
+                : null;
+
+        MatchResultDto? match = null;
+        var calculationFailure = false;
+
+        try
+        {
+            match = await _matchEngine.CalculateAsync(
+                candidateId,
+                vacancyId.ToString());
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            calculationFailure = true;
+        }
+
+        var currentPolicy = await _context.MatchingPolicyRevisions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.VacancyId == vacancyId &&
+                x.IsCurrent);
+        var readiness = await _candidateProfileService
+            .GetApplicationReadinessAsync(candidateId);
+        var readinessMissingItems = readiness.MissingItems.ToList();
+        var blockedByReadiness = !readiness.IsReady;
+
+        if (selectedResumeVersion != null &&
+            readiness.CurrentResumeVersionId.HasValue &&
+            readiness.CurrentResumeVersionId.Value != selectedResumeVersion.Id)
+        {
+            blockedByReadiness = true;
+            if (!readinessMissingItems.Contains("Selected resume version is stale."))
+            {
+                readinessMissingItems.Add("Selected resume version is stale.");
+            }
+        }
+
+        if (selectedResumeVersion == null)
+        {
+            blockedByReadiness = true;
+            if (!readinessMissingItems.Contains("Current resume version"))
+            {
+                readinessMissingItems.Add("Current resume version");
+            }
+        }
+
+        var blockedByRegulatoryGate = match?.Families
+            .SelectMany(x => x.Criteria)
+            .Any(x =>
+                x.IsRegulatoryGate &&
+                x.State == MatchCriterionState.NotMet) == true;
+        var relationshipBlocked = false;
+        var baselineAcknowledgementRequired =
+            !blockedByRegulatoryGate &&
+            match?.Eligibility == MatchEligibilityStatus.DoesNotMeetBaseline;
+
+        blockedByReadiness = blockedByReadiness ||
+            match?.Eligibility is
+                MatchEligibilityStatus.IncompleteAssessment or
+                MatchEligibilityStatus.PendingVerification;
+
+        var vacancyUnavailableOrSuppressed =
+            vacancy.LifecycleStatus !=
+                DevSphere.Domain.Enums.VacancyLifecycleStatus.Published ||
+            !vacancy.IsOpen ||
+            (vacancy.ClosingDateUtc.HasValue &&
+             vacancy.ClosingDateUtc.Value <= DateTime.UtcNow);
+
+        calculationFailure = calculationFailure ||
+            match?.AssessmentStatus == MatchAssessmentStatus.CalculationFailure;
+
+        var primaryCode = ResolveApplyDecision(
+            calculationFailure,
+            accountStateBlocked,
+            vacancyUnavailableOrSuppressed,
+            relationshipBlocked,
+            blockedByRegulatoryGate,
+            blockedByReadiness,
+            baselineAcknowledgementRequired);
+        var reasonCodes = new List<string>();
+
+        AddReasonIf(calculationFailure, "CalculationFailure", reasonCodes);
+        AddReasonIf(accountStateBlocked, "AccountStateBlocked", reasonCodes);
+        AddReasonIf(vacancyUnavailableOrSuppressed, "VacancyUnavailableOrSuppressed", reasonCodes);
+        AddReasonIf(relationshipBlocked, "RelationshipBlocked", reasonCodes);
+        AddReasonIf(blockedByRegulatoryGate, "BlockedByRegulatoryGate", reasonCodes);
+        AddReasonIf(blockedByReadiness, "BlockedByReadiness", reasonCodes);
+        AddReasonIf(baselineAcknowledgementRequired, "AllowedAfterBaselineAcknowledgement", reasonCodes);
+
+        return CreateApplyDecision(
+            primaryCode,
+            reasonCodes,
+            vacancyId,
+            currentPolicy?.Id,
+            currentPolicy?.RevisionNumber,
+            selectedResumeVersion?.Id,
+            readinessMissingItems,
+            match?.EligibilityReason);
+    }
+
+    private static void AddReasonIf(
+        bool condition,
+        string code,
+        ICollection<string> reasons)
+    {
+        if (condition)
+        {
+            reasons.Add(code);
+        }
+    }
+
     public async Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId)
     {
@@ -462,6 +622,8 @@ public class JobApplicationService : IJobApplicationService
                 CandidateId = x.CandidateId,
                 VacancyId = x.VacancyId,
                 VacancyTitle = x.Vacancy.Title,
+                VacancyLocation = x.Vacancy.Location,
+                WorkMode = x.Vacancy.WorkMode,
                 CompanyId = x.Vacancy.CompanyId,
                 CompanyName = x.Vacancy.CompanyId.HasValue &&
                     companyNames.TryGetValue(
@@ -574,6 +736,53 @@ public class JobApplicationService : IJobApplicationService
     {
         return (await GetByCandidateAsync(candidateId))
             .SingleOrDefault(x => x.Id == applicationId);
+    }
+
+    public async Task<EmployerApplicationDetailDto>
+        GetEmployerApplicationAsync(
+            Guid applicationId,
+            string employerId)
+    {
+        var application = await _context.JobApplications
+            .AsNoTracking()
+            .Include(x => x.Vacancy)
+            .Include(x => x.Snapshot)
+            .FirstOrDefaultAsync(x => x.Id == applicationId)
+            ?? throw new KeyNotFoundException("Application not found.");
+
+        if (application.Vacancy.EmployerId != employerId)
+        {
+            throw new UnauthorizedAccessException(
+                "Employer does not own this application.");
+        }
+
+        var candidateDisplayName = await _context.CandidateProfiles
+            .AsNoTracking()
+            .Where(x => x.UserId == application.CandidateId)
+            .Select(x => x.FullName)
+            .FirstOrDefaultAsync() ?? string.Empty;
+        var match = ReadSnapshotMatch(application.Snapshot);
+
+        return new EmployerApplicationDetailDto
+        {
+            ApplicationId = application.Id,
+            CandidateId = application.CandidateId,
+            CandidateDisplayName = candidateDisplayName,
+            VacancyId = application.VacancyId,
+            VacancyTitle = application.Vacancy.Title,
+            SubmittedAtUtc = application.AppliedAt,
+            Status = application.Status.ToString(),
+            AssessmentStatus = match.AssessmentStatus,
+            DisplayCompatibility = match.DisplayCompatibility,
+            Eligibility = match.Eligibility,
+            EligibilityReason = match.EligibilityReason,
+            MatchedSkills = match.MatchedSkills.ToList(),
+            MissingSkills = match.MissingSkills.ToList(),
+            MissingInputs = match.MissingInputs.ToList(),
+            Families = match.Families.ToList(),
+            ResumeVersionId = application.Snapshot?.ResumeVersionId,
+            CapturedAtUtc = application.Snapshot?.CapturedAtUtc
+        };
     }
 
 
@@ -841,6 +1050,7 @@ public class JobApplicationService : IJobApplicationService
 
     private static ApplyDecisionDto CreateApplyDecision(
         string primaryCode,
+        IReadOnlyCollection<string> reasonCodes,
         Guid vacancyId,
         Guid? matchingPolicyRevisionId,
         int? matchingPolicyRevisionNumber,
@@ -855,16 +1065,16 @@ public class JobApplicationService : IJobApplicationService
 
         var reasons = new List<ApplyDecisionReasonDto>();
 
-        if (primaryCode != "Allowed")
+        foreach (var reasonCode in reasonCodes)
         {
             reasons.Add(new ApplyDecisionReasonDto
             {
-                Code = primaryCode,
+                Code = reasonCode,
                 Message = GetApplyDecisionMessage(
-                    primaryCode,
+                    reasonCode,
                     readinessMissingItems,
                     eligibilityReason),
-                TargetCta = GetApplyDecisionTargetCta(primaryCode)
+                TargetCta = GetApplyDecisionTargetCta(reasonCode)
             });
         }
 

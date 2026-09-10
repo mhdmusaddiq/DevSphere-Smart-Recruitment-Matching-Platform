@@ -3,6 +3,7 @@ using DevSphere.Domain.Entities.Employers;
 using DevSphere.Domain.Entities.Taxonomy;
 using DevSphere.Domain.Enums;
 using DevSphere.Infrastructure.Data;
+using DevSphere.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DevSphere.Infrastructure.Repositories;
@@ -29,6 +30,53 @@ public class AdminRepository
         return _context.SystemSettings
             .OrderBy(x => x.Key)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(List<ApplicationUser> Users, int TotalCount)>
+        GetUsersAsync(
+            string? q,
+            string? internalRole,
+            bool? isActive,
+            int page,
+            int pageSize,
+            CancellationToken cancellationToken = default)
+    {
+        IQueryable<ApplicationUser> query =
+            _context.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            query = query.Where(x =>
+                (x.Email != null && x.Email.Contains(term)) ||
+                x.DisplayName.Contains(term) ||
+                (x.UserName != null && x.UserName.Contains(term)));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == isActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(internalRole))
+        {
+            query = query.Where(user =>
+                _context.UserRoles.Any(userRole =>
+                    userRole.UserId == user.Id &&
+                    _context.Roles.Any(role =>
+                        role.Id == userRole.RoleId &&
+                        role.Name == internalRole)));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var users = await query
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (users, totalCount);
     }
 
     public Task<List<SkillConcept>>
@@ -142,6 +190,25 @@ public class AdminRepository
             cancellationToken);
 
         return occupation;
+    }
+
+    public async Task<SkillAlias?> SetSkillAliasStatusAsync(
+        Guid aliasId,
+        bool isActive,
+        CancellationToken cancellationToken = default)
+    {
+        var alias = await _context.SkillAliases
+            .Include(x => x.SkillConcept)
+            .FirstOrDefaultAsync(x => x.Id == aliasId, cancellationToken);
+
+        if (alias == null)
+        {
+            return null;
+        }
+
+        alias.IsActive = isActive;
+        await _context.SaveChangesAsync(cancellationToken);
+        return alias;
     }
     public Task<List<CompanyVerification>>
         GetCompanyVerificationsAsync(

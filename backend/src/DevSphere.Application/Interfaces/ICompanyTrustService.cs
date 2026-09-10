@@ -11,6 +11,11 @@ public interface ICompanyTrustService
     Task<IEnumerable<CompanyProfileDto>> GetMineAsync(
         string employerUserId);
 
+    Task<CompanyProfileDto> UpdateCompanyAsync(
+        string employerUserId,
+        Guid companyId,
+        UpdateCompanyProfileRequest request);
+
     Task<CompanyVerificationResultDto> SubmitVerificationAsync(
         string employerUserId,
         Guid companyId,

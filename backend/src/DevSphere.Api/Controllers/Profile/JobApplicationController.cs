@@ -28,7 +28,7 @@ public class JobApplicationController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "Candidate")]
     public async Task<IActionResult> Apply(
-        JobApplicationDto request)
+        ApplyApplicationRequest request)
     {
         var candidateId = User.FindFirst(
             ClaimTypes.NameIdentifier
@@ -66,6 +66,39 @@ public class JobApplicationController : ControllerBase
     }
 
 
+
+    [HttpGet("vacancies/{vacancyId:guid}/apply-decision")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> GetApplyDecision(
+        Guid vacancyId)
+    {
+        var candidateId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(candidateId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await _service.GetApplyDecisionAsync(
+                candidateId,
+                vacancyId));
+        }
+        catch (ApplicationConflictException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
 
     [HttpGet("candidate")]
     [Authorize(Roles = "Candidate")]
@@ -133,6 +166,35 @@ public class JobApplicationController : ControllerBase
 
 
 
+
+    [HttpGet("/api/employer/applications/{applicationId:guid}")]
+    [Authorize(Roles = "Employer")]
+    public async Task<IActionResult> GetEmployerApplication(
+        Guid applicationId)
+    {
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await _service.GetEmployerApplicationAsync(
+                applicationId,
+                employerId));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
 
     [HttpPut("{applicationId}/status")]
     [Authorize(Roles = "Employer")]

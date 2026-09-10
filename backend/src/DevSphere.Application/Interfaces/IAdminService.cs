@@ -9,6 +9,9 @@ public interface IAdminService
     Task<IReadOnlyList<SystemSettingDto>> GetSystemSettingsAsync(CancellationToken cancellationToken = default);
 
     Task<AdminUserPageDto> GetUsersAsync(
+        string? q,
+        string? role,
+        bool? isActive,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
@@ -40,6 +43,12 @@ public interface IAdminService
     Task<AdminSkillConceptDto?>
         SetSkillConceptStatusAsync(
             Guid conceptId,
+            bool isActive,
+            CancellationToken cancellationToken = default);
+
+    Task<AdminSkillAliasDto?>
+        SetSkillAliasStatusAsync(
+            Guid aliasId,
             bool isActive,
             CancellationToken cancellationToken = default);
 

@@ -1,15 +1,15 @@
 # Backend Final Handoff
 
-- Branch: `integration/backend-final-codex-20260910`
-- Branch head: Phase F release checkpoint (this commit; use `git rev-parse HEAD`)
+- Branch: `fix/frontend-enablement-final-20260910`
+- Branch head: frontend-enablement surgical checkpoint (this commit; use `git rev-parse HEAD`)
 - Base: `integration/second-brain-final` at `b2a3fcfe81c1bf29dd2be0147505da76f1d4e500`
 - Jeni merged: `8327f0a35e185bbbb1ae6da9a3b79b510e211fa6`
 - Thikal merged: `c14db837241704da4ed0d82f211e5f89d0df679e`
 - Abi merged: `9f45c6ff4cfc21ea018faca0143a49e6860fd87d`
 - Build: green (`dotnet build backend/DevSphere.sln --no-restore`)
-- Tests: 204 passed, 0 failed, 0 skipped
+- Tests: 215 passed, 0 failed, 0 skipped
 - Migration: `20260909213539_BackendFinalClosure`; SQL Server zero-to-head apply passed on disposable `DevSphere_Codex_BackendFinal_20260910`, EF reports no pending model changes, and an idempotent script is exported at `backend/artifacts/migrations/backend-final-idempotent.sql`
-- OpenAPI: OpenAPI 3.0.1, 95 paths, exported at `backend/artifacts/openapi/devsphere-backend-final.openapi.json`
+- OpenAPI: OpenAPI 3.0.1, 100 paths, exported at `backend/artifacts/openapi/devsphere-backend-final.openapi.json`
 - BRD status: must-pass backend and real-view closure green
 - Second Brain P0 Core: Jeni snapshot/apply transaction and Thikal RM-2.1 reconciled; typed nullable assessments and snapshot-only applicant ranking are green
 - Second Brain P0 Professional: Abi auth/admin merged; registration no longer issues a protected JWT before verification, login requires active and verified accounts, `/me` reports verification state, passwords require 15 characters without trimming, development-only challenge disclosure is preserved, and publication checks active/verified employer-company-membership-policy prerequisites
@@ -23,8 +23,10 @@
 - Phase D: canonical application transitions/withdrawal, atomic history and candidate notification, pending-contact cancellation, PDF-only 5 MiB CV handling, application-authorized resume download, notification ownership, contact cancellation/revocation and live disclosure checks, enriched real-view DTOs, filtered/newest discovery, candidate server-side best-match, My Applications list/detail, and employer applicant identity are green.
 - Phase E: existing P1 workflow foundation audited and preserved; employer and candidate-safe workflow summaries added without coupling scorecards to RM-2.1.
 - Phase F: final closure migration generated and reconciled with the two earlier hand-written migrations, SQL Server zero-to-head migration passed, model drift is zero, OpenAPI exports successfully, and live HTTP smoke covered pending-verification login denial, verification/login/`me`, PDF CV upload, company creation/submission/admin verification, membership trust propagation, vacancy publication, and calculated best-match. The smoke also drove fixes for bootstrap seeding, candidate readiness persistence, skill insertion, Swagger multipart generation, and structured apply-decision storage width.
+- Frontend enablement: candidate apply preflight and explicit baseline acknowledgement share the server decision path; snapshot/history public writes are removed; consent authority is candidate revoke/employer pending cancel; My Applications includes vacancy location/work mode; owned factual company edits preserve trust state; current policy has owner-only full read and atomic aggregate edit with post-application locking; employer application detail is snapshot-based and owner-only; verification evidence is available only through the admin verification route; alias status moderation and filtered/paged admin users are available; and non-development auth challenges select configurable SMTP only when configuration is complete.
+- Frontend-enablement HTTP smoke: passed against SQL Server for preflight zero writes, acknowledgement false/true, snapshot/history POST 405, candidate revoke, employer cancel, company ownership, policy full read/edit/409 lock, application-detail ownership, evidence 403/200 separation, alias toggle/restore, filtered admin totals, and Production unavailable-delivery wording with no OTP disclosure. SMTP completion and AptLens message composition are covered without a network mail send.
 
 ## Remaining
 
-- P0/backend-final: none known.
+- P0/backend-final and frontend-enablement patch: none known.
 - P1 only: canonical offer-state expansion and interview reschedule/conflict support remain deferred, as allowed by the master prompt.

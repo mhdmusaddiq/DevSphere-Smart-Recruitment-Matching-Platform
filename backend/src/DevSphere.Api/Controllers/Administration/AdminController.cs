@@ -12,10 +12,14 @@ namespace DevSphere.Api.Controllers.Administration;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _service;
+    private readonly IFileStorageService _fileStorage;
 
-    public AdminController(IAdminService service)
+    public AdminController(
+        IAdminService service,
+        IFileStorageService fileStorage)
     {
         _service = service;
+        _fileStorage = fileStorage;
     }
 
     [HttpGet("audit-events")]
@@ -40,15 +44,27 @@ public class AdminController : ControllerBase
 
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers(
+        [FromQuery] string? q = null,
+        [FromQuery] string? role = null,
+        [FromQuery] bool? isActive = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25,
         CancellationToken cancellationToken = default)
     {
-        return Ok(
-            await _service.GetUsersAsync(
+        try
+        {
+            return Ok(await _service.GetUsersAsync(
+                q,
+                role,
+                isActive,
                 page,
                 pageSize,
                 cancellationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet("dashboard")]
@@ -162,6 +178,20 @@ public class AdminController : ControllerBase
             ? NotFound()
             : Ok(result);
     }
+
+    [HttpPut("catalogue/aliases/{aliasId:guid}/status")]
+    public async Task<IActionResult> SetSkillAliasStatus(
+        Guid aliasId,
+        UpdateCatalogueStatusRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _service.SetSkillAliasStatusAsync(
+            aliasId,
+            request.IsActive,
+            cancellationToken);
+
+        return result == null ? NotFound() : Ok(result);
+    }
     [HttpGet("company-verifications")]
     public async Task<IActionResult>
         GetCompanyVerifications(
@@ -200,6 +230,38 @@ public class AdminController : ControllerBase
         return result == null
             ? NotFound()
             : Ok(result);
+    }
+
+    [HttpGet("company-verifications/{verificationId:guid}/evidence")]
+    public async Task<IActionResult> GetCompanyVerificationEvidence(
+        Guid verificationId,
+        CancellationToken cancellationToken = default)
+    {
+        var verification = await _service.GetCompanyVerificationAsync(
+            verificationId,
+            cancellationToken);
+
+        if (verification == null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var stream = await _fileStorage.OpenReadAsync(
+                verification.EvidenceStorageKey,
+                cancellationToken);
+
+            return File(
+                stream,
+                "application/octet-stream",
+                $"company-verification-{verification.Id:N}-evidence",
+                enableRangeProcessing: true);
+        }
+        catch (FileNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpPut("company-verifications/{verificationId:guid}/review")]
