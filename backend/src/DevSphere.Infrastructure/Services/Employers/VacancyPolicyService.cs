@@ -3,6 +3,9 @@ using DevSphere.Application.Interfaces;
 using DevSphere.Domain.Entities.Vacancies;
 using DevSphere.Domain.Enums;
 using DevSphere.Infrastructure.Repositories;
+using DevSphere.Infrastructure.Data;
+using System.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevSphere.Infrastructure.Services.Employers;
 
@@ -10,11 +13,14 @@ public class VacancyPolicyService :
     IVacancyPolicyService
 {
     private readonly VacancyPolicyRepository _repository;
+    private readonly DevSphereDbContext _context;
 
     public VacancyPolicyService(
-        VacancyPolicyRepository repository)
+        VacancyPolicyRepository repository,
+        DevSphereDbContext context)
     {
         _repository = repository;
+        _context = context;
     }
 
     public async Task EnsureMaterialRevisionForEditAsync(
@@ -48,6 +54,165 @@ public class VacancyPolicyService :
             revision);
 
         return MapRevision(revision);
+    }
+
+    public async Task<VacancyPolicyAggregateDto>
+        GetCurrentAggregateAsync(
+            string employerUserId,
+            Guid vacancyId)
+    {
+        var vacancy = await GetOwnedVacancyAsync(
+            employerUserId,
+            vacancyId);
+        var revision = await EnsureCurrentRevisionAsync(vacancy);
+
+        await SynchronizeMaterialLockAsync(vacancy, revision);
+
+        return MapAggregate(
+            revision,
+            await _repository.GetFamilyPoliciesAsync(revision.Id),
+            await _repository.GetRequirementsAsync(revision.Id),
+            await _repository.GetAlternativeSetsAsync(revision.Id));
+    }
+
+    public async Task<VacancyPolicyAggregateDto>
+        ReplaceCurrentAggregateAsync(
+            string employerUserId,
+            Guid vacancyId,
+            VacancyPolicyAggregateUpdateRequest request)
+    {
+        ValidateAggregate(request);
+
+        await using var transaction = _context.Database.IsRelational()
+            ? await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable)
+            : null;
+
+        var vacancy = await GetOwnedVacancyAsync(
+            employerUserId,
+            vacancyId);
+        var revision = await GetWritableRevisionAsync(vacancy);
+
+        var existingRequirements =
+            await _repository.GetRequirementsAsync(revision.Id);
+        var existingSets =
+            await _repository.GetAlternativeSetsAsync(revision.Id);
+        var existingFamilies =
+            await _repository.GetFamilyPoliciesAsync(revision.Id);
+
+        _context.VacancyRequirements.RemoveRange(existingRequirements);
+        _context.AlternativeSets.RemoveRange(existingSets);
+        _context.FamilyPolicies.RemoveRange(existingFamilies);
+        await _context.SaveChangesAsync();
+
+        var now = DateTime.UtcNow;
+        var familyIds = request.Families.ToDictionary(
+            x => x.ClientKey,
+            _ => Guid.NewGuid(),
+            StringComparer.OrdinalIgnoreCase);
+        var requirementIds = request.Requirements.ToDictionary(
+            x => x.ClientKey,
+            _ => Guid.NewGuid(),
+            StringComparer.OrdinalIgnoreCase);
+        var setIds = request.AlternativeSets.ToDictionary(
+            x => x.ClientKey,
+            _ => Guid.NewGuid(),
+            StringComparer.OrdinalIgnoreCase);
+
+        var requirementSetKeys = request.AlternativeSets
+            .SelectMany(set => set.MemberRequirementClientKeys
+                .Select(requirementKey => new
+                {
+                    RequirementKey = requirementKey,
+                    SetKey = set.ClientKey
+                }))
+            .ToDictionary(
+                x => x.RequirementKey,
+                x => x.SetKey,
+                StringComparer.OrdinalIgnoreCase);
+
+        var families = request.Families
+            .Select(x => new FamilyPolicy
+            {
+                Id = familyIds[x.ClientKey],
+                MatchingPolicyRevisionId = revision.Id,
+                RequirementFamily = x.RequirementFamily,
+                FamilyImportance = x.FamilyImportance,
+                IsActive = x.IsActive,
+                IsScored = x.IsScored,
+                CreatedAt = now
+            })
+            .ToList();
+
+        var sets = request.AlternativeSets
+            .Select(x => new AlternativeSet
+            {
+                Id = setIds[x.ClientKey],
+                MatchingPolicyRevisionId = revision.Id,
+                FamilyPolicyId = familyIds[x.FamilyClientKey],
+                SetType = x.SetType,
+                MinimumSatisfiedCount = x.SetType == AlternativeSetType.MinSatisfied
+                    ? x.MinimumSatisfiedCount
+                    : null,
+                Mode = x.Mode,
+                Importance = x.Importance,
+                IsActive = x.IsActive,
+                IsScored = x.Mode == RequirementMode.Informational
+                    ? false
+                    : x.IsScored,
+                DisplayOrder = x.DisplayOrder,
+                CreatedAt = now
+            })
+            .ToList();
+
+        var requirements = request.Requirements
+            .Select(x => new VacancyRequirement
+            {
+                Id = requirementIds[x.ClientKey],
+                VacancyId = vacancy.Id,
+                MatchingPolicyRevisionId = revision.Id,
+                FamilyPolicyId = familyIds[x.FamilyClientKey],
+                AlternativeSetId = requirementSetKeys.TryGetValue(
+                    x.ClientKey,
+                    out var setKey)
+                        ? setIds[setKey]
+                        : null,
+                RequirementFamily = x.RequirementFamily,
+                Mode = x.Mode,
+                Importance = x.Importance,
+                IsActive = x.IsActive,
+                IsScored = x.Mode == RequirementMode.Informational
+                    ? false
+                    : x.IsScored,
+                Description = x.Description?.Trim() ?? string.Empty,
+                IsMandatory = x.Mode == RequirementMode.Mandatory,
+                SkillConceptId = x.SkillConceptId,
+                CanonicalTargetKey = string.IsNullOrWhiteSpace(x.CanonicalTargetKey)
+                    ? null
+                    : x.CanonicalTargetKey.Trim(),
+                RequiredMonths = x.RequiredMonths,
+                RequiredValue = x.RequiredValue?.Trim(),
+                AcceptedValuesJson = x.AcceptedValuesJson?.Trim(),
+                IsRegulatoryGate = x.IsRegulatoryGate,
+                RequiresVerification = x.RequiresVerification,
+                QuestionText = x.QuestionText?.Trim(),
+                ExpectedAnswer = x.ExpectedAnswer?.Trim(),
+                DisplayOrder = x.DisplayOrder,
+                CreatedAt = now
+            })
+            .ToList();
+
+        await _context.FamilyPolicies.AddRangeAsync(families);
+        await _context.AlternativeSets.AddRangeAsync(sets);
+        await _context.VacancyRequirements.AddRangeAsync(requirements);
+        await _context.SaveChangesAsync();
+
+        if (transaction != null)
+        {
+            await transaction.CommitAsync();
+        }
+
+        return MapAggregate(revision, families, requirements, sets);
     }
 
     public async Task<FamilyPolicyDto>
@@ -403,6 +568,219 @@ public class VacancyPolicyService :
                 alternativeSet.DisplayOrder,
             MemberRequirementIds =
                 memberIds
+        };
+    }
+
+    private static void ValidateAggregate(
+        VacancyPolicyAggregateUpdateRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var familyKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var familyEnums = new HashSet<RequirementFamily>();
+
+        foreach (var family in request.Families)
+        {
+            if (string.IsNullOrWhiteSpace(family.ClientKey) ||
+                !familyKeys.Add(family.ClientKey))
+            {
+                throw new ArgumentException(
+                    "Family client keys are required and must be unique.");
+            }
+
+            if (!Enum.IsDefined(family.RequirementFamily) ||
+                !Enum.IsDefined(family.FamilyImportance) ||
+                !familyEnums.Add(family.RequirementFamily))
+            {
+                throw new ArgumentException(
+                    "Each requirement family may appear only once.");
+            }
+        }
+
+        var requirementKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var requirementsByKey =
+            new Dictionary<string, VacancyRequirementEditRequest>(
+                StringComparer.OrdinalIgnoreCase);
+        var canonicalTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var requirement in request.Requirements)
+        {
+            if (string.IsNullOrWhiteSpace(requirement.ClientKey) ||
+                !requirementKeys.Add(requirement.ClientKey))
+            {
+                throw new ArgumentException(
+                    "Requirement client keys are required and must be unique.");
+            }
+
+            var family = request.Families.SingleOrDefault(x =>
+                x.ClientKey.Equals(
+                    requirement.FamilyClientKey,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (family == null ||
+                family.RequirementFamily != requirement.RequirementFamily)
+            {
+                throw new ArgumentException(
+                    "Every requirement must reference its matching family.");
+            }
+
+            if (!Enum.IsDefined(requirement.Mode) ||
+                !Enum.IsDefined(requirement.Importance))
+            {
+                throw new ArgumentException("Invalid requirement enum value.");
+            }
+
+            ValidateRequirement(requirement);
+            requirementsByKey.Add(requirement.ClientKey, requirement);
+
+            if (!string.IsNullOrWhiteSpace(requirement.CanonicalTargetKey) &&
+                !canonicalTargets.Add(
+                    $"{requirement.RequirementFamily}:{requirement.CanonicalTargetKey.Trim()}"))
+            {
+                throw new ArgumentException(
+                    "Duplicate canonical requirement targets are not allowed within the same family.");
+            }
+        }
+
+        var setKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var assignedMembers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var set in request.AlternativeSets)
+        {
+            if (string.IsNullOrWhiteSpace(set.ClientKey) ||
+                !setKeys.Add(set.ClientKey))
+            {
+                throw new ArgumentException(
+                    "Alternative-set client keys are required and must be unique.");
+            }
+
+            var family = request.Families.SingleOrDefault(x =>
+                x.ClientKey.Equals(
+                    set.FamilyClientKey,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (family == null)
+            {
+                throw new ArgumentException(
+                    "Every alternative set must reference a family.");
+            }
+
+            if (!Enum.IsDefined(set.SetType) ||
+                !Enum.IsDefined(set.Mode) ||
+                !Enum.IsDefined(set.Importance))
+            {
+                throw new ArgumentException("Invalid alternative-set enum value.");
+            }
+
+            var memberKeys = set.MemberRequirementClientKeys
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (memberKeys.Count == 0)
+            {
+                throw new ArgumentException(
+                    "Alternative set must contain at least one requirement.");
+            }
+
+            if (memberKeys.Count != set.MemberRequirementClientKeys.Count)
+            {
+                throw new ArgumentException(
+                    "Alternative sets cannot contain duplicate members.");
+            }
+
+            ValidateAlternativeSet(set, memberKeys.Count);
+            var expectedScored = set.Mode == RequirementMode.Informational
+                ? false
+                : set.IsScored;
+
+            foreach (var memberKey in memberKeys)
+            {
+                if (!requirementsByKey.TryGetValue(memberKey, out var member) ||
+                    !member.FamilyClientKey.Equals(
+                        set.FamilyClientKey,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    member.RequirementFamily != family.RequirementFamily)
+                {
+                    throw new ArgumentException(
+                        "Alternative-set members must belong to the referenced family.");
+                }
+
+                var memberIsScored = member.Mode == RequirementMode.Informational
+                    ? false
+                    : member.IsScored;
+
+                if (member.Mode != set.Mode ||
+                    member.Importance != set.Importance ||
+                    memberIsScored != expectedScored)
+                {
+                    throw new ArgumentException(
+                        "Alternative-set members must use the set-level mode, importance and scored state.");
+                }
+
+                if (!assignedMembers.Add(memberKey))
+                {
+                    throw new ArgumentException(
+                        "A requirement can belong to only one alternative set.");
+                }
+            }
+        }
+    }
+
+    private static VacancyPolicyAggregateDto MapAggregate(
+        MatchingPolicyRevision revision,
+        IEnumerable<FamilyPolicy> families,
+        IEnumerable<VacancyRequirement> requirements,
+        IEnumerable<AlternativeSet> alternativeSets)
+    {
+        var requirementList = requirements.ToList();
+
+        return new VacancyPolicyAggregateDto
+        {
+            Revision = MapRevision(revision),
+            Families = families
+                .OrderBy(x => x.RequirementFamily)
+                .Select(MapFamily)
+                .ToList(),
+            Requirements = requirementList
+                .OrderBy(x => x.DisplayOrder)
+                .ThenBy(x => x.Id)
+                .Select(MapRequirement)
+                .ToList(),
+            AlternativeSets = alternativeSets
+                .OrderBy(x => x.DisplayOrder)
+                .ThenBy(x => x.Id)
+                .Select(set => new AlternativeSetDto
+                {
+                    Id = set.Id,
+                    MatchingPolicyRevisionId = set.MatchingPolicyRevisionId,
+                    FamilyPolicyId = set.FamilyPolicyId,
+                    SetType = set.SetType,
+                    MinimumSatisfiedCount = set.MinimumSatisfiedCount,
+                    Mode = set.Mode,
+                    Importance = set.Importance,
+                    IsActive = set.IsActive,
+                    IsScored = set.IsScored,
+                    DisplayOrder = set.DisplayOrder,
+                    MemberRequirementIds = requirementList
+                        .Where(x => x.AlternativeSetId == set.Id)
+                        .OrderBy(x => x.DisplayOrder)
+                        .Select(x => x.Id)
+                        .ToList()
+                })
+                .ToList()
+        };
+    }
+
+    private static FamilyPolicyDto MapFamily(FamilyPolicy family)
+    {
+        return new FamilyPolicyDto
+        {
+            Id = family.Id,
+            MatchingPolicyRevisionId = family.MatchingPolicyRevisionId,
+            RequirementFamily = family.RequirementFamily,
+            FamilyImportance = family.FamilyImportance,
+            IsActive = family.IsActive,
+            IsScored = family.IsScored
         };
     }
 

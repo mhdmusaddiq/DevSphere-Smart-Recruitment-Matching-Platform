@@ -82,7 +82,7 @@ public class AdminCatalogueModerationTests
     }
 
     [Fact]
-    public void Admin_Catalogue_Should_Not_Expose_Alias_Mutation_Or_Score_Write()
+    public void Admin_Catalogue_Should_Expose_Alias_Moderation_But_No_Score_Write()
     {
         var source =
             ReadRepoFile(
@@ -92,8 +92,8 @@ public class AdminCatalogueModerationTests
                 "Administration",
                 "AdminController.cs");
 
-        Assert.DoesNotContain(
-            "catalogue/aliases/{aliasId",
+        Assert.Contains(
+            "[HttpPut(\"catalogue/aliases/{aliasId:guid}/status\")]",
             source);
 
         Assert.DoesNotContain(
@@ -103,6 +103,37 @@ public class AdminCatalogueModerationTests
         Assert.DoesNotContain(
             "matching-score",
             source);
+    }
+
+    [Fact]
+    public async Task Admin_Should_Toggle_Alias_Status()
+    {
+        await using var context = CreateContext();
+        var concept = new SkillConcept
+        {
+            Id = Guid.NewGuid(),
+            Name = "C Sharp",
+            NormalizedName = "C SHARP",
+            IsActive = true
+        };
+        var alias = new SkillAlias
+        {
+            Id = Guid.NewGuid(),
+            SkillConceptId = concept.Id,
+            SkillConcept = concept,
+            Alias = "C#",
+            NormalizedAlias = "C#",
+            IsActive = true
+        };
+        context.AddRange(concept, alias);
+        await context.SaveChangesAsync();
+
+        var result = await new AdminRepository(context)
+            .SetSkillAliasStatusAsync(alias.Id, false);
+
+        Assert.NotNull(result);
+        Assert.False(result!.IsActive);
+        Assert.False((await context.SkillAliases.SingleAsync()).IsActive);
     }
 
     [Fact]

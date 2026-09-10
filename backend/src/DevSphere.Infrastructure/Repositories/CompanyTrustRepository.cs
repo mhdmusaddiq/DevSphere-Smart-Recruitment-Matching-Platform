@@ -53,6 +53,13 @@ public class CompanyTrustRepository
                 x => x.Id == companyId);
     }
 
+    public async Task<CompanyProfile?> GetCompanyForUpdateAsync(
+        Guid companyId)
+    {
+        return await _context.CompanyProfiles
+            .FirstOrDefaultAsync(x => x.Id == companyId);
+    }
+
     public async Task<Dictionary<Guid, CompanyProfile>> GetCompaniesAsync(
         IEnumerable<Guid> companyIds)
     {
@@ -124,6 +131,11 @@ public class CompanyTrustRepository
         await _context.CompanyVerifications
             .AddAsync(verification);
 
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task SaveAsync()
+    {
         await _context.SaveChangesAsync();
     }
 }

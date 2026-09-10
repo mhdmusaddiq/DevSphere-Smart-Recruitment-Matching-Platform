@@ -6,7 +6,11 @@ public interface IJobApplicationService
 {
     Task<JobApplicationDto> ApplyAsync(
         string candidateId,
-        JobApplicationDto request);
+        ApplyApplicationRequest request);
+
+    Task<ApplyDecisionDto> GetApplyDecisionAsync(
+        string candidateId,
+        Guid vacancyId);
 
     Task<List<JobApplicationDto>> GetByCandidateAsync(
         string candidateId);
@@ -14,6 +18,10 @@ public interface IJobApplicationService
     Task<JobApplicationDto?> GetCandidateApplicationAsync(
         Guid applicationId,
         string candidateId);
+
+    Task<EmployerApplicationDetailDto> GetEmployerApplicationAsync(
+        Guid applicationId,
+        string employerId);
 
     Task<List<RankedApplicantDto>> GetByVacancyAsync(
         Guid vacancyId,

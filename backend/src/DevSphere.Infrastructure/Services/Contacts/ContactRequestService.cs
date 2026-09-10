@@ -147,36 +147,25 @@ public class ContactRequestService : IContactRequestService
                 "Contact request not found.");
         }
 
-        if (!string.Equals(
-                request.Status,
-                "Pending",
-                StringComparison.Ordinal))
+        var normalizedStatus = status.Trim();
+        var canAccept = request.Status == "Pending" &&
+            normalizedStatus.Equals("Accepted", StringComparison.OrdinalIgnoreCase);
+        var canDecline = request.Status == "Pending" &&
+            normalizedStatus.Equals("Declined", StringComparison.OrdinalIgnoreCase);
+        var canRevoke = request.Status == "Accepted" &&
+            normalizedStatus.Equals("Revoked", StringComparison.OrdinalIgnoreCase);
+
+        if (!canAccept && !canDecline && !canRevoke)
         {
             throw new InvalidOperationException(
-                "Only pending contact requests can be updated.");
+                $"Invalid contact transition from {request.Status} to {status}.");
         }
 
-        if (!string.Equals(
-                status,
-                "Accepted",
-                StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(
-                status,
-                "Declined",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            throw new ArgumentException(
-                "Invalid contact status.",
-                nameof(status));
-        }
-
-        request.Status =
-            string.Equals(
-                status,
-                "Accepted",
-                StringComparison.OrdinalIgnoreCase)
-                ? "Accepted"
-                : "Declined";
+        request.Status = canAccept
+            ? "Accepted"
+            : canDecline
+                ? "Declined"
+                : "Revoked";
 
         request.UpdatedAt = DateTime.UtcNow;
 
@@ -203,18 +192,13 @@ public class ContactRequestService : IContactRequestService
             normalizedStatus.Equals(
                 "Cancelled",
                 StringComparison.OrdinalIgnoreCase);
-        var canRevoke = request.Status == "Accepted" &&
-            normalizedStatus.Equals(
-                "Revoked",
-                StringComparison.OrdinalIgnoreCase);
-
-        if (!canCancel && !canRevoke)
+        if (!canCancel)
         {
             throw new InvalidOperationException(
                 $"Invalid contact transition from {request.Status} to {status}.");
         }
 
-        request.Status = canCancel ? "Cancelled" : "Revoked";
+        request.Status = "Cancelled";
         request.UpdatedAt = DateTime.UtcNow;
         await _repository.UpdateAsync(request);
 

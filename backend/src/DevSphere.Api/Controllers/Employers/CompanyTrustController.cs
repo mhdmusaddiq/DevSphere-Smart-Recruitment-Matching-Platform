@@ -66,6 +66,41 @@ public class CompanyTrustController : ControllerBase
         }
     }
 
+    [HttpPut("{companyId:guid}")]
+    public async Task<IActionResult> Update(
+        Guid companyId,
+        UpdateCompanyProfileRequest request)
+    {
+        var employerUserId = GetEmployerUserId();
+
+        if (employerUserId == null)
+        {
+            return Unauthorized();
+        }
+
+        try
+        {
+            return Ok(await _service.UpdateCompanyAsync(
+                employerUserId,
+                companyId,
+                request));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
     [HttpPost("{companyId:guid}/verification")]
     public async Task<IActionResult> SubmitVerification(
         Guid companyId,

@@ -123,3 +123,36 @@ public class AlternativeSetDto
 
     public List<Guid> MemberRequirementIds { get; set; } = new();
 }
+
+public class VacancyPolicyAggregateDto
+{
+    public MatchingPolicyRevisionDto Revision { get; set; } = new();
+    public List<FamilyPolicyDto> Families { get; set; } = new();
+    public List<VacancyRequirementPolicyDto> Requirements { get; set; } = new();
+    public List<AlternativeSetDto> AlternativeSets { get; set; } = new();
+}
+
+public class VacancyPolicyAggregateUpdateRequest
+{
+    public List<FamilyPolicyEditRequest> Families { get; set; } = new();
+    public List<VacancyRequirementEditRequest> Requirements { get; set; } = new();
+    public List<AlternativeSetEditRequest> AlternativeSets { get; set; } = new();
+}
+
+public class FamilyPolicyEditRequest : FamilyPolicyRequest
+{
+    public string ClientKey { get; set; } = string.Empty;
+}
+
+public class VacancyRequirementEditRequest : VacancyRequirementRequest
+{
+    public string ClientKey { get; set; } = string.Empty;
+    public string FamilyClientKey { get; set; } = string.Empty;
+}
+
+public class AlternativeSetEditRequest : AlternativeSetRequest
+{
+    public string ClientKey { get; set; } = string.Empty;
+    public string FamilyClientKey { get; set; } = string.Empty;
+    public List<string> MemberRequirementClientKeys { get; set; } = new();
+}

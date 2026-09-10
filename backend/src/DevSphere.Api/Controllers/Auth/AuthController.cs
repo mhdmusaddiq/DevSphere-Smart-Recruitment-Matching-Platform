@@ -121,7 +121,9 @@ public class AuthController : ControllerBase
             accountState = "PendingEmailVerification",
             emailVerificationRequired = true,
             message =
-                "Account created. Email verification is required. Challenge delivery is not configured."
+                _challengeDelivery.IsAvailable
+                    ? "Account created. Verification is required. Check your email."
+                    : "Account created. Email verification is required. Email delivery is not configured."
         });
     }
 

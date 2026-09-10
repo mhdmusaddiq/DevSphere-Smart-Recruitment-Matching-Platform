@@ -94,6 +94,50 @@ public class CompanyTrustService : ICompanyTrustService
             .ToList();
     }
 
+    public async Task<CompanyProfileDto> UpdateCompanyAsync(
+        string employerUserId,
+        Guid companyId,
+        UpdateCompanyProfileRequest request)
+    {
+        ValidateEmployerUserId(employerUserId);
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ArgumentException("Company name is required.");
+        }
+
+        var membership = await _repository.GetMembershipAsync(
+            companyId,
+            employerUserId);
+
+        if (membership == null ||
+            membership.Status is not (
+                CompanyMembershipStatus.Pending or
+                CompanyMembershipStatus.Verified))
+        {
+            throw new UnauthorizedAccessException(
+                "You cannot edit this company.");
+        }
+
+        var company = await _repository.GetCompanyForUpdateAsync(companyId)
+            ?? throw new KeyNotFoundException("Company not found.");
+
+        company.Name = request.Name.Trim();
+        company.Description = request.Description?.Trim();
+        company.Website = request.Website?.Trim();
+        company.Location = request.Location?.Trim();
+        company.UpdatedAt = DateTime.UtcNow;
+
+        // These factual profile edits do not change the server-owned
+        // membership or verification state.
+        await _repository.SaveAsync();
+
+        return MapToDto(
+            company,
+            membership,
+            await _repository.GetLatestVerificationAsync(companyId));
+    }
+
     public async Task<CompanyVerificationResultDto>
         SubmitVerificationAsync(
             string employerUserId,

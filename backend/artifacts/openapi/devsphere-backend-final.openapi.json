@@ -47,6 +47,27 @@
         ],
         "parameters": [
           {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "isActive",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "page",
             "in": "query",
             "schema": {
@@ -275,6 +296,48 @@
         }
       }
     },
+    "/api/admin/catalogue/aliases/{aliasId}/status": {
+      "put": {
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "aliasId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCatalogueStatusRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCatalogueStatusRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCatalogueStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/admin/company-verifications": {
       "get": {
         "tags": [
@@ -297,6 +360,29 @@
       }
     },
     "/api/admin/company-verifications/{verificationId}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [
+          {
+            "name": "verificationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/company-verifications/{verificationId}/evidence": {
       "get": {
         "tags": [
           "Admin"
@@ -362,46 +448,6 @@
       }
     },
     "/api/applications/{jobApplicationId}/snapshot": {
-      "post": {
-        "tags": [
-          "ApplicationHistory"
-        ],
-        "parameters": [
-          {
-            "name": "jobApplicationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplicationSnapshotDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplicationSnapshotDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplicationSnapshotDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
       "get": {
         "tags": [
           "ApplicationHistory"
@@ -440,46 +486,6 @@
             }
           }
         ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "ApplicationHistory"
-        ],
-        "parameters": [
-          {
-            "name": "jobApplicationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplicationStatusHistoryDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplicationStatusHistoryDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ApplicationStatusHistoryDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "OK"
@@ -1568,6 +1574,48 @@
         }
       }
     },
+    "/api/companies/{companyId}": {
+      "put": {
+        "tags": [
+          "CompanyTrust"
+        ],
+        "parameters": [
+          {
+            "name": "companyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyProfileRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyProfileRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/companies/{companyId}/verification": {
       "post": {
         "tags": [
@@ -2245,28 +2293,6 @@
         }
       }
     },
-    "/api/files/{storageKey}": {
-      "get": {
-        "tags": [
-          "Files"
-        ],
-        "parameters": [
-          {
-            "name": "storageKey",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/Health": {
       "get": {
         "tags": [
@@ -2288,21 +2314,44 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JobApplicationDto"
+                "$ref": "#/components/schemas/ApplyApplicationRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/JobApplicationDto"
+                "$ref": "#/components/schemas/ApplyApplicationRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/JobApplicationDto"
+                "$ref": "#/components/schemas/ApplyApplicationRequest"
               }
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/applications/vacancies/{vacancyId}/apply-decision": {
+      "get": {
+        "tags": [
+          "JobApplication"
+        ],
+        "parameters": [
+          {
+            "name": "vacancyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -2353,6 +2402,29 @@
         "parameters": [
           {
             "name": "vacancyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/employer/applications/{applicationId}": {
+      "get": {
+        "tags": [
+          "JobApplication"
+        ],
+        "parameters": [
+          {
+            "name": "applicationId",
             "in": "path",
             "required": true,
             "schema": {
@@ -2958,6 +3030,69 @@
             "description": "OK"
           }
         }
+      },
+      "put": {
+        "tags": [
+          "VacancyPolicy"
+        ],
+        "parameters": [
+          {
+            "name": "vacancyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VacancyPolicyAggregateUpdateRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VacancyPolicyAggregateUpdateRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/VacancyPolicyAggregateUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/vacancies/{vacancyId}/policy/current/full": {
+      "get": {
+        "tags": [
+          "VacancyPolicy"
+        ],
+        "parameters": [
+          {
+            "name": "vacancyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/vacancies/{vacancyId}/policy/families": {
@@ -3099,6 +3234,63 @@
         },
         "additionalProperties": false
       },
+      "AlternativeSetEditRequest": {
+        "type": "object",
+        "properties": {
+          "familyPolicyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "setType": {
+            "$ref": "#/components/schemas/AlternativeSetType"
+          },
+          "minimumSatisfiedCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "mode": {
+            "$ref": "#/components/schemas/RequirementMode"
+          },
+          "importance": {
+            "$ref": "#/components/schemas/RequirementImportance"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isScored": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "memberRequirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "clientKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "familyClientKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "memberRequirementClientKeys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "AlternativeSetRequest": {
         "type": "object",
         "properties": {
@@ -3149,136 +3341,15 @@
         "type": "integer",
         "format": "int32"
       },
-      "ApplicationSnapshotDto": {
+      "ApplyApplicationRequest": {
         "type": "object",
         "properties": {
-          "id": {
+          "vacancyId": {
             "type": "string",
             "format": "uuid"
           },
-          "jobApplicationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "resumeVersionId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "matchingPolicyRevisionId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "compatibilityScore": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "rawCompatibilityScore": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "displayCompatibilityScore": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "highTierAggregateScore": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "mediumTierAggregateScore": {
-            "type": "number",
-            "format": "double",
-            "nullable": true
-          },
-          "coverage": {
-            "type": "number",
-            "format": "double"
-          },
-          "compatibilityStatus": {
-            "type": "string",
-            "nullable": true
-          },
-          "eligibilityStatus": {
-            "type": "string",
-            "nullable": true
-          },
-          "eligibilityReason": {
-            "type": "string",
-            "nullable": true
-          },
-          "isEligible": {
+          "baselineAcknowledged": {
             "type": "boolean"
-          },
-          "applyDecision": {
-            "type": "string",
-            "nullable": true
-          },
-          "matchedSkillsJson": {
-            "type": "string",
-            "nullable": true
-          },
-          "gapSkillsJson": {
-            "type": "string",
-            "nullable": true
-          },
-          "evidenceSummaryJson": {
-            "type": "string",
-            "nullable": true
-          },
-          "matchResultJson": {
-            "type": "string",
-            "nullable": true
-          },
-          "candidateSnapshotJson": {
-            "type": "string",
-            "nullable": true
-          },
-          "vacancySnapshotJson": {
-            "type": "string",
-            "nullable": true
-          },
-          "capturedAtUtc": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ApplicationStatusHistoryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "jobApplicationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "previousStatus": {
-            "type": "string",
-            "nullable": true
-          },
-          "newStatus": {
-            "type": "string",
-            "nullable": true
-          },
-          "changedByUserId": {
-            "type": "string",
-            "nullable": true
-          },
-          "changedAtUtc": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3692,6 +3763,28 @@
         },
         "additionalProperties": false
       },
+      "FamilyPolicyEditRequest": {
+        "type": "object",
+        "properties": {
+          "requirementFamily": {
+            "$ref": "#/components/schemas/RequirementFamily"
+          },
+          "familyImportance": {
+            "$ref": "#/components/schemas/RequirementImportance"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isScored": {
+            "type": "boolean"
+          },
+          "clientKey": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "FamilyPolicyRequest": {
         "type": "object",
         "properties": {
@@ -3736,6 +3829,14 @@
             "format": "uuid"
           },
           "vacancyTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "vacancyLocation": {
+            "type": "string",
+            "nullable": true
+          },
+          "workMode": {
             "type": "string",
             "nullable": true
           },
@@ -4047,6 +4148,28 @@
         },
         "additionalProperties": false
       },
+      "UpdateCompanyProfileRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "website": {
+            "type": "string",
+            "nullable": true
+          },
+          "location": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "UpdateInterviewStatusRequest": {
         "type": "object",
         "properties": {
@@ -4194,6 +4317,33 @@
         },
         "additionalProperties": false
       },
+      "VacancyPolicyAggregateUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "families": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FamilyPolicyEditRequest"
+            },
+            "nullable": true
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VacancyRequirementEditRequest"
+            },
+            "nullable": true
+          },
+          "alternativeSets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlternativeSetEditRequest"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "VacancyRequiredSkillDto": {
         "type": "object",
         "properties": {
@@ -4225,6 +4375,83 @@
           },
           "isMandatory": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VacancyRequirementEditRequest": {
+        "type": "object",
+        "properties": {
+          "familyPolicyId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requirementFamily": {
+            "$ref": "#/components/schemas/RequirementFamily"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/RequirementMode"
+          },
+          "importance": {
+            "$ref": "#/components/schemas/RequirementImportance"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isScored": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "skillConceptId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "canonicalTargetKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "requiredMonths": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "requiredValue": {
+            "type": "string",
+            "nullable": true
+          },
+          "acceptedValuesJson": {
+            "type": "string",
+            "nullable": true
+          },
+          "isRegulatoryGate": {
+            "type": "boolean"
+          },
+          "requiresVerification": {
+            "type": "boolean"
+          },
+          "questionText": {
+            "type": "string",
+            "nullable": true
+          },
+          "expectedAnswer": {
+            "type": "string",
+            "nullable": true
+          },
+          "displayOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "clientKey": {
+            "type": "string",
+            "nullable": true
+          },
+          "familyClientKey": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

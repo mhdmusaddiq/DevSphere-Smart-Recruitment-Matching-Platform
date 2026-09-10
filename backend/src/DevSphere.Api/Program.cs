@@ -30,11 +30,26 @@ builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<EmailVerificationChallengeService>();
 builder.Services.AddScoped<PasswordRecoveryChallengeService>();
 
+var smtpOptions = builder.Configuration
+    .GetSection(SmtpAuthChallengeOptions.SectionName)
+    .Get<SmtpAuthChallengeOptions>()
+    ?? new SmtpAuthChallengeOptions();
+
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddScoped<
         IAuthChallengeDelivery,
         DevelopmentAuthChallengeDelivery>();
+}
+else if (smtpOptions.IsComplete())
+{
+    builder.Services.AddSingleton(smtpOptions);
+    builder.Services.AddScoped<
+        IAuthEmailTransport,
+        SmtpAuthEmailTransport>();
+    builder.Services.AddScoped<
+        IAuthChallengeDelivery,
+        SmtpAuthChallengeDelivery>();
 }
 else
 {
@@ -44,6 +59,13 @@ else
 }
 
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment() &&
+    !smtpOptions.IsComplete())
+{
+    app.Logger.LogWarning(
+        "SMTP auth challenge delivery is unavailable. Configure Email:Smtp for external users.");
+}
 
 using (var scope = app.Services.CreateScope())
 {

@@ -38,10 +38,4 @@ public class FilesController : ControllerBase
         return Ok(stored);
     }
 
-    [HttpGet("{storageKey}")]
-    public async Task<IActionResult> Download(string storageKey, CancellationToken cancellationToken)
-    {
-        var stream = await _storage.OpenReadAsync(storageKey, cancellationToken);
-        return File(stream, "application/octet-stream", enableRangeProcessing: true);
-    }
 }
