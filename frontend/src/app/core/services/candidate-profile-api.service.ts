@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
@@ -7,55 +7,56 @@ import {
   EducationRecord,
   WorkExperience
 } from '../models/candidate-profile.model';
+import { API_BASE_URL, apiUrl } from '../config/api-base-url';
 
 @Injectable({ providedIn: 'root' })
 export class CandidateProfileApiService {
-  private readonly api = 'https://localhost:7097/api';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   constructor(private readonly http: HttpClient) {}
 
   getProfile(): Observable<CandidateProfile | null> {
     return this.http.get<CandidateProfile | null>(
-      `${this.api}/profile/candidate`
+      apiUrl(this.baseUrl, '/profile/candidate')
     );
   }
 
   createProfile(profile: CandidateProfile): Observable<CandidateProfile> {
     return this.http.post<CandidateProfile>(
-      `${this.api}/profile/candidate`,
+      apiUrl(this.baseUrl, '/profile/candidate'),
       profile
     );
   }
 
   updateProfile(profile: CandidateProfile): Observable<CandidateProfile> {
     return this.http.put<CandidateProfile>(
-      `${this.api}/profile/candidate`,
+      apiUrl(this.baseUrl, '/profile/candidate'),
       profile
     );
   }
 
   getSkills(): Observable<CandidateSkill[]> {
     return this.http.get<CandidateSkill[]>(
-      `${this.api}/profile/candidate/skills`
+      apiUrl(this.baseUrl, '/profile/candidate/skills')
     );
   }
 
   addSkill(name: string): Observable<CandidateSkill> {
     return this.http.post<CandidateSkill>(
-      `${this.api}/profile/candidate/skills`,
+      apiUrl(this.baseUrl, '/profile/candidate/skills'),
       { name }
     );
   }
 
   deleteSkill(id: string): Observable<void> {
     return this.http.delete<void>(
-      `${this.api}/profile/candidate/skills/${id}`
+      apiUrl(this.baseUrl, `/profile/candidate/skills/${id}`)
     );
   }
 
   getWorkExperiences(): Observable<WorkExperience[]> {
     return this.http.get<WorkExperience[]>(
-      `${this.api}/candidate-career/work-experiences`
+      apiUrl(this.baseUrl, '/candidate-career/work-experiences')
     );
   }
 
@@ -63,7 +64,7 @@ export class CandidateProfileApiService {
     item: Partial<WorkExperience>
   ): Observable<WorkExperience> {
     return this.http.post<WorkExperience>(
-      `${this.api}/candidate-career/work-experiences`,
+      apiUrl(this.baseUrl, '/candidate-career/work-experiences'),
       item
     );
   }
@@ -73,20 +74,20 @@ export class CandidateProfileApiService {
     item: Partial<WorkExperience>
   ): Observable<WorkExperience> {
     return this.http.put<WorkExperience>(
-      `${this.api}/candidate-career/work-experiences/${id}`,
+      apiUrl(this.baseUrl, `/candidate-career/work-experiences/${id}`),
       item
     );
   }
 
   deleteWorkExperience(id: string): Observable<void> {
     return this.http.delete<void>(
-      `${this.api}/candidate-career/work-experiences/${id}`
+      apiUrl(this.baseUrl, `/candidate-career/work-experiences/${id}`)
     );
   }
 
   getEducation(): Observable<EducationRecord[]> {
     return this.http.get<EducationRecord[]>(
-      `${this.api}/candidate-career/education`
+      apiUrl(this.baseUrl, '/candidate-career/education')
     );
   }
 
@@ -94,7 +95,7 @@ export class CandidateProfileApiService {
     item: Partial<EducationRecord>
   ): Observable<EducationRecord> {
     return this.http.post<EducationRecord>(
-      `${this.api}/candidate-career/education`,
+      apiUrl(this.baseUrl, '/candidate-career/education'),
       item
     );
   }
@@ -104,14 +105,14 @@ export class CandidateProfileApiService {
     item: Partial<EducationRecord>
   ): Observable<EducationRecord> {
     return this.http.put<EducationRecord>(
-      `${this.api}/candidate-career/education/${id}`,
+      apiUrl(this.baseUrl, `/candidate-career/education/${id}`),
       item
     );
   }
 
   deleteEducation(id: string): Observable<void> {
     return this.http.delete<void>(
-      `${this.api}/candidate-career/education/${id}`
+      apiUrl(this.baseUrl, `/candidate-career/education/${id}`)
     );
   }
 }

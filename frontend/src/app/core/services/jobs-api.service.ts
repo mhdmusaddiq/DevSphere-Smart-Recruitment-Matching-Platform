@@ -4,24 +4,24 @@ import { Observable } from 'rxjs';
 
 import { Vacancy } from '../models/vacancy.model';
 import { MatchResult } from '../models/match-result.model';
+import { API_BASE_URL, apiUrl } from '../config/api-base-url';
 
 @Injectable({
   providedIn: 'root'
 })
 export class JobsApiService {
   private readonly http = inject(HttpClient);
-
-  private readonly apiUrl = 'https://localhost:7097/api';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   getVacancies(): Observable<Vacancy[]> {
     return this.http.get<Vacancy[]>(
-      `${this.apiUrl}/vacancies`
+      apiUrl(this.baseUrl, '/vacancies')
     );
   }
 
   getMatch(vacancyId: string): Observable<MatchResult> {
     return this.http.get<MatchResult>(
-      `${this.apiUrl}/matching/vacancies/${vacancyId}`
+      apiUrl(this.baseUrl, `/matching/vacancies/${vacancyId}`)
     );
   }
 }

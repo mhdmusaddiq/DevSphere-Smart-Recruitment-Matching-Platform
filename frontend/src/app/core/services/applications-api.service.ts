@@ -6,18 +6,18 @@ import {
   ApplicationStatusHistory,
   JobApplication
 } from '../models/application.model';
+import { API_BASE_URL, apiUrl } from '../config/api-base-url';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApplicationsApiService {
   private readonly http = inject(HttpClient);
-
-  private readonly apiUrl = 'https://localhost:7097/api';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   apply(vacancyId: string): Observable<JobApplication> {
     return this.http.post<JobApplication>(
-      `${this.apiUrl}/applications`,
+      apiUrl(this.baseUrl, '/applications'),
       {
         vacancyId,
         candidateId: '',
@@ -28,7 +28,7 @@ export class ApplicationsApiService {
 
   getMine(): Observable<JobApplication[]> {
     return this.http.get<JobApplication[]>(
-      `${this.apiUrl}/applications/candidate`
+      apiUrl(this.baseUrl, '/applications/candidate')
     );
   }
 
@@ -36,7 +36,7 @@ export class ApplicationsApiService {
     applicationId: string
   ): Observable<ApplicationStatusHistory[]> {
     return this.http.get<ApplicationStatusHistory[]>(
-      `${this.apiUrl}/applications/${applicationId}/status-history`
+      apiUrl(this.baseUrl, `/applications/${applicationId}/status-history`)
     );
   }
 }

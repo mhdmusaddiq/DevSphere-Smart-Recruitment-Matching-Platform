@@ -1,3 +1,5 @@
+@import './styles/tokens.css';
+
 * {
   box-sizing: border-box;
 }
@@ -6,9 +8,9 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
+  font: var(--font-body);
+  background: var(--color-background);
+  color: var(--color-text);
 }
 
 body {
@@ -20,4 +22,16 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+a, button, input, select, textarea {
+  outline: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: var(--focus-ring);
 }
