@@ -20,6 +20,7 @@ using DevSphere.Infrastructure.Services.Dashboards;
 using DevSphere.Infrastructure.Services.Employers;
 using DevSphere.Infrastructure.Services.Files;
 using DevSphere.Infrastructure.Services.Matching;
+using DevSphere.Infrastructure.Services.Auth;
 
 namespace DevSphere.Api.Extensions;
 
@@ -41,7 +42,11 @@ public static class ServiceCollectionExtensions
             .AddEntityFrameworkStores<DevSphereDbContext>()
             ;
 
+        var jwtOptions = JwtOptions.LoadRequired(configuration);
+
+        services.AddSingleton(jwtOptions);
         services.AddScoped<TokenService>();
+        services.AddScoped<JwtSessionValidator>();
 
         services.AddScoped<ICandidateProfileService, CandidateProfileService>();
         services.AddScoped<SkillTaxonomyService>();
@@ -97,8 +102,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFileValidationService, FileValidationService>();
         services.AddScoped<ICandidateCareerService, CandidateCareerService>();
 
-        var jwtSettings = configuration.GetSection("JwtSettings");
-
         services
             .AddAuthentication(options =>
             {
@@ -118,14 +121,29 @@ public static class ServiceCollectionExtensions
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
 
-                        ValidIssuer = jwtSettings["Issuer"],
-                        ValidAudience = jwtSettings["Audience"],
+                        ValidIssuer = jwtOptions.Issuer,
+                        ValidAudience = jwtOptions.Audience,
 
                         IssuerSigningKey =
                             new SymmetricSecurityKey(
                                 Encoding.UTF8.GetBytes(
-                                    jwtSettings["SecretKey"]!))
+                                    jwtOptions.SecretKey))
                     };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var validator = context.HttpContext
+                            .RequestServices
+                            .GetRequiredService<JwtSessionValidator>();
+
+                        if (!await validator.IsCurrentAsync(context.Principal))
+                        {
+                            context.Fail("The bearer session is no longer current.");
+                        }
+                    }
+                };
             });
 
         return services;

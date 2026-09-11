@@ -31,6 +31,9 @@ public class VacancyPolicyController :
     }
 
     [HttpGet("current/full")]
+    [ProducesResponseType(
+        typeof(VacancyPolicyAggregateDto),
+        StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCurrentFull(
         Guid vacancyId)
     {

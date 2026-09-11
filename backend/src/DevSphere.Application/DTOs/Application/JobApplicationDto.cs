@@ -42,6 +42,11 @@ public class ApplyApplicationRequest
     public bool BaselineAcknowledged { get; set; }
 }
 
+public class ApplicationStatusTransitionRequest
+{
+    public string Status { get; set; } = string.Empty;
+}
+
 public class EmployerApplicationDetailDto
 {
     public Guid ApplicationId { get; set; }

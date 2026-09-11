@@ -98,13 +98,17 @@ public class BackendClosureContractTests
     }
 
     [Fact]
-    public void Bootstrap_Seeder_Should_Enforce_Identity_Results()
+    public void Bootstrap_Seeder_Should_Be_OptIn_And_Secret_Free()
     {
         var source = Read("src", "DevSphere.Infrastructure", "Identity",
             "RoleSeeder.cs");
 
         Assert.Contains("EnsureSucceeded", source);
-        Assert.Contains("Admin@DevSphere2026", source);
+        Assert.Contains("BootstrapAdminOptions", source);
+        Assert.Contains("bootstrapAdmin?.Enabled != true", source);
+        Assert.DoesNotContain("var adminEmail = \"", source);
+        Assert.DoesNotContain("Admin@DevSphere", source);
+        Assert.Contains("bootstrapAdmin.Password", source);
     }
 
     private static string Read(params string[] parts)

@@ -74,12 +74,17 @@ public class VacancyRequirementPolicyDto
     public bool IsScored { get; set; }
 
     public string Description { get; set; } = string.Empty;
+    public Guid? SkillConceptId { get; set; }
     public string? CanonicalTargetKey { get; set; }
+    public int? RequiredMonths { get; set; }
+    public string? RequiredValue { get; set; }
+    public string? AcceptedValuesJson { get; set; }
 
     public bool IsRegulatoryGate { get; set; }
     public bool RequiresVerification { get; set; }
 
     public string? QuestionText { get; set; }
+    public string? ExpectedAnswer { get; set; }
     public int DisplayOrder { get; set; }
 }
 

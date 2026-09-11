@@ -262,4 +262,103 @@ public class VacancyPolicyServiceTests
         Assert.True(revision.IsMateriallyLocked);
         Assert.NotNull(revision.MateriallyLockedAtUtc);
     }
+
+    [Fact]
+    public async Task Owner_Full_Read_Put_Read_RoundTrip_Preserves_All_Editable_Fields()
+    {
+        await using var context = CreateContext();
+        var vacancy = await SeedVacancyAsync(context);
+        var service = CreateService(context);
+        var skillConceptId = Guid.NewGuid();
+        var initial = new VacancyPolicyAggregateUpdateRequest
+        {
+            Families =
+            [
+                new FamilyPolicyEditRequest
+                {
+                    ClientKey = "question-family",
+                    RequirementFamily = RequirementFamily.StructuredQuestion,
+                    FamilyImportance = RequirementImportance.High
+                }
+            ],
+            Requirements =
+            [
+                new VacancyRequirementEditRequest
+                {
+                    ClientKey = "question-1",
+                    FamilyClientKey = "question-family",
+                    RequirementFamily = RequirementFamily.StructuredQuestion,
+                    Mode = RequirementMode.Preferred,
+                    Importance = RequirementImportance.High,
+                    Description = "Owner-only criterion",
+                    SkillConceptId = skillConceptId,
+                    CanonicalTargetKey = "criterion-key",
+                    RequiredMonths = 18,
+                    RequiredValue = "required-value",
+                    AcceptedValuesJson = "[\"one\",\"two\"]",
+                    QuestionText = "What is the expected response?",
+                    ExpectedAnswer = "expected response",
+                    IsScored = true,
+                    DisplayOrder = 7
+                }
+            ]
+        };
+
+        await service.ReplaceCurrentAggregateAsync(
+            "employer-1", vacancy.Id, initial);
+        var read = await service.GetCurrentAggregateAsync(
+            "employer-1", vacancy.Id);
+        var projected = Assert.Single(read.Requirements);
+        var replay = new VacancyPolicyAggregateUpdateRequest
+        {
+            Families =
+            [
+                new FamilyPolicyEditRequest
+                {
+                    ClientKey = "question-family",
+                    RequirementFamily = read.Families[0].RequirementFamily,
+                    FamilyImportance = read.Families[0].FamilyImportance,
+                    IsActive = read.Families[0].IsActive,
+                    IsScored = read.Families[0].IsScored
+                }
+            ],
+            Requirements =
+            [
+                new VacancyRequirementEditRequest
+                {
+                    ClientKey = "question-1",
+                    FamilyClientKey = "question-family",
+                    RequirementFamily = projected.RequirementFamily,
+                    Mode = projected.Mode,
+                    Importance = projected.Importance,
+                    IsActive = projected.IsActive,
+                    IsScored = projected.IsScored,
+                    Description = projected.Description,
+                    SkillConceptId = projected.SkillConceptId,
+                    CanonicalTargetKey = projected.CanonicalTargetKey,
+                    RequiredMonths = projected.RequiredMonths,
+                    RequiredValue = projected.RequiredValue,
+                    AcceptedValuesJson = projected.AcceptedValuesJson,
+                    IsRegulatoryGate = projected.IsRegulatoryGate,
+                    RequiresVerification = projected.RequiresVerification,
+                    QuestionText = projected.QuestionText,
+                    ExpectedAnswer = projected.ExpectedAnswer,
+                    DisplayOrder = projected.DisplayOrder
+                }
+            ]
+        };
+
+        await service.ReplaceCurrentAggregateAsync(
+            "employer-1", vacancy.Id, replay);
+        var final = Assert.Single((await service.GetCurrentAggregateAsync(
+            "employer-1", vacancy.Id)).Requirements);
+
+        Assert.Equal(skillConceptId, final.SkillConceptId);
+        Assert.Equal(18, final.RequiredMonths);
+        Assert.Equal("required-value", final.RequiredValue);
+        Assert.Equal("[\"one\",\"two\"]", final.AcceptedValuesJson);
+        Assert.Equal("expected response", final.ExpectedAnswer);
+        Assert.Equal("What is the expected response?", final.QuestionText);
+        Assert.Equal(7, final.DisplayOrder);
+    }
 }

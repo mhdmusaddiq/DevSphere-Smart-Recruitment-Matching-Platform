@@ -5,8 +5,10 @@ using DevSphere.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 using DevSphere.Infrastructure.Services.Auth;
+using DevSphere.Infrastructure.Configurations;
 
 namespace DevSphere.Api.Controllers.Auth;
 
@@ -19,22 +21,29 @@ public class AuthController : ControllerBase
     private readonly EmailVerificationChallengeService _emailVerification;
     private readonly PasswordRecoveryChallengeService _passwordRecovery;
     private readonly IAuthChallengeDelivery _challengeDelivery;
+    private readonly IAuthAbuseLimiter _abuseLimiter;
+    private readonly AuthRateLimitOptions _rateLimits;
 
     public AuthController(
         UserManager<ApplicationUser> userManager,
         TokenService tokenService,
         EmailVerificationChallengeService emailVerification,
         PasswordRecoveryChallengeService passwordRecovery,
-        IAuthChallengeDelivery challengeDelivery)
+        IAuthChallengeDelivery challengeDelivery,
+        IAuthAbuseLimiter abuseLimiter,
+        AuthRateLimitOptions rateLimits)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _emailVerification = emailVerification;
         _passwordRecovery = passwordRecovery;
         _challengeDelivery = challengeDelivery;
+        _abuseLimiter = abuseLimiter;
+        _rateLimits = rateLimits;
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting(AuthRateLimitPolicyNames.VerificationIssueIp)]
     public async Task<IActionResult> Register(
         RegisterRequest request)
     {
@@ -128,9 +137,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(AuthRateLimitPolicyNames.LoginIp)]
     public async Task<IActionResult> Login(
         LoginRequest request)
     {
+        var normalizedAccount = NormalizeAccount(request.Email);
         var user = await _userManager
             .FindByEmailAsync(request.Email);
 
@@ -138,7 +149,7 @@ public class AuthController : ControllerBase
             !user.IsActive ||
             !user.EmailConfirmed)
         {
-            return Unauthorized();
+            return RecordFailedLogin(normalizedAccount);
         }
 
         var validPassword = await _userManager
@@ -148,9 +159,10 @@ public class AuthController : ControllerBase
 
         if (!validPassword)
         {
-            return Unauthorized();
+            return RecordFailedLogin(normalizedAccount);
         }
 
+        _abuseLimiter.ResetLoginFailures(normalizedAccount);
         var token = await _tokenService.CreateToken(user);
 
         return Ok(new AuthResponse
@@ -162,6 +174,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("resend-verification")]
+    [EnableRateLimiting(AuthRateLimitPolicyNames.VerificationIssueIp)]
     public async Task<IActionResult> ResendVerification(
         ResendEmailVerificationRequest request)
     {
@@ -220,6 +233,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("verify-email")]
+    [EnableRateLimiting(AuthRateLimitPolicyNames.VerificationConsumeIp)]
     public async Task<IActionResult> VerifyEmail(
         VerifyEmailRequest request)
     {
@@ -277,6 +291,7 @@ public class AuthController : ControllerBase
         };
     }
     [HttpPost("forgot-password")]
+    [EnableRateLimiting(AuthRateLimitPolicyNames.RecoveryIssueIp)]
     public async Task<IActionResult> ForgotPassword(
         ForgotPasswordRequest request)
     {
@@ -337,6 +352,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting(AuthRateLimitPolicyNames.ResetConsumeIp)]
     public async Task<IActionResult> ResetPassword(
         ResetPasswordRequest request)
     {
@@ -507,5 +523,37 @@ public class AuthController : ControllerBase
         }
 
         return internalRole;
+    }
+
+    private IActionResult RecordFailedLogin(string normalizedAccount)
+    {
+        var accepted = _abuseLimiter.RecordLoginFailure(
+            normalizedAccount,
+            _rateLimits.Login.AccountFailedAttempts,
+            TimeSpan.FromMinutes(
+                _rateLimits.Login.AccountWindowMinutes),
+            out var retryAfter);
+
+        if (accepted)
+        {
+            return Unauthorized();
+        }
+
+        Response.Headers.RetryAfter = Math.Max(
+                1,
+                (int)Math.Ceiling(retryAfter.TotalSeconds))
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        return StatusCode(
+            StatusCodes.Status429TooManyRequests,
+            new
+            {
+                message = "Too many requests. Please try again later."
+            });
+    }
+
+    private static string NormalizeAccount(string? email)
+    {
+        return email?.Trim().ToUpperInvariant() ?? string.Empty;
     }
 }

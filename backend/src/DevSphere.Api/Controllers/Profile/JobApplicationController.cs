@@ -1,7 +1,6 @@
 using DevSphere.Application.Exceptions;
 using DevSphere.Application.DTOs.Application;
 using DevSphere.Application.Interfaces;
-using DevSphere.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -13,15 +12,12 @@ namespace DevSphere.Api.Controllers.Profile;
 public class JobApplicationController : ControllerBase
 {
     private readonly IJobApplicationService _service;
-    private readonly JobApplicationRepository _repository;
 
 
     public JobApplicationController(
-        IJobApplicationService service,
-        JobApplicationRepository repository)
+        IJobApplicationService service)
     {
         _service = service;
-        _repository = repository;
     }
 
 
@@ -198,65 +194,48 @@ public class JobApplicationController : ControllerBase
 
     [HttpPut("{applicationId}/status")]
     [Authorize(Roles = "Employer")]
+    [ProducesResponseType(
+        typeof(JobApplicationDto),
+        StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateStatus(
         Guid applicationId,
-        [FromBody] JobApplicationDto request)
+        [FromBody] ApplicationStatusTransitionRequest request)
     {
+        var employerId = User.FindFirstValue(
+            ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(employerId))
+        {
+            return Unauthorized();
+        }
+
         try
         {
-            var employerId = User.FindFirst(
-                ClaimTypes.NameIdentifier
-            )?.Value;
-
-
-            if (string.IsNullOrWhiteSpace(employerId))
-            {
-                return Unauthorized();
-            }
-
-
-
-            var application = await _repository
-                .GetWithVacancyAsync(applicationId);
-
-
-
-            if (application == null)
-            {
-                return NotFound(new
-                {
-                    message = "Application not found."
-                });
-            }
-
-
-
-
-            if (application.Vacancy.EmployerId != employerId)
-            {
-                return Forbid();
-            }
-
-
-
-
-
             var result = await _service
                 .UpdateStatusAsync(
                     applicationId,
                     request.Status,
                     employerId);
-
-
-
             return Ok(result);
         }
-        catch (Exception ex)
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (ArgumentException ex)
         {
             return BadRequest(new
             {
                 message = ex.Message
             });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
         }
     }
 

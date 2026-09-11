@@ -1,4 +1,5 @@
 using DevSphere.Infrastructure.Data;
+using DevSphere.Infrastructure.Configurations;
 using DevSphere.Infrastructure.Identity;
 using DevSphere.Infrastructure.Services.Auth;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +28,7 @@ public class PasswordRecoveryChallengeRuntimeTests
 
         services.AddScoped<
             PasswordRecoveryChallengeService>();
+        services.AddSingleton(new AuthRateLimitOptions());
 
         return services.BuildServiceProvider();
     }

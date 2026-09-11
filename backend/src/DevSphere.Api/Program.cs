@@ -24,11 +24,13 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerConfiguration();
+builder.Services.AddAuthRateLimiting(builder.Configuration);
 
 builder.Services.AddDevSphereServices(builder.Configuration);
 builder.Services.AddScoped<IContactRequestService, ContactRequestService>();
 builder.Services.AddScoped<EmailVerificationChallengeService>();
 builder.Services.AddScoped<PasswordRecoveryChallengeService>();
+builder.Services.AddSingleton<IAuthAbuseLimiter, AuthAbuseLimiter>();
 
 var smtpOptions = builder.Configuration
     .GetSection(SmtpAuthChallengeOptions.SectionName)
@@ -74,10 +76,14 @@ using (var scope = app.Services.CreateScope())
 
     var userManager = scope.ServiceProvider
         .GetRequiredService<UserManager<ApplicationUser>>();
+    var bootstrapAdmin = builder.Configuration
+        .GetSection(BootstrapAdminOptions.SectionName)
+        .Get<BootstrapAdminOptions>();
 
     await RoleSeeder.SeedAsync(
         roleManager,
-        userManager);
+        userManager,
+        bootstrapAdmin);
 }
 
 if (app.Environment.IsDevelopment())
@@ -91,6 +97,8 @@ app.UseHttpsRedirection();
 app.UseCors("Frontend");
 
 app.UseDevSphereMiddleware();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 

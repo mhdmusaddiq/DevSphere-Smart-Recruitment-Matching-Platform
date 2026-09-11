@@ -1,6 +1,7 @@
 using System.Data;
 using System.Security.Cryptography;
 using System.Text.Json;
+using DevSphere.Infrastructure.Configurations;
 using DevSphere.Infrastructure.Identity;
 using DevSphere.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -14,27 +15,20 @@ public class PasswordRecoveryChallengeService
     private const string TokenName = "PasswordRecovery";
     private const string RateTokenName = "PasswordRecoveryRate";
 
-    private static readonly TimeSpan Lifetime =
-        TimeSpan.FromMinutes(10);
-
-    private static readonly TimeSpan ResendCooldown =
-        TimeSpan.FromSeconds(60);
-
-    private static readonly TimeSpan RateWindow =
-        TimeSpan.FromHours(1);
-
-    private const int MaximumAttempts = 5;
-    private const int MaximumIssuesPerWindow = 5;
-
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly DevSphereDbContext _context;
+    private readonly IssueLimitOptions _issueLimits;
+    private readonly ConsumeLimitOptions _consumeLimits;
 
     public PasswordRecoveryChallengeService(
         UserManager<ApplicationUser> userManager,
-        DevSphereDbContext context)
+        DevSphereDbContext context,
+        AuthRateLimitOptions rateLimits)
     {
         _userManager = userManager;
         _context = context;
+        _issueLimits = rateLimits.RecoveryIssue;
+        _consumeLimits = rateLimits.ResetConsume;
     }
 
     public Task<PasswordRecoveryIssueResult> IssueAsync(
@@ -84,12 +78,12 @@ public class PasswordRecoveryChallengeService
                 cancellationToken);
 
         if (existing != null &&
-            now - existing.IssuedAtUtc < ResendCooldown)
+            now - existing.IssuedAtUtc < IssueCooldown)
         {
             return new PasswordRecoveryIssueResult(
                 false,
                 null,
-                ResendCooldown -
+                IssueCooldown -
                 (now - existing.IssuedAtUtc));
         }
 
@@ -100,15 +94,15 @@ public class PasswordRecoveryChallengeService
 
         var recentIssues =
             rateState.IssuedAtUtc
-                .Where(x => x > now - RateWindow)
+                .Where(x => x > now - IssueWindow)
                 .OrderBy(x => x)
                 .ToList();
 
-        if (recentIssues.Count >= MaximumIssuesPerWindow)
+        if (recentIssues.Count >= _issueLimits.EmailIssueLimit)
         {
             var retryAfter =
                 recentIssues[0] +
-                RateWindow -
+                IssueWindow -
                 now;
 
             return new PasswordRecoveryIssueResult(
@@ -146,7 +140,7 @@ public class PasswordRecoveryChallengeService
                     _userManager.PasswordHasher
                         .HashPassword(user, code),
                 IssuedAtUtc = now,
-                ExpiresAtUtc = now + Lifetime,
+                ExpiresAtUtc = now + ChallengeLifetime,
                 FailedAttempts = 0
             };
 
@@ -190,7 +184,8 @@ public class PasswordRecoveryChallengeService
                 PasswordRecoveryConsumeResult.Expired);
         }
 
-        if (challenge.FailedAttempts >= MaximumAttempts)
+        if (challenge.FailedAttempts >=
+            _consumeLimits.ChallengeFailedAttempts)
         {
             await RemoveAsync(
                 user,
@@ -233,7 +228,8 @@ public class PasswordRecoveryChallengeService
         {
             challenge.FailedAttempts++;
 
-            if (challenge.FailedAttempts >= MaximumAttempts)
+            if (challenge.FailedAttempts >=
+                _consumeLimits.ChallengeFailedAttempts)
             {
                 await RemoveAsync(
                     user,
@@ -484,6 +480,15 @@ public class PasswordRecoveryChallengeService
         return _userManager.NormalizeEmail(
             user.Email ?? string.Empty);
     }
+
+    private TimeSpan ChallengeLifetime => TimeSpan.FromMinutes(
+        _consumeLimits.ChallengeLifetimeMinutes);
+
+    private TimeSpan IssueCooldown => TimeSpan.FromSeconds(
+        _issueLimits.CooldownSeconds);
+
+    private TimeSpan IssueWindow => TimeSpan.FromMinutes(
+        _issueLimits.EmailWindowMinutes);
 
     private static PasswordRecoveryResetResult Result(
         PasswordRecoveryConsumeResult status)

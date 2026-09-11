@@ -1066,14 +1066,24 @@ public class VacancyPolicyService :
                 requirement.IsScored,
             Description =
                 requirement.Description,
+            SkillConceptId =
+                requirement.SkillConceptId,
             CanonicalTargetKey =
                 requirement.CanonicalTargetKey,
+            RequiredMonths =
+                requirement.RequiredMonths,
+            RequiredValue =
+                requirement.RequiredValue,
+            AcceptedValuesJson =
+                requirement.AcceptedValuesJson,
             IsRegulatoryGate =
                 requirement.IsRegulatoryGate,
             RequiresVerification =
                 requirement.RequiresVerification,
             QuestionText =
                 requirement.QuestionText,
+            ExpectedAnswer =
+                requirement.ExpectedAnswer,
             DisplayOrder =
                 requirement.DisplayOrder
         };

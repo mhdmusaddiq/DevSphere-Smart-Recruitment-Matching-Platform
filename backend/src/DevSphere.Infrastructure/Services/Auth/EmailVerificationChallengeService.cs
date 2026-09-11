@@ -1,6 +1,7 @@
 using System.Data;
 using System.Security.Cryptography;
 using System.Text.Json;
+using DevSphere.Infrastructure.Configurations;
 using DevSphere.Infrastructure.Identity;
 using DevSphere.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -14,30 +15,23 @@ public class EmailVerificationChallengeService
     private const string TokenName = "EmailVerification";
     private const string RateTokenName = "EmailVerificationRate";
 
-    private static readonly TimeSpan Lifetime =
-        TimeSpan.FromMinutes(10);
-
-    private static readonly TimeSpan ResendCooldown =
-        TimeSpan.FromSeconds(60);
-
-    private static readonly TimeSpan RateWindow =
-        TimeSpan.FromHours(1);
-
-    private const int MaximumAttempts = 5;
-    private const int MaximumIssuesPerWindow = 5;
-
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly DevSphereDbContext _context;
     private readonly IPasswordHasher<ApplicationUser> _hasher;
+    private readonly IssueLimitOptions _issueLimits;
+    private readonly ConsumeLimitOptions _consumeLimits;
 
     public EmailVerificationChallengeService(
         UserManager<ApplicationUser> userManager,
         IPasswordHasher<ApplicationUser> hasher,
-        DevSphereDbContext context)
+        DevSphereDbContext context,
+        AuthRateLimitOptions rateLimits)
     {
         _userManager = userManager;
         _hasher = hasher;
         _context = context;
+        _issueLimits = rateLimits.VerificationIssue;
+        _consumeLimits = rateLimits.VerificationConsume;
     }
 
     public Task<EmailVerificationIssueResult> IssueAsync(
@@ -84,12 +78,12 @@ public class EmailVerificationChallengeService
             cancellationToken);
 
         if (existing != null &&
-            now - existing.IssuedAtUtc < ResendCooldown)
+            now - existing.IssuedAtUtc < IssueCooldown)
         {
             return new EmailVerificationIssueResult(
                 false,
                 null,
-                ResendCooldown -
+                IssueCooldown -
                 (now - existing.IssuedAtUtc));
         }
 
@@ -98,14 +92,14 @@ public class EmailVerificationChallengeService
             cancellationToken);
 
         var recentIssues = rateState.IssuedAtUtc
-            .Where(x => x > now - RateWindow)
+            .Where(x => x > now - IssueWindow)
             .OrderBy(x => x)
             .ToList();
 
-        if (recentIssues.Count >= MaximumIssuesPerWindow)
+        if (recentIssues.Count >= _issueLimits.EmailIssueLimit)
         {
             var retryAfter =
-                recentIssues[0] + RateWindow - now;
+                recentIssues[0] + IssueWindow - now;
 
             return new EmailVerificationIssueResult(
                 false,
@@ -141,7 +135,7 @@ public class EmailVerificationChallengeService
                 CodeVerifier =
                     _hasher.HashPassword(user, code),
                 IssuedAtUtc = now,
-                ExpiresAtUtc = now + Lifetime,
+                ExpiresAtUtc = now + ChallengeLifetime,
                 FailedAttempts = 0
             };
 
@@ -186,7 +180,8 @@ public class EmailVerificationChallengeService
             return EmailVerificationConsumeResult.Expired;
         }
 
-        if (challenge.FailedAttempts >= MaximumAttempts)
+        if (challenge.FailedAttempts >=
+            _consumeLimits.ChallengeFailedAttempts)
         {
             await RemoveAsync(
                 user,
@@ -228,7 +223,8 @@ public class EmailVerificationChallengeService
         {
             challenge.FailedAttempts++;
 
-            if (challenge.FailedAttempts >= MaximumAttempts)
+            if (challenge.FailedAttempts >=
+                _consumeLimits.ChallengeFailedAttempts)
             {
                 await RemoveAsync(
                     user,
@@ -430,6 +426,15 @@ public class EmailVerificationChallengeService
         return _userManager.NormalizeEmail(
             user.Email ?? string.Empty);
     }
+
+    private TimeSpan ChallengeLifetime => TimeSpan.FromMinutes(
+        _consumeLimits.ChallengeLifetimeMinutes);
+
+    private TimeSpan IssueCooldown => TimeSpan.FromSeconds(
+        _issueLimits.CooldownSeconds);
+
+    private TimeSpan IssueWindow => TimeSpan.FromMinutes(
+        _issueLimits.EmailWindowMinutes);
 
     private sealed class EmailVerificationChallengeState
     {

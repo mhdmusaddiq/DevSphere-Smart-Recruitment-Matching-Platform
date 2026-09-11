@@ -1,6 +1,7 @@
 using DevSphere.Infrastructure.Identity;
+using DevSphere.Infrastructure.Configurations;
+using DevSphere.Infrastructure.Services.Auth;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -12,23 +13,21 @@ namespace DevSphere.Infrastructure.Services;
 public class TokenService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConfiguration _configuration;
+    private readonly JwtOptions _options;
 
     public TokenService(
-    IConfiguration configuration,
+    JwtOptions options,
     UserManager<ApplicationUser> userManager)
     {
-        _configuration = configuration;
+        _options = options;
         _userManager = userManager;
     }
 
     public async Task<string> CreateToken(ApplicationUser user)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(
-                jwtSettings["SecretKey"]!));
+                _options.SecretKey));
 
         var credentials = new SigningCredentials(
             key,
@@ -40,7 +39,10 @@ public class TokenService
 {
     new Claim(JwtRegisteredClaimNames.Sub, user.Id),
     new Claim(JwtRegisteredClaimNames.Email, user.Email ?? ""),
-    new Claim("displayName", user.DisplayName)
+    new Claim("displayName", user.DisplayName),
+    new Claim(
+        JwtSessionValidator.SecurityStampClaim,
+        user.SecurityStamp ?? string.Empty)
 };
 
         foreach (var role in roles)
@@ -51,11 +53,11 @@ public class TokenService
 
 
         var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"],
-            audience: jwtSettings["Audience"],
+            issuer: _options.Issuer,
+            audience: _options.Audience,
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(
-                int.Parse(jwtSettings["ExpiryMinutes"]!)),
+                _options.ExpiryMinutes),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler()

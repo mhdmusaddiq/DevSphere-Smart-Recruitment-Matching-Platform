@@ -143,7 +143,7 @@ public class AuthProfessionalContractTests
             "EmailVerificationChallengeService.cs");
 
         Assert.Contains(
-            "TimeSpan.FromMinutes(10)",
+            "_consumeLimits.ChallengeLifetimeMinutes",
             source);
 
         Assert.Contains(
@@ -162,7 +162,7 @@ public class AuthProfessionalContractTests
             "EmailVerificationChallengeService.cs");
 
         Assert.Contains(
-            "MaximumAttempts = 5",
+            "_consumeLimits.ChallengeFailedAttempts",
             source);
 
         Assert.Contains(
@@ -185,7 +185,7 @@ public class AuthProfessionalContractTests
             "EmailVerificationChallengeService.cs");
 
         Assert.Contains(
-            "TimeSpan.FromSeconds(60)",
+            "_issueLimits.CooldownSeconds",
             source);
 
         Assert.Contains(
@@ -291,11 +291,11 @@ public class AuthProfessionalContractTests
             "EmailVerificationChallengeService.cs");
 
         Assert.Contains(
-            "MaximumIssuesPerWindow = 5",
+            "_issueLimits.EmailIssueLimit",
             source);
 
         Assert.Contains(
-            "TimeSpan.FromHours(1)",
+            "_issueLimits.EmailWindowMinutes",
             source);
 
         Assert.Contains(
@@ -303,7 +303,7 @@ public class AuthProfessionalContractTests
             source);
 
         Assert.Contains(
-            "recentIssues.Count >= MaximumIssuesPerWindow",
+            "recentIssues.Count >= _issueLimits.EmailIssueLimit",
             source);
     }
 

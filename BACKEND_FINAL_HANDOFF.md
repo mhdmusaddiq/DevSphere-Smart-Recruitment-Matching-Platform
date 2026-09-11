@@ -1,32 +1,44 @@
 # Backend Final Handoff
 
-- Branch: `fix/frontend-enablement-final-20260910`
-- Branch head: frontend-enablement surgical checkpoint (this commit; use `git rev-parse HEAD`)
-- Base: `integration/second-brain-final` at `b2a3fcfe81c1bf29dd2be0147505da76f1d4e500`
-- Jeni merged: `8327f0a35e185bbbb1ae6da9a3b79b510e211fa6`
-- Thikal merged: `c14db837241704da4ed0d82f211e5f89d0df679e`
-- Abi merged: `9f45c6ff4cfc21ea018faca0143a49e6860fd87d`
-- Build: green (`dotnet build backend/DevSphere.sln --no-restore`)
-- Tests: 215 passed, 0 failed, 0 skipped
-- Migration: `20260909213539_BackendFinalClosure`; SQL Server zero-to-head apply passed on disposable `DevSphere_Codex_BackendFinal_20260910`, EF reports no pending model changes, and an idempotent script is exported at `backend/artifacts/migrations/backend-final-idempotent.sql`
-- OpenAPI: OpenAPI 3.0.1, 100 paths, exported at `backend/artifacts/openapi/devsphere-backend-final.openapi.json`
-- BRD status: must-pass backend and real-view closure green
-- Second Brain P0 Core: Jeni snapshot/apply transaction and Thikal RM-2.1 reconciled; typed nullable assessments and snapshot-only applicant ranking are green
-- Second Brain P0 Professional: Abi auth/admin merged; registration no longer issues a protected JWT before verification, login requires active and verified accounts, `/me` reports verification state, passwords require 15 characters without trimming, development-only challenge disclosure is preserved, and publication checks active/verified employer-company-membership-policy prerequisites
-- P1: existing foundation preserved; employer-owned and candidate-safe application workflow summary GET endpoints added. Canonical offer-state expansion and interview reschedule/conflict support remain deferred.
+- Branch: `fix/backend-final-reopen-20260911`
+- Base: `develop` at `e3f6b8c323036ae7af1e16133682f91537c272c7`
+- Re-frozen backend authority: this commit; resolve with `git rev-parse HEAD`
+- Scope: the six accepted Global 3-Family backend ledger items only
+- Push/merge status: local commit only; not pushed or merged
 
-## Completed checkpoints
+## Accepted ledger
 
-- Phase A: Jeni application snapshot and apply-decision closure merged, built, and tested.
-- Phase B: Thikal RM-2.1 merged and semantically reconciled with Jeni. Apply decisions are structured, nullable assessment scores are preserved, one-decimal display rounding is authoritative, the full match result is frozen, and applicant ranking reads snapshots rather than recalculating mutable profiles.
-- Phase C: Abi professional auth/admin merged. Email verification, password recovery, challenge controls/delivery, moderation, company verification, protected-token gating, password policy, and publication prerequisites are green.
-- Phase D: canonical application transitions/withdrawal, atomic history and candidate notification, pending-contact cancellation, PDF-only 5 MiB CV handling, application-authorized resume download, notification ownership, contact cancellation/revocation and live disclosure checks, enriched real-view DTOs, filtered/newest discovery, candidate server-side best-match, My Applications list/detail, and employer applicant identity are green.
-- Phase E: existing P1 workflow foundation audited and preserved; employer and candidate-safe workflow summaries added without coupling scorecards to RM-2.1.
-- Phase F: final closure migration generated and reconciled with the two earlier hand-written migrations, SQL Server zero-to-head migration passed, model drift is zero, OpenAPI exports successfully, and live HTTP smoke covered pending-verification login denial, verification/login/`me`, PDF CV upload, company creation/submission/admin verification, membership trust propagation, vacancy publication, and calculated best-match. The smoke also drove fixes for bootstrap seeding, candidate readiness persistence, skill insertion, Swagger multipart generation, and structured apply-decision storage width.
-- Frontend enablement: candidate apply preflight and explicit baseline acknowledgement share the server decision path; snapshot/history public writes are removed; consent authority is candidate revoke/employer pending cancel; My Applications includes vacancy location/work mode; owned factual company edits preserve trust state; current policy has owner-only full read and atomic aggregate edit with post-application locking; employer application detail is snapshot-based and owner-only; verification evidence is available only through the admin verification route; alias status moderation and filtered/paged admin users are available; and non-development auth challenges select configurable SMTP only when configuration is complete.
-- Frontend-enablement HTTP smoke: passed against SQL Server for preflight zero writes, acknowledgement false/true, snapshot/history POST 405, candidate revoke, employer cancel, company ownership, policy full read/edit/409 lock, application-detail ownership, evidence 403/200 separation, alias toggle/restore, filtered admin totals, and Production unavailable-delivery wording with no OTP disclosure. SMTP completion and AptLens message composition are covered without a network mail send.
+- G-SEC-01 — PASS: roles always seed, while administrator bootstrap is disabled by default and requires complete runtime-only configuration when explicitly enabled. No fixed administrator email or password remains in tracked defaults/source.
+- G-SEC-02 — PASS: JWT signing material is required from protected runtime configuration, validated at startup, and absent from tracked `appsettings.json`. A production-like launch without it exits non-zero with a clear configuration error.
+- G-SEC-03 — PASS: bearer tokens carry the current Identity security stamp; every protected request validates the user is active and the stamp is current. Disable, logout, and successful password reset invalidate previously issued tokens.
+- G-SEC-04 — PASS: server-authoritative account/IP throttling uses configuration-backed submission defaults, generic 429 responses, and `Retry-After` when available. Verification/recovery issue and challenge controls remain configuration-backed and anti-enumerating.
+- G-E05-01 — PASS: owner policy full-read returns every persisted editable requirement field needed for lossless GET→PUT→GET, including owner-only `ExpectedAnswer`; public/candidate projections were not broadened.
+- G-APP-01 — PASS: employer status transitions use a dedicated request DTO and preserve 400 invalid input, 403 non-owner, 404 missing application, and 409 illegal/stale transition semantics.
 
-## Remaining
+## Frozen G-SEC-04 defaults
 
-- P0/backend-final and frontend-enablement patch: none known.
-- P1 only: canonical offer-state expansion and interview reschedule/conflict support remain deferred, as allowed by the master prompt.
+- Login: 5 failed attempts/account/15 minutes; 30 requests/IP/15 minutes; successful valid login resets the account counter.
+- Verification issue: 5 issues/email/60 minutes; 60-second cooldown; 20 requests/IP/60 minutes.
+- Verification consume: 5 failed attempts/challenge; 10-minute lifetime; 30 requests/IP/15 minutes.
+- Recovery issue: 5 issues/email/60 minutes; 60-second cooldown; 20 requests/IP/60 minutes.
+- Reset consume: 5 failed attempts/challenge; 10-minute lifetime; 30 requests/IP/15 minutes.
+
+## Verification
+
+- Accepted-ledger targeted tests: 11 passed, 0 failed, 0 skipped.
+- Security regression suite: 108 passed, 0 failed, 0 skipped.
+- Full backend suite: 226 passed, 0 failed, 0 skipped.
+- Build: green with 0 warnings and 0 errors (`dotnet build backend/DevSphere.sln --no-restore`).
+- Database: SQL Server zero-to-head apply passed on disposable `DevSphere_BackendReopen_20260911`; current head remains `20260909213539_BackendFinalClosure`; EF reports no pending model changes.
+- OpenAPI: regenerated and reviewed; OpenAPI 3.0.1 with 100 paths at `backend/artifacts/openapi/devsphere-backend-final.openapi.json`. The application-status operation now references `ApplicationStatusTransitionRequest`.
+- G-SEC-04 HTTP smoke: all account and IP limit+1 boundaries passed, including valid-login reset, generic body, and `Retry-After`.
+- Backend/frontend-enablement HTTP smoke: passed the complete existing journey plus application-transition 200/400/403/404/409 checks.
+- Frontend files changed: no.
+- Deferred scope changed: no.
+
+## Residual risks
+
+- Any environment that previously ran the historical bootstrap credential must rotate or disable that already-persisted account operationally before deployment; this repository no longer provisions or contains the credential.
+- Rate-limit counters are intentionally process-local for this academic/local submission; multi-instance distributed enforcement remains out of scope.
+- Direct `HttpContext.Connection.RemoteIpAddress` partitioning is correct for the current no-proxy deployment. A future trusted reverse proxy must configure forwarded-header processing before relying on forwarded client addresses.
+- Canonical offer-state expansion and interview reschedule/conflict support remain deferred P1 scope.
