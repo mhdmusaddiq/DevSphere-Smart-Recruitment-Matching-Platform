@@ -6,8 +6,28 @@ import { RoutePlaceholderComponent } from '../shared/routes/route-placeholder.co
 export const publicRoutes: Routes = [
   { path: 'jobs', loadComponent: () => import('../features/jobs/jobs.component').then(component => component.JobsComponent) },
   { path: 'jobs/:vacancyId', component: RoutePlaceholderComponent, data: { pageId: 'S03', pageName: 'Job details' } },
-  { path: 'login', component: RoutePlaceholderComponent, canActivate: [guestOnlyGuard], data: { pageId: 'A02', pageName: 'Sign in' } },
-  { path: 'register', component: RoutePlaceholderComponent, canActivate: [guestOnlyGuard], data: { pageId: 'A03', pageName: 'Create account' } },
+ {
+  path: 'login',
+  loadComponent: () =>
+    import('../features/auth/sign-in/sign-in.component')
+      .then(component => component.SignInComponent),
+  canActivate: [guestOnlyGuard],
+  data: {
+    pageId: 'A02',
+    pageName: 'Sign in'
+  }
+},
+{
+  path: 'register',
+  loadComponent: () =>
+    import('../features/auth/register/register.component')
+      .then(component => component.RegisterComponent),
+  canActivate: [guestOnlyGuard],
+  data: {
+    pageId: 'A03',
+    pageName: 'Create account'
+  }
+},
   { path: 'verify-email', component: RoutePlaceholderComponent, data: { pageId: 'A04', pageName: 'Verify email' } },
   { path: 'forgot-password', component: RoutePlaceholderComponent, data: { pageId: 'A05', pageName: 'Forgot password' } },
   { path: 'reset-password', component: RoutePlaceholderComponent, data: { pageId: 'A05', pageName: 'Reset password' } }
