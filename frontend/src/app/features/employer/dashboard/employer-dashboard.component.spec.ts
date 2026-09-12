@@ -1,4 +1,4 @@
-﻿/// <reference types="jasmine" />
+/// <reference types="jasmine" />
 
 import { TestBed } from '@angular/core/testing';
 
@@ -162,7 +162,7 @@ describe('EmployerDashboardComponent', () => {
     ];
 
     expect(component.nextAction.route)
-      .toBe('/employer/vacancies/draft-1/policy');
+      .toBe('/employer/vacancies/draft-1/edit');
 
     expect(component.nextAction.label)
       .toBe('Continue vacancy');

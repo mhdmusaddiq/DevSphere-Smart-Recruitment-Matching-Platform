@@ -1,4 +1,4 @@
-﻿export interface EmployerDashboard {
+export interface EmployerDashboard {
   employerId: string;
   openVacancyCount: number;
   applicationCount: number;
@@ -81,4 +81,196 @@ export interface StoredFileDescriptor {
   originalFileName: string;
   contentType: string;
   fileSizeBytes: number;
+}
+
+export enum RequirementFamily {
+  Skill = 1,
+  Experience = 2,
+  Education = 3,
+  LocationWorkMode = 4,
+  Certification = 5,
+  LicenceRegistration = 6,
+  Language = 7,
+  Availability = 8,
+  ProjectPortfolio = 9,
+  StructuredQuestion = 10
+}
+
+export enum RequirementImportance {
+  Low = 1,
+  Medium = 2,
+  High = 3
+}
+
+export enum RequirementMode {
+  Mandatory = 1,
+  Preferred = 2,
+  Informational = 3
+}
+
+export enum AlternativeSetType {
+  AnyOf = 1,
+  MinSatisfied = 2
+}
+
+export interface MatchingPolicyRevisionDto {
+  id: string;
+  vacancyId: string;
+  revisionNumber: number;
+  isCurrent: boolean;
+  isMateriallyLocked: boolean;
+  materiallyLockedAtUtc: string | null;
+}
+
+export interface FamilyPolicyRequest {
+  requirementFamily: RequirementFamily;
+  familyImportance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+}
+
+export interface FamilyPolicyDto {
+  id: string;
+  matchingPolicyRevisionId: string;
+  requirementFamily: RequirementFamily;
+  familyImportance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+}
+
+export interface VacancyRequirementRequest {
+  familyPolicyId: string;
+  requirementFamily: RequirementFamily;
+  mode: RequirementMode;
+  importance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+  description: string;
+  skillConceptId: string | null;
+  canonicalTargetKey: string | null;
+  requiredMonths: number | null;
+  requiredValue: string | null;
+  acceptedValuesJson: string | null;
+  isRegulatoryGate: boolean;
+  requiresVerification: boolean;
+  questionText: string | null;
+  expectedAnswer: string | null;
+  displayOrder: number;
+}
+
+export interface VacancyRequirementPolicyDto
+  extends VacancyRequirementRequest {
+  id: string;
+  vacancyId: string;
+  matchingPolicyRevisionId: string;
+  alternativeSetId: string | null;
+}
+
+export interface AlternativeSetRequest {
+  familyPolicyId: string;
+  setType: AlternativeSetType;
+  minimumSatisfiedCount: number | null;
+  mode: RequirementMode;
+  importance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+  displayOrder: number;
+  memberRequirementIds: string[];
+}
+
+export interface AlternativeSetDto
+  extends AlternativeSetRequest {
+  id: string;
+  matchingPolicyRevisionId: string;
+}
+
+export interface VacancyPolicyAggregateDto {
+  revision: MatchingPolicyRevisionDto;
+  families: FamilyPolicyDto[];
+  requirements: VacancyRequirementPolicyDto[];
+  alternativeSets: AlternativeSetDto[];
+}
+
+export interface FamilyPolicyAggregateUpdate {
+  clientKey: string;
+  requirementFamily: RequirementFamily;
+  familyImportance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+}
+
+export interface VacancyRequirementAggregateUpdate {
+  clientKey: string;
+  familyClientKey: string;
+  requirementFamily: RequirementFamily;
+  mode: RequirementMode;
+  importance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+  description: string;
+  skillConceptId: string | null;
+  canonicalTargetKey: string | null;
+  requiredMonths: number | null;
+  requiredValue: string | null;
+  acceptedValuesJson: string | null;
+  isRegulatoryGate: boolean;
+  requiresVerification: boolean;
+  questionText: string | null;
+  expectedAnswer: string | null;
+  displayOrder: number;
+}
+
+export interface AlternativeSetAggregateUpdate {
+  clientKey: string;
+  familyClientKey: string;
+  setType: AlternativeSetType;
+  minimumSatisfiedCount: number | null;
+  mode: RequirementMode;
+  importance: RequirementImportance;
+  isActive: boolean;
+  isScored: boolean;
+  displayOrder: number;
+  memberRequirementClientKeys: string[];
+}
+
+export interface MatchingPolicyAggregateUpdateRequest {
+  families: FamilyPolicyAggregateUpdate[];
+  requirements: VacancyRequirementAggregateUpdate[];
+  alternativeSets: AlternativeSetAggregateUpdate[];
+}
+export interface EmployerApplyDecisionReason {
+  code: string;
+  message: string;
+  targetCta: string;
+}
+
+export interface EmployerApplyDecision {
+  canSubmit: boolean;
+  requiresBaselineAcknowledgement: boolean;
+  primaryCode: string;
+  reasons: EmployerApplyDecisionReason[];
+  evaluatedAtUtc: string;
+  vacancyId: string;
+  matchingPolicyRevisionId: string | null;
+  matchingPolicyRevisionNumber: number | null;
+  resumeVersionId: string | null;
+}
+
+export interface EmployerJobApplication {
+  id: string;
+  candidateId: string;
+  vacancyId: string;
+  vacancyTitle: string;
+  vacancyLocation: string;
+  workMode: string;
+  companyId: string | null;
+  companyName: string;
+  submittedAtUtc: string;
+  status: string;
+  frozenAssessmentStatus: string;
+  displayCompatibility: number | null;
+  eligibility: string;
+  resumeVersionId: string | null;
+  capturedAtUtc: string | null;
+  applyDecision: EmployerApplyDecision | null;
 }

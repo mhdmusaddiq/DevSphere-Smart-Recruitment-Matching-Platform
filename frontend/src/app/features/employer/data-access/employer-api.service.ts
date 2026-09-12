@@ -10,6 +10,11 @@ import {
   EmployerDashboard,
   EmployerProfile,
   EmployerVacancy,
+  EmployerJobApplication,
+
+  VacancyPolicyAggregateDto,
+  MatchingPolicyAggregateUpdateRequest,
+  MatchingPolicyRevisionDto,
   StoredFileDescriptor,
   SubmitCompanyVerificationRequest
 } from './employer.models';
@@ -53,6 +58,85 @@ export class EmployerApiService {
     );
   }
 
+  getVacancy(vacancyId: string): Observable<EmployerVacancy> {
+    return this.http.get<EmployerVacancy>(
+      apiUrl(this.baseUrl, `/vacancies/${vacancyId}`)
+    );
+  }
+
+
+  getVacancyApplications(
+    vacancyId: string
+  ): Observable<EmployerJobApplication[]> {
+    return this.http.get<EmployerJobApplication[]>(
+      apiUrl(this.baseUrl, `/applications/vacancy/${vacancyId}`)
+    );
+  }
+  createVacancy(request: EmployerVacancy): Observable<EmployerVacancy> {
+    return this.http.post<EmployerVacancy>(
+      apiUrl(this.baseUrl, '/vacancies'),
+      request
+    );
+  }
+
+  updateVacancy(
+    vacancyId: string,
+    request: EmployerVacancy
+  ): Observable<EmployerVacancy> {
+    return this.http.put<EmployerVacancy>(
+      apiUrl(this.baseUrl, `/vacancies/${vacancyId}`),
+      request
+    );
+  }
+
+  publishVacancy(vacancyId: string): Observable<EmployerVacancy> {
+    return this.http.put<EmployerVacancy>(
+      apiUrl(this.baseUrl, `/vacancies/${vacancyId}/publish`),
+      {}
+    );
+  }
+
+  closeVacancy(vacancyId: string): Observable<EmployerVacancy> {
+    return this.http.put<EmployerVacancy>(
+      apiUrl(this.baseUrl, `/vacancies/${vacancyId}/close`),
+      {}
+    );
+  }
+
+  getCurrentMatchingPolicy(
+    vacancyId: string
+  ): Observable<MatchingPolicyRevisionDto> {
+    return this.http.get<MatchingPolicyRevisionDto>(
+      apiUrl(
+        this.baseUrl,
+        `/vacancies/${vacancyId}/policy/current`
+      )
+    );
+  }
+
+  getFullMatchingPolicy(
+    vacancyId: string
+  ): Observable<VacancyPolicyAggregateDto> {
+    return this.http.get<VacancyPolicyAggregateDto>(
+      apiUrl(
+        this.baseUrl,
+        `/vacancies/${vacancyId}/policy/current/full`
+      )
+    );
+  }
+
+  updateMatchingPolicy(
+    vacancyId: string,
+    request: MatchingPolicyAggregateUpdateRequest
+  ): Observable<VacancyPolicyAggregateDto> {
+    return this.http.put<VacancyPolicyAggregateDto>(
+      apiUrl(
+        this.baseUrl,
+        `/vacancies/${vacancyId}/policy/current`
+      ),
+      request
+    );
+  }
   getCompanies(): Observable<CompanyProfile[]> {
     return this.http.get<CompanyProfile[]>(
       apiUrl(this.baseUrl, '/companies/mine')

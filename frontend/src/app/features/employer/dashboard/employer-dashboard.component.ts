@@ -151,7 +151,7 @@ export class EmployerDashboardComponent implements OnInit {
         title: 'Complete your draft vacancy',
         description:
           'Finish the vacancy and matching policy before moving to applicant review.',
-        route: `/employer/vacancies/${draftVacancy.id}/policy`,
+        route: `/employer/vacancies/${draftVacancy.id}/edit`,
         label: 'Continue vacancy'
       };
     }

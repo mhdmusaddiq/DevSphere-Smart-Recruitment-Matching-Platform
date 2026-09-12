@@ -1,0 +1,180 @@
+<section class="vacancies-page">
+  <div class="page-heading">
+    <div>
+      <h1>Vacancies</h1>
+      <p>Manage Draft, Published and Closed vacancy lifecycle.</p>
+    </div>
+
+    <a
+      class="primary-button"
+      routerLink="/employer/vacancies/new"
+    >
+      Create vacancy
+    </a>
+  </div>
+
+  <div class="filter-row" aria-label="Vacancy lifecycle filters">
+    @for (filter of lifecycleFilters; track filter) {
+      <button
+        type="button"
+        class="filter-button"
+        [class.active]="selectedFilter === filter"
+        (click)="setFilter(filter)"
+      >
+        {{ filter }}
+      </button>
+    }
+  </div>
+
+  @if (actionMessage) {
+    <div class="message success-message" role="status">
+      {{ actionMessage }}
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="message error-message" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (loading) {
+    <div class="state-card">
+      Loading vacancies...
+    </div>
+  } @else if (filteredVacancies.length === 0) {
+    <div class="state-card empty-state">
+      <h2>No vacancies found</h2>
+      <p>
+        There are no vacancies in the selected lifecycle state.
+      </p>
+    </div>
+  } @else {
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Vacancy</th>
+              <th>Mode</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Closing</th>
+              <th>
+                <span class="visually-hidden">Actions</span>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (vacancy of filteredVacancies; track vacancy.id) {
+              <tr>
+                <td>
+                  <div class="vacancy-title">
+                    {{ vacancy.title }}
+                  </div>
+
+                  <div class="vacancy-meta">
+                    {{ vacancy.location || 'Location not specified' }}
+
+                    @if (vacancy.requiredSkills.length > 0) {
+                      <span aria-hidden="true"> Ã‚Â· </span>
+                      {{ vacancy.requiredSkills[0].name }}
+
+                      @if (vacancy.requiredSkills.length > 1) {
+                        <span>
+                          +{{ vacancy.requiredSkills.length - 1 }}
+                        </span>
+                      }
+                    }
+                  </div>
+                </td>
+
+                <td>{{ vacancy.workMode || 'Ã¢â‚¬â€' }}</td>
+
+                <td>{{ vacancy.employmentType || 'Ã¢â‚¬â€' }}</td>
+
+                <td>
+                  <span
+                    class="status-badge"
+                    [class.status-draft]="vacancy.lifecycleStatus === 'Draft'"
+                    [class.status-published]="vacancy.lifecycleStatus === 'Published'"
+                    [class.status-closed]="vacancy.lifecycleStatus === 'Closed'"
+                  >
+                    {{ vacancy.lifecycleStatus }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ formatClosingDate(vacancy.closingDateUtc) }}
+                </td>
+
+                <td>
+                  <div class="action-row">
+                    @if (vacancy.lifecycleStatus === 'Draft') {
+                      <a
+                        class="secondary-button"
+                        [routerLink]="[
+                          '/employer/vacancies',
+                          vacancy.id,
+                          'edit'
+                        ]"
+                      >
+                        Edit
+                      </a>
+
+                      <button
+                        type="button"
+                        class="primary-small-button"
+                        [disabled]="actionVacancyId !== null"
+                        (click)="publishVacancy(vacancy)"
+                      >
+                        @if (actionVacancyId === vacancy.id) {
+                          Publishing...
+                        } @else {
+                          Publish
+                        }
+                      </button>
+                    } @else if (vacancy.lifecycleStatus === 'Published') {
+                      <a
+                        class="secondary-button"
+                        [routerLink]="['/employer/vacancies', vacancy.id]"
+                      >
+                        Manage
+                      </a>
+
+                      <button
+                        type="button"
+                        class="danger-button"
+                        [disabled]="actionVacancyId !== null"
+                        (click)="closeVacancy(vacancy)"
+                      >
+                        @if (actionVacancyId === vacancy.id) {
+                          Closing...
+                        } @else {
+                          Close
+                        }
+                      </button>
+                    } @else {
+                      <a
+                        class="secondary-button"
+                        [routerLink]="['/employer/vacancies', vacancy.id]"
+                      >
+                        View
+                      </a>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <div class="lifecycle-note">
+    Closed is terminal. Material Published fields lock after the first
+    application; on 409 refresh server state.
+  </div>
+</section>

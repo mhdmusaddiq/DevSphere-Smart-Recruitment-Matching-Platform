@@ -1,0 +1,327 @@
+<section class="management-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Vacancy management</p>
+      <h1>{{ vacancy?.title || 'Vacancy' }}</h1>
+      <p>
+        Manage lifecycle, matching policy and vacancy-contextual
+        application workload.
+      </p>
+    </div>
+
+    <a
+      class="secondary-button"
+      routerLink="/employer/vacancies"
+    >
+      Back to vacancies
+    </a>
+  </header>
+
+  @if (loading) {
+    <section class="card">
+      <p>Loading vacancy management...</p>
+    </section>
+  } @else if (!vacancy) {
+    <section
+      class="message error-message"
+      role="alert"
+    >
+      {{ errorMessage || 'Vacancy could not be loaded.' }}
+    </section>
+  } @else {
+
+    @if (errorMessage) {
+      <div
+        class="message error-message"
+        role="alert"
+      >
+        {{ errorMessage }}
+      </div>
+    }
+
+    @if (successMessage) {
+      <div
+        class="message success-message"
+        role="status"
+      >
+        {{ successMessage }}
+      </div>
+    }
+
+    <section class="summary-grid">
+      <article class="card metric-card">
+        <span class="label">Lifecycle</span>
+        <strong>{{ vacancy.lifecycleStatus }}</strong>
+      </article>
+
+      <article class="card metric-card">
+        <span class="label">Applications</span>
+        <strong>{{ applicationCount }}</strong>
+      </article>
+
+      <article class="card metric-card">
+        <span class="label">Policy revision</span>
+        <strong>
+          {{ policy ? policy.revisionNumber : '—' }}
+        </strong>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Vacancy facts</p>
+          <h2>{{ vacancy.title }}</h2>
+        </div>
+
+        <div class="actions">
+          @if (isDraft) {
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="actionLoading"
+              (click)="edit()"
+            >
+              Edit vacancy
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="actionLoading"
+              (click)="publish()"
+            >
+              {{ actionLoading ? 'Publishing...' : 'Publish' }}
+            </button>
+          }
+
+          @if (isPublished) {
+            <button
+              type="button"
+              class="danger-button"
+              [disabled]="actionLoading"
+              (click)="close()"
+            >
+              {{ actionLoading ? 'Closing...' : 'Close vacancy' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <dl class="facts-grid">
+        <div>
+          <dt>Company</dt>
+          <dd>{{ vacancy.companyName || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Company verification</dt>
+          <dd>
+            {{ vacancy.companyVerificationStatus || '—' }}
+          </dd>
+        </div>
+
+        <div>
+          <dt>Location</dt>
+          <dd>{{ vacancy.location || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Work mode</dt>
+          <dd>{{ vacancy.workMode || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Employment type</dt>
+          <dd>{{ vacancy.employmentType || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Education</dt>
+          <dd>{{ vacancy.requiredEducation || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Assessment status</dt>
+          <dd>{{ vacancy.assessmentStatus || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Eligibility</dt>
+          <dd>{{ vacancy.eligibility || '—' }}</dd>
+        </div>
+
+        <div>
+          <dt>Closing date</dt>
+          <dd>
+            {{
+              vacancy.closingDateUtc
+                ? (vacancy.closingDateUtc | date: 'mediumDate')
+                : '—'
+            }}
+          </dd>
+        </div>
+
+        <div>
+          <dt>Published</dt>
+          <dd>
+            {{
+              vacancy.publishedAtUtc
+                ? (vacancy.publishedAtUtc | date: 'mediumDate')
+                : '—'
+            }}
+          </dd>
+        </div>
+      </dl>
+
+      @if (isClosed) {
+        <div class="message readonly-message">
+          Closed vacancies are terminal and read-only.
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Matching policy</p>
+          <h2>Current policy</h2>
+        </div>
+
+        @if (policy) {
+          <span class="policy-badge">
+            Revision {{ policy.revisionNumber }}
+          </span>
+        }
+      </div>
+
+      @if (policy) {
+        <dl class="facts-grid">
+          <div>
+            <dt>Current revision</dt>
+            <dd>
+              {{ policy.isCurrent ? 'Yes' : 'No' }}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Material changes</dt>
+            <dd>
+              {{
+                policy.isMateriallyLocked
+                  ? 'Locked'
+                  : 'Not locked'
+              }}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Locked at</dt>
+            <dd>
+              {{
+                policy.materiallyLockedAtUtc
+                  ? (policy.materiallyLockedAtUtc | date: 'medium')
+                  : '—'
+              }}
+            </dd>
+          </div>
+        </dl>
+      } @else {
+        <p>No current matching policy was returned.</p>
+      }
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Application workload</p>
+          <h2>Applications for this vacancy</h2>
+        </div>
+
+        <a
+          class="primary-button"
+          [routerLink]="[
+            '/employer/vacancies',
+            vacancyId,
+            'applicants'
+          ]"
+        >
+          Review ranked applicants
+        </a>
+      </div>
+
+      @if (applications.length === 0) {
+        <div class="empty-state">
+          <strong>No applications yet</strong>
+          <p>
+            Applications submitted for this vacancy will appear here.
+          </p>
+        </div>
+      } @else {
+        <div class="application-summary">
+          <span>
+            Total
+            <strong>{{ applicationCount }}</strong>
+          </span>
+
+          <span>
+            Submitted
+            <strong>{{ countStatus('Submitted') }}</strong>
+          </span>
+
+          <span>
+            Shortlisted
+            <strong>{{ countStatus('Shortlisted') }}</strong>
+          </span>
+
+          <span>
+            Rejected
+            <strong>{{ countStatus('Rejected') }}</strong>
+          </span>
+        </div>
+
+        <div class="application-list">
+          @for (
+            application of applications;
+            track application.id
+          ) {
+            <article class="application-row">
+              <div>
+                <strong>
+                  Application {{ application.id }}
+                </strong>
+
+                <p>
+                  Submitted
+                  {{
+                    application.submittedAtUtc
+                      | date: 'medium'
+                  }}
+                </p>
+              </div>
+
+              <div class="application-meta">
+                <span>{{ application.status }}</span>
+
+                <span>
+                  {{ application.frozenAssessmentStatus }}
+                </span>
+
+                @if (
+                  application.displayCompatibility !== null
+                ) {
+                  <strong>
+                    {{
+                      application.displayCompatibility
+                        | number: '1.0-2'
+                    }}
+                  </strong>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>
