@@ -78,7 +78,7 @@
                     {{ vacancy.location || 'Location not specified' }}
 
                     @if (vacancy.requiredSkills.length > 0) {
-                      <span aria-hidden="true"> Ã‚Â· </span>
+                      <span aria-hidden="true"> · </span>
                       {{ vacancy.requiredSkills[0].name }}
 
                       @if (vacancy.requiredSkills.length > 1) {
@@ -90,9 +90,9 @@
                   </div>
                 </td>
 
-                <td>{{ vacancy.workMode || 'Ã¢â‚¬â€' }}</td>
+                <td>{{ vacancy.workMode || '—' }}</td>
 
-                <td>{{ vacancy.employmentType || 'Ã¢â‚¬â€' }}</td>
+                <td>{{ vacancy.employmentType || '—' }}</td>
 
                 <td>
                   <span

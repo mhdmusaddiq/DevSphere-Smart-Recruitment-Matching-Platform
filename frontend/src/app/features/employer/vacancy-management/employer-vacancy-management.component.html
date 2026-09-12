@@ -62,7 +62,7 @@
       <article class="card metric-card">
         <span class="label">Policy revision</span>
         <strong>
-          {{ policy ? policy.revisionNumber : 'â€”' }}
+          {{ policy ? policy.revisionNumber : '—' }}
         </strong>
       </article>
     </section>
@@ -111,44 +111,44 @@
       <dl class="facts-grid">
         <div>
           <dt>Company</dt>
-          <dd>{{ vacancy.companyName || 'â€”' }}</dd>
+          <dd>{{ vacancy.companyName || '—' }}</dd>
         </div>
 
         <div>
           <dt>Company verification</dt>
           <dd>
-            {{ vacancy.companyVerificationStatus || 'â€”' }}
+            {{ vacancy.companyVerificationStatus || '—' }}
           </dd>
         </div>
 
         <div>
           <dt>Location</dt>
-          <dd>{{ vacancy.location || 'â€”' }}</dd>
+          <dd>{{ vacancy.location || '—' }}</dd>
         </div>
 
         <div>
           <dt>Work mode</dt>
-          <dd>{{ vacancy.workMode || 'â€”' }}</dd>
+          <dd>{{ vacancy.workMode || '—' }}</dd>
         </div>
 
         <div>
           <dt>Employment type</dt>
-          <dd>{{ vacancy.employmentType || 'â€”' }}</dd>
+          <dd>{{ vacancy.employmentType || '—' }}</dd>
         </div>
 
         <div>
           <dt>Education</dt>
-          <dd>{{ vacancy.requiredEducation || 'â€”' }}</dd>
+          <dd>{{ vacancy.requiredEducation || '—' }}</dd>
         </div>
 
         <div>
           <dt>Assessment status</dt>
-          <dd>{{ vacancy.assessmentStatus || 'â€”' }}</dd>
+          <dd>{{ vacancy.assessmentStatus || '—' }}</dd>
         </div>
 
         <div>
           <dt>Eligibility</dt>
-          <dd>{{ vacancy.eligibility || 'â€”' }}</dd>
+          <dd>{{ vacancy.eligibility || '—' }}</dd>
         </div>
 
         <div>
@@ -157,7 +157,7 @@
             {{
               vacancy.closingDateUtc
                 ? (vacancy.closingDateUtc | date: 'mediumDate')
-                : 'â€”'
+                : '—'
             }}
           </dd>
         </div>
@@ -168,7 +168,7 @@
             {{
               vacancy.publishedAtUtc
                 ? (vacancy.publishedAtUtc | date: 'mediumDate')
-                : 'â€”'
+                : '—'
             }}
           </dd>
         </div>
@@ -221,7 +221,7 @@
               {{
                 policy.materiallyLockedAtUtc
                   ? (policy.materiallyLockedAtUtc | date: 'medium')
-                  : 'â€”'
+                  : '—'
               }}
             </dd>
           </div>
