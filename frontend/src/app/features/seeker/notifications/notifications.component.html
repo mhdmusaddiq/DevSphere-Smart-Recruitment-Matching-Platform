@@ -1,0 +1,69 @@
+<main class="notifications-page">
+  <header class="page-header">
+    <div>
+      <p class="breadcrumb">Notifications</p>
+      <h1>Notifications</h1>
+      <p>Factual updates from your AptLens account and recruitment workflow.</p>
+    </div>
+
+    <button class="secondary" type="button" [disabled]="refreshing || loading" (click)="loadNotifications(false)">
+      {{ refreshing ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </header>
+
+  @if (rowError) {
+    <div class="row-error" role="alert">{{ rowError }}</div>
+  }
+
+  @if (errorMessage) {
+    <apt-error-state
+      title="Notifications unavailable"
+      [message]="errorMessage"
+      (retry)="loadNotifications()" />
+  } @else if (loading) {
+    <apt-loading-state message="Loading notifications…" />
+  } @else {
+    <nav class="filters" aria-label="Notification filters">
+      <button type="button" [class.active]="filter === 'All'" [attr.aria-pressed]="filter === 'All'" (click)="setFilter('All')">All</button>
+      <button type="button" [class.active]="filter === 'Unread'" [attr.aria-pressed]="filter === 'Unread'" (click)="setFilter('Unread')">Unread</button>
+    </nav>
+
+    <section class="notification-list">
+      @for (notification of filteredNotifications; track notification.id) {
+        <article class="notification-row" [class.unread]="!notification.isRead">
+          <span class="state-icon" aria-hidden="true">{{ notification.isRead ? '✓' : '●' }}</span>
+
+          <div>
+            <strong>{{ notification.message }}</strong>
+            <small>{{ notification.createdAtUtc | date:'medium' }}</small>
+            @if (!notification.isRead) {
+              <span class="visually-hidden">Unread notification</span>
+            }
+          </div>
+
+          @if (!notification.isRead) {
+            <button
+              class="mark-read"
+              type="button"
+              [disabled]="markingId !== null"
+              (click)="markRead(notification)">
+              {{ markingId === notification.id ? 'Updating…' : 'Mark as read' }}
+            </button>
+          }
+        </article>
+      } @empty {
+        <section class="empty-card">
+          <apt-empty-state-visual />
+          <h2>You're all caught up.</h2>
+          <p>{{ filter === 'Unread' ? 'There are no unread notifications.' : 'No notifications have been recorded for this account yet.' }}</p>
+        </section>
+      }
+    </section>
+
+    <aside class="routing-note">
+      <strong>Navigation stays factual.</strong>
+      <span>The notification API contains only message, read state and timestamp, so rows do not invent deep links from message text.</span>
+      <a routerLink="/seeker/applications">Go to My Applications</a>
+    </aside>
+  }
+</main>

@@ -11,13 +11,13 @@ export const seekerRoutes: Routes = [
     canActivate: [authGuard, verifiedAccountGuard, roleGuard],
     data: { roles: ['JobSeeker'] },
     children: [
-      { path: 'dashboard', component: RoutePlaceholderComponent, data: { pageId: 'S01', pageName: 'Job Seeker dashboard' } },
+      { path: 'dashboard', loadComponent: () => import('../features/seeker/dashboard/seeker-dashboard.component').then(component => component.SeekerDashboardComponent), data: { pageId: 'S01', pageName: 'Job Seeker dashboard' } },
       { path: 'applications', loadComponent: () => import('../features/applications/applications.component').then(component => component.ApplicationsComponent) },
-      { path: 'applications/:applicationId', component: RoutePlaceholderComponent, data: { pageId: 'S05', pageName: 'Application details' } },
+      { path: 'applications/:applicationId', loadComponent: () => import('../features/seeker/application-detail/application-detail.component').then(component => component.ApplicationDetailComponent), data: { pageId: 'S05', pageName: 'Application details' } },
       { path: 'profile', loadComponent: () => import('../features/profile/profile.component').then(component => component.ProfileComponent) },
       { path: 'cv', loadComponent: () => import('../features/resume/resume.component').then(component => component.ResumeComponent) },
-      { path: 'contact-requests', component: RoutePlaceholderComponent, data: { pageId: 'S08', pageName: 'Contact requests' } },
-      { path: 'notifications', component: RoutePlaceholderComponent, data: { pageId: 'S09', pageName: 'Notifications' } }
+      { path: 'contact-requests', loadComponent: () => import('../features/seeker/contact-requests/contact-requests.component').then(component => component.ContactRequestsComponent), data: { pageId: 'S08', pageName: 'Contact requests' } },
+      { path: 'notifications', loadComponent: () => import('../features/seeker/notifications/notifications.component').then(component => component.NotificationsComponent), data: { pageId: 'S09', pageName: 'Notifications' } }
     ]
   }
 ];

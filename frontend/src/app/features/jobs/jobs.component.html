@@ -1,287 +1,120 @@
-<div class="jobs-page">
-
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">D</div>
-
-      <div>
-        <strong>DevSphere</strong>
-        <span>Smart Recruitment</span>
-      </div>
-    </div>
-
+<div class="jobs-shell">
+  <aside class="side-nav">
+    <a class="brand" routerLink="/jobs">Apt<span>Lens</span></a>
     <nav>
-      <a routerLink="/jobs" class="active">Jobs</a>
-      <a routerLink="/seeker/applications">My Applications</a>
-    </nav>
-  </header>
-
-  <main>
-
-    <section class="hero">
-      <p class="eyebrow">SMART JOB MATCHING</p>
-
-      <h1>Find a role that matches your potential.</h1>
-
-      <p class="hero-text">
-        Explore open opportunities and compare your profile
-        against each vacancy using DevSphere's matching engine.
-      </p>
-
-      <div class="search-box">
-        <span>?</span>
-
-        <input
-          type="text"
-          [(ngModel)]="searchTerm"
-          placeholder="Search by job title, location or keyword"
-        />
-      </div>
-    </section>
-
-    <section class="content">
-
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">OPEN OPPORTUNITIES</p>
-          <h2>Available Jobs</h2>
-        </div>
-
-        @if (!loading) {
-          <span class="result-count">
-            {{ filteredVacancies.length }}
-            {{ filteredVacancies.length === 1 ? 'job' : 'jobs' }}
-          </span>
-        }
-      </div>
-
-      @if (errorMessage) {
-        <div class="alert">
-          {{ errorMessage }}
-        </div>
-      }
-
-      @if (loading) {
-
-        <div class="state-card">
-          <div class="spinner"></div>
-          <p>Loading opportunities...</p>
-        </div>
-
+      <a class="active" routerLink="/jobs">Find Jobs</a>
+      @if (isJobSeeker) {
+        <a routerLink="/seeker/dashboard">Dashboard</a>
+        <a routerLink="/seeker/applications">My Applications</a>
+        <a routerLink="/seeker/profile">Career Profile</a>
+        <a routerLink="/seeker/cv">CV Studio</a>
+        <a routerLink="/seeker/contact-requests">Contact Requests</a>
+        <a routerLink="/seeker/notifications">Notifications</a>
       } @else {
-
-        <div class="job-grid">
-
-          @for (vacancy of filteredVacancies; track vacancy.id) {
-
-            <article class="job-card">
-
-              <div class="job-card-top">
-                <span class="status">
-                  Open
-                </span>
-
-                <span class="location">
-                  {{ vacancy.location }}
-                </span>
-              </div>
-
-              <h3>{{ vacancy.title }}</h3>
-
-              <p class="description">
-                {{ vacancy.description }}
-              </p>
-
-              <div class="job-meta">
-                <div>
-                  <span class="meta-label">
-                    Experience
-                  </span>
-
-                  <strong>
-                    {{ experienceLabel(vacancy.requiredExperienceMonths) }}
-                  </strong>
-                </div>
-
-                <div>
-                  <span class="meta-label">
-                    Status
-                  </span>
-
-                  <strong>
-                    {{ vacancy.isOpen ? 'Accepting applications' : 'Closed' }}
-                  </strong>
-                </div>
-              </div>
-
-              <div class="card-actions">
-
-                <button
-                  class="match-button"
-                  type="button"
-                  [disabled]="matchLoadingId === vacancy.id"
-                  (click)="checkMatch(vacancy)"
-                >
-                  @if (matchLoadingId === vacancy.id) {
-                    Calculating...
-                  } @else {
-                    Check My Match
-                  }
-                </button>
-
-                <button
-                  class="apply-button"
-                  type="button"
-                  (click)="apply(vacancy)"
-                >
-                  Apply
-                </button>
-
-              </div>
-
-            </article>
-
-          } @empty {
-
-            <div class="state-card empty-state">
-              <h3>No jobs found</h3>
-              <p>
-                Try a different title, location or keyword.
-              </p>
-            </div>
-
-          }
-
-        </div>
-
+        <a routerLink="/login">Sign in</a>
+        <a routerLink="/register">Create account</a>
       }
+    </nav>
+  </aside>
 
-    </section>
+  <main class="jobs-main">
+    <header class="topbar">
+      <span>See the fit. Know the why.</span>
+      @if (isJobSeeker) { <a routerLink="/seeker/notifications">Notifications</a> } @else { <a routerLink="/login">Sign in</a> }
+    </header>
 
-  </main>
-
-  @if (selectedVacancy) {
-
-    <div class="modal-backdrop" (click)="closeMatch()">
-
-      <section
-        class="match-panel"
-        (click)="$event.stopPropagation()"
-      >
-
-        <button
-          class="close-button"
-          type="button"
-          (click)="closeMatch()"
-          aria-label="Close"
-        >
-          ×
-        </button>
-
-        <p class="eyebrow">PROFILE MATCH</p>
-
-        <h2>{{ selectedVacancy.title }}</h2>
-
-        <p class="match-location">
-          {{ selectedVacancy.location }}
-        </p>
-
-        @if (matchLoadingId === selectedVacancy.id) {
-
-          <div class="state-card">
-            <div class="spinner"></div>
-            <p>Calculating your match...</p>
-          </div>
-
-        } @else if (selectedMatch) {
-
-          <div class="total-score">
-            <strong>
-              {{ score(selectedMatch.totalScore) }}%
-            </strong>
-            <span>Overall Match</span>
-          </div>
-
-          <div class="score-grid">
-
-            <div class="score-card">
-              <span>Skills</span>
-              <strong>
-                {{ score(selectedMatch.skillsScore) }}%
-              </strong>
-            </div>
-
-            <div class="score-card">
-              <span>Experience</span>
-              <strong>
-                {{ score(selectedMatch.experienceScore) }}%
-              </strong>
-            </div>
-
-            <div class="score-card">
-              <span>Education</span>
-              <strong>
-                {{ score(selectedMatch.educationScore) }}%
-              </strong>
-            </div>
-
-            <div class="score-card">
-              <span>Location</span>
-              <strong>
-                {{ score(selectedMatch.locationScore) }}%
-              </strong>
-            </div>
-
-          </div>
-
-          <div class="skills-section">
-
-            <div>
-              <h3>Matched Skills</h3>
-
-              <div class="chips">
-                @for (
-                  skill of selectedMatch.matchedSkills;
-                  track skill
-                ) {
-                  <span class="chip matched">
-                    {{ skill }}
-                  </span>
-                } @empty {
-                  <span class="muted">
-                    No matched skills yet.
-                  </span>
-                }
-              </div>
-            </div>
-
-            <div>
-              <h3>Skills to Improve</h3>
-
-              <div class="chips">
-                @for (
-                  skill of selectedMatch.missingSkills;
-                  track skill
-                ) {
-                  <span class="chip missing">
-                    {{ skill }}
-                  </span>
-                } @empty {
-                  <span class="muted">
-                    No missing skills.
-                  </span>
-                }
-              </div>
-            </div>
-
-          </div>
-
-        }
-
+    <div class="page-content">
+      <section class="hero">
+        <h1>Find Your Next Opportunity</h1>
+        <p>Search published roles and understand your current alignment.</p>
+        <form class="hero-form" (ngSubmit)="search(true)">
+          <input [(ngModel)]="filters.q" name="q" placeholder="Job title, company or keyword" aria-label="Job title, company or keyword" />
+          <input [(ngModel)]="filters.location" name="location" placeholder="Location or district" aria-label="Location or district" />
+          <button type="submit">Search</button>
+        </form>
       </section>
 
+      <div class="preset-row" role="tablist" aria-label="Discovery presets">
+        <button type="button" [class.active]="preset === 'all'" (click)="selectPreset('all')">All Jobs</button>
+        <button type="button" [class.active]="preset === 'best'" (click)="selectPreset('best')">Best Match</button>
+        <button type="button" [class.active]="preset === 'newest'" (click)="selectPreset('newest')">Newest</button>
+        <button type="button" [class.active]="preset === 'remote'" (click)="selectPreset('remote')">Remote</button>
+        <button type="button" [class.active]="preset === 'onsite'" (click)="selectPreset('onsite')">On-site</button>
+        <button type="button" [class.active]="preset === 'hybrid'" (click)="selectPreset('hybrid')">Hybrid</button>
+        <button class="filter-trigger" type="button" (click)="mobileFiltersOpen = !mobileFiltersOpen">Filters</button>
+      </div>
+
+      @if (activeFilters.length) {
+        <div class="filter-chips" aria-label="Active filters">
+          @for (filter of activeFilters; track filter.key) {
+            <button type="button" (click)="removeFilter(filter.key)">{{ filter.label }} ×</button>
+          }
+          <button type="button" class="clear-chip" (click)="clearFilters()">Clear all</button>
+        </div>
+      }
+
+      @if (noticeMessage) { <div class="notice">{{ noticeMessage }}</div> }
+      @if (preset === 'best' && isJobSeeker) {
+        <div class="best-note"><strong>Best Match</strong><span>Only server-calculated assessments participate in personalized ranking.</span></div>
+      }
+
+      <div class="results-layout">
+        <section class="results" aria-live="polite">
+          @if (errorMessage) {
+            <apt-error-state title="Jobs unavailable" [message]="errorMessage" (retry)="search(false)" />
+          }
+
+          @if (loading && vacancies.length === 0) {
+            <apt-loading-state message="Loading published roles…" />
+          } @else if (!loading && vacancies.length === 0 && !errorMessage) {
+            <div class="empty"><apt-empty-state-visual /><h2>No published jobs match these filters.</h2><p>Clear the filters and try another search.</p><button type="button" (click)="clearFilters()">Clear filters</button></div>
+          } @else {
+            @for (vacancy of vacancies; track vacancy.id) {
+              <article class="job-card">
+                <apt-company-monogram [companyName]="vacancy.companyName" [size]="48" />
+                <div class="job-copy">
+                  <div class="company-line"><strong>{{ vacancy.companyName || 'Company' }}</strong>@if (vacancy.companyVerificationStatus) { <span>{{ vacancy.companyVerificationStatus }}</span> }</div>
+                  <h2>{{ vacancy.title }}</h2>
+                  <p>{{ vacancy.location }} · {{ vacancy.workMode }} · {{ vacancy.employmentType }}</p>
+                  <div class="skill-list">
+                    @for (skill of vacancy.requiredSkills.slice(0, 4); track skill.name) { <span>{{ skill.name }}</span> }
+                  </div>
+                  <div class="truth-line"><span>{{ experienceLabel(vacancy.requiredExperienceMonths) }} experience</span>@if (salaryLabel(vacancy)) { <span>{{ salaryLabel(vacancy) }}</span> }@if (vacancy.closingDateUtc) { <span>Closes {{ vacancy.closingDateUtc | date:'mediumDate' }}</span> }</div>
+                </div>
+
+                <div class="match-column">
+                  @if (isCalculated(vacancy)) {
+                    <strong class="score">{{ vacancy.displayCompatibility }}</strong>
+                    <span>Compatibility</span>
+                    <small>{{ vacancy.eligibility }}</small>
+                  } @else if (preset === 'best' && vacancy.assessmentStatus) {
+                    <strong class="state-label">{{ vacancy.assessmentStatus }}</strong>
+                    <small>{{ vacancy.eligibility || 'Assessment state' }}</small>
+                  }
+                </div>
+
+                <a class="view-button" [routerLink]="['/jobs', vacancy.id]">View role</a>
+              </article>
+            }
+
+            <div class="pager" aria-label="Job results pagination">
+              <button type="button" [disabled]="page <= 1 || loading" (click)="previousPage()">Previous</button>
+              <span>Page {{ page }}</span>
+              <button type="button" [disabled]="!hasMore || loading" (click)="loadMore()">Load more</button>
+              <button type="button" [disabled]="!hasMore || loading" (click)="nextPage()">Next</button>
+            </div>
+          }
+        </section>
+
+        <aside class="filters" [class.open]="mobileFiltersOpen">
+          <div class="filters-heading"><h2>Filters</h2><button type="button" (click)="mobileFiltersOpen = false">Close</button></div>
+          <label>Skill<input [(ngModel)]="filters.skill" name="skill" placeholder="Add skill" /></label>
+          <label>Location or district<input [(ngModel)]="filters.location" name="filterLocation" placeholder="Any location" /></label>
+          <label>Work mode<select [(ngModel)]="filters.workMode" name="workMode"><option value="">Any mode</option><option>Remote</option><option>On-site</option><option>Hybrid</option></select></label>
+          <label>Employment type<select [(ngModel)]="filters.employmentType" name="employmentType"><option value="">Any type</option><option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option></select></label>
+          <div class="filter-actions"><button type="button" (click)="clearFilters()">Reset</button><button class="primary" type="button" (click)="search(true)">Apply filters</button></div>
+        </aside>
+      </div>
     </div>
-
-  }
-
+  </main>
 </div>

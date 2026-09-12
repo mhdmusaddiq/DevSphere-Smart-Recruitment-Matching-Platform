@@ -1,0 +1,149 @@
+<div class="detail-shell">
+  <aside class="side-nav">
+    <a class="brand" routerLink="/jobs">Apt<span>Lens</span></a>
+    <nav>
+      @if (isJobSeeker) { <a routerLink="/seeker/dashboard">Dashboard</a> }
+      <a class="active" routerLink="/jobs">Find Jobs</a>
+      @if (isJobSeeker) {
+        <a routerLink="/seeker/applications">My Applications</a>
+        <a routerLink="/seeker/profile">Profile</a>
+        <a routerLink="/seeker/cv">CV</a>
+        <a routerLink="/seeker/contact-requests">Contact Requests</a>
+        <a routerLink="/seeker/notifications">Notifications</a>
+      }
+    </nav>
+  </aside>
+
+  <main class="main">
+    <header class="topbar"><a routerLink="/jobs">Find Jobs</a>@if (vacancy) { <span>/ {{ vacancy.title }}</span> }</header>
+    <div class="content">
+      @if (loading) {
+        <apt-loading-state message="Loading role details…" />
+      } @else if (pageError) {
+        <apt-error-state title="Role unavailable" [message]="pageError" (retry)="load()" />
+      } @else if (vacancy) {
+        <section class="overview-card">
+          <div class="company-row">
+            <apt-company-monogram [companyName]="vacancy.companyName" [size]="46" />
+            <div><strong>{{ vacancy.companyName }}</strong>@if (vacancy.companyVerificationStatus) { <span class="verified"> · {{ vacancy.companyVerificationStatus }}</span> }<small>{{ vacancy.location }}</small></div>
+          </div>
+          <div class="overview-actions"><a class="ghost" routerLink="/jobs">Back to jobs</a>@if (isJobSeeker) { <button type="button" (click)="openApply()">Apply</button> }</div>
+          <h1>{{ vacancy.title }}</h1>
+          <div class="meta-chips"><span>{{ vacancy.workMode }}</span><span>{{ vacancy.employmentType }}</span><span>{{ experienceLabel(vacancy.requiredExperienceMonths) }} experience</span>@if (salaryLabel()) { <span>{{ salaryLabel() }}</span> }@if (vacancy.closingDateUtc) { <span>Closes {{ vacancy.closingDateUtc | date:'mediumDate' }}</span> }</div>
+        </section>
+
+        <div class="tabs" role="tablist" aria-label="Job detail sections">
+          <button type="button" [class.active]="activeTab === 'overview'" (click)="showTab('overview')">Overview</button>
+          <button type="button" [class.active]="activeTab === 'match'" (click)="showTab('match')">Match Details</button>
+          <button type="button" [class.active]="activeTab === 'requirements'" (click)="showTab('requirements')">Requirements</button>
+          <button type="button" [class.active]="activeTab === 'readiness'" (click)="showTab('readiness')">Readiness</button>
+          <button type="button" [class.active]="activeTab === 'apply'" (click)="showTab('apply')">Apply</button>
+        </div>
+
+        @if (activeTab === 'overview') {
+          <section class="panel"><h2>About this role</h2><p class="description">{{ vacancy.description }}</p><div class="fact-grid"><div><span>Lifecycle</span><strong>{{ vacancy.lifecycleStatus }}</strong></div><div><span>Education</span><strong>{{ vacancy.requiredEducation || 'Not specified' }}</strong></div><div><span>Location</span><strong>{{ vacancy.location }}</strong></div><div><span>Published</span><strong>{{ vacancy.publishedAtUtc ? (vacancy.publishedAtUtc | date:'mediumDate') : 'Not listed' }}</strong></div></div><h3>Required skills</h3><div class="skill-list">@for (skill of vacancy.requiredSkills; track skill.name) { <span>{{ skill.name }}</span> } @empty { <span>No explicit skill list was published.</span> }</div></section>
+        }
+
+        @if (!isJobSeeker && activeTab !== 'overview') {
+          <section class="panel sign-in-panel"><h2>Sign in for personalized fit and application controls</h2><p>The public role overview stays available. Compatibility, readiness and ApplyDecision are candidate-owned server results.</p><div><a class="primary-link" routerLink="/login" [queryParams]="{ returnUrl: '/jobs/' + vacancyId }">Sign in</a><a class="ghost" routerLink="/register">Create Job Seeker account</a></div></section>
+        } @else if (isJobSeeker && personalizedLoading && activeTab !== 'overview') {
+          <apt-loading-state message="Loading your server-authored fit and readiness…" />
+        }
+
+        @if (isJobSeeker && !personalizedLoading && activeTab === 'match') {
+          <section class="panel">
+            <h2>Compatibility summary</h2>
+            @if (matchError) { <apt-error-state title="Match unavailable" [message]="matchError" [retryable]="false" /> }
+            @if (match) {
+              <div class="score-grid"><div><span>Assessment</span><strong>{{ assessmentLabel(match.assessmentStatus) }}</strong></div><div><span>Eligibility</span><strong>{{ eligibilityLabel(match.eligibility) }}</strong></div>@if (isCalculated()) { <div class="score-box"><span>Compatibility</span><strong>{{ match.displayCompatibility }}</strong></div> }<div><span>Coverage</span><strong>{{ match.coverage }}%</strong></div></div>
+              @if (match.eligibilityReason) { <p class="truth-note">{{ match.eligibilityReason }}</p> }
+              <div class="split"><div><h3>Matched skills</h3><div class="skill-list">@for (skill of match.matchedSkills; track skill) { <span class="good">{{ skill }}</span> } @empty { <small>No matched skills were returned.</small> }</div></div><div><h3>Gaps</h3><div class="skill-list">@for (skill of match.missingSkills; track skill) { <span class="gap">{{ skill }}</span> } @empty { <small>No missing skills were returned.</small> }</div></div></div>
+            }
+          </section>
+        }
+
+        @if (isJobSeeker && !personalizedLoading && activeTab === 'requirements') {
+          <section class="panel">
+            <h2>Requirements evidence</h2>
+
+            @if (matchError) {
+              <apt-error-state
+                title="Evidence unavailable"
+                [message]="matchError"
+                [retryable]="false" />
+            }
+
+            @if (match) {
+              @for (family of match.families; track family.family) {
+                <article class="family">
+                  <div class="family-heading">
+                    <strong>{{ family.family }}</strong>
+                    <span>{{ family.importance }}</span>
+                  </div>
+
+                  @for (
+                    criterion of family.criteria;
+                    track criterion.requirementId ?? criterion.alternativeSetId ?? criterion.label
+                  ) {
+                    <div class="criterion">
+                      <div>
+                        <strong>{{ criterion.label }}</strong>
+                        <small>
+                          {{ criterion.mode }} &middot; {{ criterion.importance }}
+                          @if (criterion.isRegulatoryGate) {
+                            <span> &middot; Regulatory gate</span>
+                          }
+                        </small>
+                      </div>
+
+                      <span class="criterion-state">
+                        {{ criterionStateLabel(criterion.state) }}
+                      </span>
+
+                      @if (criterion.score !== null) {
+                        <strong>{{ criterion.score }}</strong>
+                      }
+                    </div>
+                  }
+                </article>
+              }
+
+              @if (match.missingInputs.length) {
+                <div class="truth-note">
+                  <strong>Missing inputs</strong>
+                  <ul>
+                    @for (item of match.missingInputs; track item) {
+                      <li>{{ item }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+            }
+          </section>
+        }
+        @if (isJobSeeker && !personalizedLoading && activeTab === 'readiness') {
+          <section class="panel"><h2>Vacancy-specific readiness</h2>@if (readinessError) { <apt-error-state title="Readiness unavailable" [message]="readinessError" [retryable]="false" /> }@if (readiness) { <div class="score-grid"><div><span>Profile</span><strong>{{ readiness.profileReady ? 'Ready' : 'Action needed' }}</strong></div><div><span>Current CV</span><strong>{{ readiness.resumeReady ? 'Ready' : 'Action needed' }}</strong></div><div><span>Application readiness</span><strong>{{ readiness.isReady ? 'Ready' : 'Blocked' }}</strong></div></div>@if (readiness.missingItems.length) { <div class="truth-note"><strong>Required next actions</strong><ul>@for (item of readiness.missingItems; track item) { <li>{{ item }}</li> }</ul></div> } }@if (match?.missingInputs?.length) { <div class="truth-note"><strong>Vacancy evidence still missing</strong><ul>@for (item of match.missingInputs; track item) { <li>{{ item }}</li> }</ul></div> }</section>
+        }
+
+        @if (isJobSeeker && !personalizedLoading && activeTab === 'apply') {
+          <div class="apply-layout">
+            <section class="panel">
+              <h2>Submit your application</h2><p>Review the current ResumeVersion and the server ApplyDecision. Eligibility is checked again when you submit.</p>
+              @if (decisionError) { <apt-error-state title="Apply decision unavailable" [message]="decisionError" (retry)="loadPersonalized()" /> }
+              @if (resumeError) { <apt-error-state title="CV unavailable" [message]="resumeError" [retryable]="false" /> }
+              @if (currentResumeVersion; as version) { <div class="resume-card"><span class="pdf">PDF</span><div><strong>{{ version.originalFileName }}</strong><small>Resume Version {{ version.versionNumber }} · {{ fileSize(version.fileSizeBytes) }} · Current</small></div><a class="ghost" routerLink="/seeker/cv">Manage CV</a></div> } @else { <div class="truth-note"><strong>No current ResumeVersion is available.</strong><a routerLink="/seeker/cv">Open CV Studio</a></div> }
+              <div class="snapshot-note"><strong>Application snapshot</strong><span>On successful submission, the current ResumeVersion and server matching result are captured as immutable application history.</span></div>
+              @if (decision) {
+                @if (decision.reasons.length) { <div class="decision-reasons">@for (reason of decision.reasons; track reason.code) { <div><strong>{{ reason.message }}</strong>@if (reason.targetCta) { <small>Next action: {{ reason.targetCta }}</small> }</div> }</div> }
+                @if (decision.requiresBaselineAcknowledgement) { <label class="ack"><input type="checkbox" [(ngModel)]="baselineAcknowledged" /> <span><strong>Acknowledge the baseline gap.</strong><small>I reviewed the identified gap and still want to submit this application.</small></span></label> }
+                @if (applyError) { <div class="apply-error">{{ applyError }} @if (applyError.includes('already')) { <a routerLink="/seeker/applications">Open My Applications</a> }</div> }
+                <div class="apply-actions"><button class="ghost-button" type="button" (click)="showTab('readiness')">Back</button><button type="button" [disabled]="!canSubmit" (click)="apply()">{{ applying ? 'Submitting…' : 'Submit application' }}</button></div>
+              }
+            </section>
+            <aside class="panel final-check"><h2>Final check</h2><div><span>Company</span><strong>{{ vacancy.companyName }}</strong></div><div><span>Role</span><strong>{{ vacancy.title }}</strong></div><div><span>Compatibility</span><strong>{{ isCalculated() ? match?.displayCompatibility : assessmentLabel(match?.assessmentStatus) }}</strong></div><div><span>Apply permission</span><strong>{{ decision?.canSubmit ? (decision?.requiresBaselineAcknowledgement ? 'Allowed with acknowledgement' : 'Allowed') : (decision?.primaryCode || 'Blocked') }}</strong></div><p>Compatibility is decision support, not a hiring probability. Final submission is accepted only after the server re-check.</p></aside>
+          </div>
+        }
+      }
+    </div>
+  </main>
+</div>

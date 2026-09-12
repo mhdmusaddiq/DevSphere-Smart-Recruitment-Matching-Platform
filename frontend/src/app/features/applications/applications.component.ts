@@ -1,90 +1,224 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 
-import {
-  ApplicationStatusHistory,
-  JobApplication
-} from '../../core/models/application.model';
-import {
-  ApplicationsApiService
-} from '../../core/services/applications-api.service';
+import { CompanyMonogramComponent } from '../../shared/avatar/company-monogram.component';
+import { EmptyStateVisualComponent } from '../../shared/states/empty-state-visual.component';
+import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { LoadingStateComponent } from '../../shared/states/loading-state.component';
+import { SeekerWorkflowApiService } from '../seeker/data/seeker-workflow-api.service';
+import { SeekerApplication } from '../seeker/data/seeker-workflow.models';
+
+type ApplicationFilter =
+  | 'All'
+  | 'Active'
+  | 'Shortlisted'
+  | 'Selected'
+  | 'Rejected'
+  | 'Withdrawn';
 
 @Component({
   selector: 'app-applications',
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink
+    RouterLink,
+    CompanyMonogramComponent,
+    EmptyStateVisualComponent,
+    ErrorStateComponent,
+    LoadingStateComponent
   ],
   templateUrl: './applications.component.html',
   styleUrl: './applications.component.css'
 })
 export class ApplicationsComponent implements OnInit {
-  private readonly api = inject(ApplicationsApiService);
+  private readonly api = inject(SeekerWorkflowApiService);
 
-  applications: JobApplication[] = [];
-  history: ApplicationStatusHistory[] = [];
+  readonly filters: ApplicationFilter[] = [
+    'All',
+    'Active',
+    'Shortlisted',
+    'Selected',
+    'Rejected',
+    'Withdrawn'
+  ];
+
+  applications: SeekerApplication[] = [];
+  filter: ApplicationFilter = 'All';
+  resumeVersionNumbers = new Map<string, number>();
 
   loading = true;
-  historyLoading = false;
+  refreshing = false;
+  withdrawingId: string | null = null;
+  withdrawCandidate: SeekerApplication | null = null;
 
   errorMessage = '';
-
-  selectedApplication: JobApplication | null = null;
+  staleMessage = '';
+  actionMessage = '';
 
   ngOnInit(): void {
     this.loadApplications();
   }
 
-  loadApplications(): void {
-    this.loading = true;
-    this.errorMessage = '';
+  get filteredApplications(): SeekerApplication[] {
+    if (this.filter === 'All') {
+      return this.applications;
+    }
 
-    this.api.getMine().subscribe({
-      next: applications => {
-        this.applications = applications;
-        this.loading = false;
-      },
-      error: error => {
-        this.loading = false;
+    if (this.filter === 'Active') {
+      return this.applications.filter(application =>
+        ['Submitted', 'Screening', 'UnderReview', 'Shortlisted']
+          .includes(application.status)
+      );
+    }
 
-        if (error.status === 401 || error.status === 403) {
-          this.errorMessage =
-            'Please sign in as a Candidate to view your applications.';
-          return;
-        }
-
-        this.errorMessage =
-          'Unable to load your applications.';
-      }
-    });
+    return this.applications.filter(
+      application => application.status === this.filter
+    );
   }
 
-  openHistory(application: JobApplication): void {
-    this.selectedApplication = application;
-    this.history = [];
-    this.historyLoading = true;
+  loadApplications(showLoader = true): void {
+    if (showLoader && this.applications.length === 0) {
+      this.loading = true;
+    } else {
+      this.refreshing = true;
+    }
 
-    this.api.getHistory(application.id).subscribe({
-      next: history => {
-        this.history = history;
-        this.historyLoading = false;
+    this.errorMessage = '';
+    this.actionMessage = '';
+
+    this.api
+      .getApplications()
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.refreshing = false;
+      }))
+      .subscribe({
+        next: applications => {
+          this.applications = applications;
+          this.staleMessage = '';
+
+          if (applications.some(application => Boolean(application.resumeVersionId))) {
+            this.loadResumeLabels();
+          } else {
+            this.resumeVersionNumbers.clear();
+          }
+        },
+        error: (error: HttpErrorResponse) => {
+          const message = this.errorText(
+            error,
+            'Unable to load your applications.'
+          );
+
+          if (this.applications.length > 0) {
+            this.staleMessage =
+              'Could not refresh your applications. Previously loaded information may be out of date.';
+            return;
+          }
+
+          this.errorMessage = message;
+        }
+      });
+  }
+
+  setFilter(filter: ApplicationFilter): void {
+    this.filter = filter;
+  }
+
+  isCalculated(application: SeekerApplication): boolean {
+    return application.frozenAssessmentStatus
+      .toLowerCase() === 'calculated'
+      && application.displayCompatibility !== null;
+  }
+
+  canWithdraw(application: SeekerApplication): boolean {
+    return !this.staleMessage
+      && ['Submitted', 'Screening', 'UnderReview', 'Shortlisted']
+        .includes(application.status);
+  }
+
+  resumeLabel(application: SeekerApplication): string | null {
+    if (!application.resumeVersionId) {
+      return null;
+    }
+
+    const version = this.resumeVersionNumbers.get(application.resumeVersionId);
+    return version ? `CV version ${version}` : 'Submitted CV linked';
+  }
+
+  askWithdraw(application: SeekerApplication): void {
+    if (!this.canWithdraw(application) || this.withdrawingId) {
+      return;
+    }
+
+    this.withdrawCandidate = application;
+  }
+
+  cancelWithdraw(): void {
+    this.withdrawCandidate = null;
+  }
+
+  confirmWithdraw(): void {
+    const application = this.withdrawCandidate;
+
+    if (!application || !this.canWithdraw(application)) {
+      return;
+    }
+
+    this.withdrawingId = application.id;
+    this.actionMessage = '';
+
+    this.api
+      .withdraw(application.id)
+      .pipe(finalize(() => {
+        this.withdrawingId = null;
+        this.withdrawCandidate = null;
+      }))
+      .subscribe({
+        next: updated => {
+          this.applications = this.applications.map(item =>
+            item.id === updated.id ? updated : item
+          );
+          this.actionMessage = 'Application withdrawn.';
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 409) {
+            this.loadApplications(false);
+            this.actionMessage =
+              'The application changed before withdrawal. We refreshed the current server status.';
+            return;
+          }
+
+          this.actionMessage = this.errorText(
+            error,
+            'Unable to withdraw this application.'
+          );
+        }
+      });
+  }
+
+  private loadResumeLabels(): void {
+    this.api.getResume().subscribe({
+      next: resume => {
+        this.resumeVersionNumbers = new Map(
+          resume.versions.map(version => [version.id, version.versionNumber])
+        );
       },
       error: () => {
-        this.historyLoading = false;
-        this.errorMessage =
-          'Unable to load application history.';
+        this.resumeVersionNumbers.clear();
       }
     });
   }
 
-  closeHistory(): void {
-    this.selectedApplication = null;
-    this.history = [];
-  }
+  private errorText(error: HttpErrorResponse, fallback: string): string {
+    if (error.status === 401 || error.status === 403) {
+      return 'Your Job Seeker session cannot access these applications.';
+    }
 
-  statusClass(status: string): string {
-    return `status-${status.toLowerCase()}`;
+    return typeof error.error?.message === 'string'
+      ? error.error.message
+      : fallback;
   }
 }

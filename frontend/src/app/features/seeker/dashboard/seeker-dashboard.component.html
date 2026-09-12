@@ -1,0 +1,136 @@
+<div class="workspace">
+  <aside class="sidebar" aria-label="Job Seeker navigation">
+    <a class="brand" routerLink="/seeker/dashboard">Apt<span>Lens</span></a>
+    <nav>
+      <a class="active" routerLink="/seeker/dashboard">Dashboard</a>
+      <a routerLink="/jobs">Find Jobs</a>
+      <a routerLink="/seeker/applications">My Applications</a>
+      <a routerLink="/seeker/profile">Profile</a>
+      <a routerLink="/seeker/cv">CV</a>
+      <a routerLink="/seeker/contact-requests">Contact Requests</a>
+      <a routerLink="/seeker/notifications">Notifications</a>
+    </nav>
+    <div class="sidebar-user">
+      <span class="avatar">{{ displayName.charAt(0).toUpperCase() }}</span>
+      <div><strong>{{ displayName }}</strong><small>Job Seeker</small></div>
+    </div>
+  </aside>
+
+  <section class="main-shell">
+    <header class="topbar">
+      <form class="top-search" (ngSubmit)="findJobs()">
+        <input [(ngModel)]="searchQuery" name="topQuery" placeholder="Search jobs by title or skill" aria-label="Search jobs by title or skill" />
+      </form>
+      <div class="top-user"><span class="avatar small">{{ displayName.charAt(0).toUpperCase() }}</span><strong>{{ displayName }}</strong></div>
+    </header>
+
+    <main class="content">
+      <div class="heading-row">
+        <div>
+          <h1>{{ greeting }}, {{ displayName.split(' ')[0] }}</h1>
+          <p>Find your next suitable role and keep every application moving.</p>
+        </div>
+        <span>Job Seeker workspace</span>
+      </div>
+
+      <form class="hero-search" (ngSubmit)="findJobs()">
+        <input [(ngModel)]="searchQuery" name="query" placeholder="Job title or skill" aria-label="Job title or skill" />
+        <input [(ngModel)]="searchLocation" name="location" placeholder="Location" aria-label="Location" />
+        <button type="submit">Find jobs</button>
+      </form>
+
+      @if (dashboardFailed) {
+        <apt-error-state title="Dashboard counters unavailable" message="The summary could not be loaded. Other sections may still be available." (retry)="loadDashboard()" />
+      }
+
+      <section class="summary-grid" aria-label="Job Seeker summary">
+        @if (loading) {
+          <div class="summary-card skeleton"></div><div class="summary-card skeleton"></div><div class="summary-card skeleton"></div>
+        } @else {
+          <article class="summary-card"><span class="metric-icon">▤</span><div><strong>{{ summary.applicationCount }}</strong><small>Applications</small></div></article>
+          <article class="summary-card"><span class="metric-icon warm">◔</span><div><strong>{{ summary.pendingContactRequestCount }}</strong><small>Pending contact requests</small></div></article>
+          <article class="summary-card"><span class="metric-icon cool">♢</span><div><strong>{{ summary.unreadNotificationCount }}</strong><small>Unread notifications</small></div></article>
+        }
+      </section>
+
+      <div class="dashboard-grid">
+        <div class="primary-column">
+          <section class="panel">
+            <div class="panel-heading"><div><h2>Explore open roles</h2><p>Open vacancies from the platform — check fit on the job page.</p></div><a routerLink="/jobs">View all jobs</a></div>
+            @if (loading) {
+              <apt-loading-state message="Loading published roles…" />
+            } @else if (rolesFailed) {
+              <apt-error-state title="Roles unavailable" message="Published roles could not be loaded." (retry)="loadDashboard()" />
+            } @else {
+              @for (role of openRoles; track role.id) {
+                <article class="role-row">
+                  <apt-company-monogram [companyName]="role.companyName" [size]="42" />
+                  <div class="role-copy"><strong>{{ role.title }}</strong><span>{{ role.companyName }} · {{ role.location }} · {{ experienceLabel(role.requiredExperienceMonths) }}</span></div>
+                  <div class="role-meta"><span>{{ salaryLabel(role) }}</span>@if (role.closingDateUtc) { <small>Closes {{ role.closingDateUtc | date:'mediumDate' }}</small> }</div>
+                  <a class="ghost-button" [routerLink]="['/jobs', role.id]">View role</a>
+                </article>
+              } @empty {
+                <div class="calm-empty"><strong>No published roles are available right now.</strong><a routerLink="/jobs">Find Jobs</a></div>
+              }
+            }
+          </section>
+
+          <section class="panel">
+            <div class="panel-heading"><div><h2>My applications</h2><p>Current status from your submitted applications.</p></div><a routerLink="/seeker/applications">View all applications</a></div>
+            @if (loading) {
+              <apt-loading-state message="Loading applications…" />
+            } @else if (applicationsFailed) {
+              <apt-error-state title="Applications unavailable" message="Your application preview could not be loaded." (retry)="loadDashboard()" />
+            } @else {
+              @for (application of recentApplications; track application.id) {
+                <article class="application-row">
+                  <div><strong>{{ application.vacancyTitle }}</strong><span>{{ application.companyName }} · {{ application.vacancyLocation }}</span></div>
+                  <div class="application-truth">
+                    <span class="status-pill">{{ application.status }}</span>
+                    @if (isCalculated(application)) { <small>{{ application.displayCompatibility }}% frozen compatibility</small> }
+                  </div>
+                  <a class="ghost-button" [routerLink]="['/seeker/applications', application.id]">View</a>
+                </article>
+              } @empty {
+                <div class="calm-empty"><strong>You have not submitted an application yet.</strong><a routerLink="/jobs">Find Jobs</a></div>
+              }
+            }
+          </section>
+        </div>
+
+        <aside class="secondary-column">
+          <section class="panel next-step">
+            <p class="eyebrow">{{ nextStep.eyebrow }}</p>
+            <h2>{{ nextStep.title }}</h2>
+            <p>{{ nextStep.description }}</p>
+            <a class="primary-button" [routerLink]="nextStep.route">{{ nextStep.action }}</a>
+          </section>
+
+          @if (!loading && pendingContact) {
+            <section class="panel compact-panel">
+              <h2>Contact request</h2>
+              <p>{{ pendingContact.companyName }} is requesting contact access for {{ pendingContact.vacancyTitle }}.</p>
+              <div class="contact-row"><span>{{ pendingContact.employerDisplayName }}</span><a routerLink="/seeker/contact-requests">Review</a></div>
+              <small>You control whether contact details are shared.</small>
+            </section>
+          } @else if (!loading && contactsFailed) {
+            <section class="panel compact-panel"><p>Contact requests are temporarily unavailable.</p></section>
+          }
+
+          <section class="panel compact-panel">
+            <div class="panel-heading"><div><h2>Latest updates</h2><p>Recent recruitment activity.</p></div><a routerLink="/seeker/notifications">View all</a></div>
+            @if (loading) {
+              <apt-loading-state message="Loading updates…" />
+            } @else if (notificationsFailed) {
+              <p>Notifications are temporarily unavailable.</p>
+            } @else {
+              @for (notification of notifications; track notification.id) {
+                <div class="notification-row" [class.unread]="!notification.isRead"><span>{{ notification.message }}</span><small>{{ notification.createdAtUtc | date:'short' }}</small></div>
+              } @empty { <p class="muted">No recent updates.</p> }
+            }
+          </section>
+        </aside>
+      </div>
+    </main>
+  </section>
+</div>
