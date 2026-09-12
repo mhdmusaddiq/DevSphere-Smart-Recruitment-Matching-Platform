@@ -1,0 +1,224 @@
+<main class="verify-page">
+  <aside class="auth-visual" aria-hidden="true">
+    <div class="visual-brand">AptLens</div>
+
+    <div class="visual-copy">
+      <p class="eyebrow">SMART RECRUITMENT, EXPLAINED</p>
+      <h2>See the fit.<br />Know the why.</h2>
+      <p>
+        Secure account verification protects identity before
+        AptLens opens role-based recruitment workflows.
+      </p>
+    </div>
+
+    <div class="visual-notes">
+      <div>
+        <strong>Short-lived code</strong>
+        <span>Verification challenges expire after 10 minutes.</span>
+      </div>
+      <div>
+        <strong>Rate protected</strong>
+        <span>Attempts and challenge issues are limited.</span>
+      </div>
+      <div>
+        <strong>No silent session</strong>
+        <span>Verification never creates a signed-in session.</span>
+      </div>
+    </div>
+  </aside>
+
+  <section class="auth-panel">
+    <div class="mobile-brand">AptLens</div>
+
+    <div class="auth-card">
+      <p class="crumb">SIGN IN · VERIFY EMAIL</p>
+
+      @if (verified()) {
+        <div
+          class="result-card result-card--success"
+          role="status"
+        >
+          <span class="result-icon" aria-hidden="true">✓</span>
+          <p class="eyebrow">EMAIL VERIFIED</p>
+          <h1>{{ statusMessage() }}</h1>
+          <p>
+            Verification is complete. Sign in normally to
+            create an authenticated session.
+          </p>
+
+          <a class="primary-button" routerLink="/login">
+            Sign in
+          </a>
+        </div>
+      } @else {
+        <header class="page-header">
+          <p class="eyebrow">VERIFY YOUR EMAIL</p>
+          <h1>Enter your verification code</h1>
+          <p>
+            Use the six-digit code created for your AptLens
+            account. Codes expire after 10 minutes.
+          </p>
+        </header>
+
+        <div class="form-stack">
+          @if (knownEmail()) {
+            <div class="known-email">
+              <div>
+                <span>Email</span>
+                <strong>{{ maskedEmail }}</strong>
+              </div>
+
+              <button
+                type="button"
+                class="text-button"
+                (click)="changeEmail()"
+              >
+                Change
+              </button>
+            </div>
+          } @else {
+            <label class="field">
+              <span>Email address</span>
+              <input
+                type="email"
+                autocomplete="email"
+                [formControl]="emailControl"
+                placeholder="you@example.com"
+                [attr.aria-invalid]="
+                  emailControl.invalid &&
+                  emailControl.touched
+                "
+              />
+            </label>
+
+            @if (
+              emailControl.touched &&
+              emailControl.invalid
+            ) {
+              <p class="field-error" role="alert">
+                Enter a valid email address.
+              </p>
+            }
+          }
+
+          <div class="privacy-note">
+            <span aria-hidden="true">i</span>
+            <p>
+              Resending returns a privacy-safe result. AptLens
+              does not reveal whether an account exists or
+              whether a new challenge was issued.
+            </p>
+          </div>
+
+          <fieldset class="code-field">
+            <legend>Verification code</legend>
+
+            <div
+              class="code-row"
+              (paste)="onCodePaste($event)"
+            >
+              @for (
+                control of codeControls;
+                track $index
+              ) {
+                <input
+                  data-code-digit
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="1"
+                  [formControl]="control"
+                  [attr.aria-label]="
+                    'Verification digit ' + ($index + 1)
+                  "
+                  (input)="
+                    onDigitInput($event, $index)
+                  "
+                  (keydown)="
+                    onDigitKeydown($event, $index)
+                  "
+                />
+              }
+            </div>
+
+            <small>
+              Six digits. You can paste the full code.
+            </small>
+
+            @if (
+              codeTouched() &&
+              !hasCompleteCode
+            ) {
+              <p class="field-error" role="alert">
+                Enter the complete six-digit verification code.
+              </p>
+            }
+          </fieldset>
+
+          @if (statusMessage()) {
+            <div
+              class="status-banner"
+              [class.status-banner--error]="
+                statusKind() === 'error'
+              "
+              [class.status-banner--success]="
+                statusKind() === 'success'
+              "
+              role="status"
+            >
+              {{ statusMessage() }}
+            </div>
+          }
+
+          @if (developmentCode()) {
+            <div class="development-helper">
+              <strong>Development helper</strong>
+              <span>
+                Local verification code:
+                <code>{{ developmentCode() }}</code>
+              </span>
+              <small>
+                Shown only because the API returned a
+                developmentCode.
+              </small>
+            </div>
+          }
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="isSubmitting()"
+            (click)="submitVerification()"
+          >
+            @if (isSubmitting()) {
+              Verifying…
+            } @else {
+              Verify email
+            }
+          </button>
+
+          <div class="secondary-actions">
+            <span>Didn't get a code?</span>
+
+            <button
+              type="button"
+              class="text-button"
+              [disabled]="isResending()"
+              (click)="resendVerification()"
+            >
+              @if (isResending()) {
+                Processing…
+              } @else {
+                Resend verification
+              }
+            </button>
+          </div>
+
+          <a class="back-link" routerLink="/login">
+            Back to sign in
+          </a>
+        </div>
+      }
+    </div>
+  </section>
+</main>
