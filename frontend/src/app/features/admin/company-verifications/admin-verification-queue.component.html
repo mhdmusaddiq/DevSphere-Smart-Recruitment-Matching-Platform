@@ -1,0 +1,144 @@
+<section class="verification-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">AD03 · Trust review</p>
+      <h1>Company verification</h1>
+      <p>
+        Review submitted company identity evidence. Company
+        verification is separate from employer membership or
+        association decisions.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      [disabled]="loading()"
+      (click)="load()"
+    >
+      {{ loading() ? 'Refreshing…' : 'Refresh queue' }}
+    </button>
+  </header>
+
+  <div class="filters">
+    <label>
+      <span class="sr-only">Search company name</span>
+      <input
+        type="search"
+        placeholder="Search company name"
+        autocomplete="off"
+        [formControl]="searchControl"
+      />
+    </label>
+
+    <label>
+      <span class="sr-only">Verification status</span>
+      <select [formControl]="statusControl">
+        @for (status of statuses; track status) {
+          <option [value]="status">
+            {{ statusLabel(status) }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="apply()"
+    >
+      Apply
+    </button>
+  </div>
+
+  <div class="summary-row">
+    <span>
+      <strong>{{ filteredRows().length }}</strong>
+      {{ statusLabel(statusControl.value).toLowerCase() }}
+      reviews shown
+    </span>
+    <span>Newest submissions first</span>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="error-panel" role="alert">
+      <strong>Review queue unavailable</strong>
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="load()">Retry</button>
+    </div>
+  } @else if (loading()) {
+    <div class="loading-list" aria-label="Loading company verification queue">
+      @for (item of [1,2,3]; track item) {
+        <span></span>
+      }
+    </div>
+  } @else {
+    <section class="queue-card">
+      <header>
+        <h2>Review queue</h2>
+        <p>
+          PendingReview is the default server queue. Other
+          statuses are read-only history unless a server-backed
+          transition is available.
+        </p>
+      </header>
+
+      @if (filteredRows().length) {
+        <div class="queue-list">
+          @for (
+            verification of filteredRows();
+            track verification.id
+          ) {
+            <article class="queue-row">
+              <apt-company-monogram
+                [companyName]="verification.companyName"
+                [size]="40"
+              />
+
+              <div class="company-copy">
+                <strong>{{ verification.companyName }}</strong>
+                <span>
+                  {{
+                    verification.notes ||
+                    'Company verification submission'
+                  }}
+                </span>
+              </div>
+
+              <span
+                class="status-badge"
+                [attr.data-status]="verification.status"
+              >
+                {{ statusLabel(verification.status) }}
+              </span>
+
+              <time>
+                {{
+                  verification.submittedAtUtc
+                    | date:'dd MMM y · HH:mm'
+                }}
+              </time>
+
+              <a
+                [routerLink]="[
+                  '/admin/company-verifications',
+                  verification.id
+                ]"
+              >
+                Open review
+              </a>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <strong>No matching verification reviews</strong>
+          <span>
+            No records were returned for the selected status and
+            company search.
+          </span>
+        </div>
+      }
+    </section>
+  }
+</section>

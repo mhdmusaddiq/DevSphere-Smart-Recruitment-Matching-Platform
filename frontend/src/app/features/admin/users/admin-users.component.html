@@ -1,0 +1,281 @@
+<section class="users-page">
+  <header class="page-heading">
+    <p class="eyebrow">Account administration</p>
+    <h1>User accounts</h1>
+    <p>
+      Search and filter platform accounts, then enable or disable
+      access using server-enforced safeguards. Account history
+      is never hard-deleted.
+    </p>
+  </header>
+
+  <div class="filters">
+    <label class="search-field">
+      <span class="sr-only">Search name or email</span>
+      <input
+        type="search"
+        autocomplete="off"
+        placeholder="Search name or email"
+        [formControl]="searchControl"
+      />
+    </label>
+
+    <label>
+      <span class="sr-only">Role</span>
+      <select
+        [formControl]="roleControl"
+        (change)="applyFilters()"
+      >
+        <option value="">All roles</option>
+        <option value="JobSeeker">Job seeker</option>
+        <option value="Employer">Employer</option>
+        <option value="Admin">Admin</option>
+      </select>
+    </label>
+
+    <label>
+      <span class="sr-only">Status</span>
+      <select
+        [formControl]="statusControl"
+        (change)="applyFilters()"
+      >
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="disabled">Disabled</option>
+      </select>
+    </label>
+
+    <button
+      type="button"
+      class="clear-button"
+      (click)="clearFilters()"
+    >
+      Clear filters
+    </button>
+  </div>
+
+  @if (actionMessage()) {
+    <div
+      class="action-banner action-banner--success"
+      role="status"
+    >
+      {{ actionMessage() }}
+    </div>
+  }
+
+  @if (actionError()) {
+    <div
+      class="action-banner action-banner--error"
+      role="alert"
+    >
+      {{ actionError() }}
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div class="error-panel" role="alert">
+      <strong>User accounts unavailable</strong>
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    <div class="result-summary">
+      <span>
+        <strong>{{ result()?.totalCount ?? 0 }}</strong>
+        matching accounts
+      </span>
+      <span>Newest accounts first · {{ pageSize }} per page</span>
+    </div>
+
+    @if (loading() && !result()) {
+      <div class="loading-list" aria-label="Loading user accounts">
+        @for (item of [1,2,3,4,5]; track item) {
+          <span></span>
+        }
+      </div>
+    } @else if ((result()?.items?.length ?? 0) > 0) {
+      <div class="table-card">
+        <div class="desktop-table">
+          <div class="table-row table-header">
+            <span>User</span>
+            <span>Role</span>
+            <span>Status</span>
+            <span>Created</span>
+            <span>Access</span>
+          </div>
+
+          @for (
+            user of result()!.items;
+            track user.userId
+          ) {
+            <div class="table-row">
+              <div class="user-cell">
+                <apt-identity-avatar
+                  [displayName]="user.displayName || user.email"
+                  [size]="34"
+                />
+                <div>
+                  <strong>
+                    {{ user.displayName || user.email }}
+                  </strong>
+                  <span>{{ user.email }}</span>
+                </div>
+              </div>
+
+              <span
+                class="role-badge"
+                [attr.data-role]="user.role"
+              >
+                {{ user.role }}
+              </span>
+
+              <span
+                class="status-badge"
+                [class.status-badge--disabled]="!user.isActive"
+              >
+                {{ user.isActive ? 'Active' : 'Disabled' }}
+              </span>
+
+              <span class="created">
+                {{
+                  user.createdAtUtc
+                    | date:'dd MMM y'
+                }}
+              </span>
+
+              <button
+                type="button"
+                class="status-button"
+                [class.status-button--enable]="!user.isActive"
+                [disabled]="pendingUserId() !== null"
+                (click)="toggleStatus(user)"
+              >
+                @if (pendingUserId() === user.userId) {
+                  Updating…
+                } @else {
+                  {{ user.isActive ? 'Disable' : 'Enable' }}
+                }
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="mobile-cards">
+          @for (
+            user of result()!.items;
+            track user.userId
+          ) {
+            <article class="user-card">
+              <div class="user-card-heading">
+                <div class="user-cell">
+                  <apt-identity-avatar
+                    [displayName]="user.displayName || user.email"
+                    [size]="36"
+                  />
+                  <div>
+                    <strong>
+                      {{ user.displayName || user.email }}
+                    </strong>
+                    <span>{{ user.email }}</span>
+                  </div>
+                </div>
+
+                <span
+                  class="status-badge"
+                  [class.status-badge--disabled]="!user.isActive"
+                >
+                  {{ user.isActive ? 'Active' : 'Disabled' }}
+                </span>
+              </div>
+
+              <div class="user-meta">
+                <span
+                  class="role-badge"
+                  [attr.data-role]="user.role"
+                >
+                  {{ user.role }}
+                </span>
+                <span class="joined-badge">
+                  Joined
+                  {{
+                    user.createdAtUtc
+                      | date:'dd MMM y'
+                  }}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                class="status-button status-button--wide"
+                [class.status-button--enable]="!user.isActive"
+                [disabled]="pendingUserId() !== null"
+                (click)="toggleStatus(user)"
+              >
+                @if (pendingUserId() === user.userId) {
+                  Updating…
+                } @else {
+                  {{
+                    user.isActive
+                      ? 'Disable account'
+                      : 'Enable account'
+                  }}
+                }
+              </button>
+            </article>
+          }
+        </div>
+
+        <footer class="pagination">
+          <span>
+            Page {{ page() }} ·
+            {{ result()?.items?.length ?? 0 }} shown
+          </span>
+
+          <div>
+            <button
+              type="button"
+              [disabled]="page() <= 1"
+              (click)="goToPage(page() - 1)"
+            >
+              Previous
+            </button>
+
+            @for (
+              pageNumber of visiblePages();
+              track pageNumber
+            ) {
+              <button
+                type="button"
+                class="page-button"
+                [class.page-button--active]="
+                  pageNumber === page()
+                "
+                (click)="goToPage(pageNumber)"
+              >
+                {{ pageNumber }}
+              </button>
+            }
+
+            <button
+              type="button"
+              [disabled]="page() >= totalPages()"
+              (click)="goToPage(page() + 1)"
+            >
+              Next
+            </button>
+          </div>
+        </footer>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <strong>No matching user accounts</strong>
+        <span>
+          Change the server-side search or filters and try again.
+        </span>
+        <button type="button" (click)="clearFilters()">
+          Clear filters
+        </button>
+      </div>
+    }
+  }
+</section>
