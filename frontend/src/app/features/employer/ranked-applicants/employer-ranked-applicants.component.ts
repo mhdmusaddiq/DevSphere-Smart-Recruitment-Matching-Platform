@@ -41,6 +41,42 @@ export class EmployerRankedApplicantsComponent implements OnInit {
     this.load();
   }
 
+  assessmentLabel(
+    value: string | number
+  ): string {
+    const labels: Record<string, string> = {
+      '1': 'Calculated',
+      '2': 'Provisional',
+      '3': 'NotCalculated',
+      '4': 'CalculationFailure'
+    };
+
+    return labels[String(value)] ?? String(value);
+  }
+
+  eligibilityLabel(
+    value: string | number
+  ): string {
+    const labels: Record<string, string> = {
+      '1': 'MeetsBaseline',
+      '2': 'PendingVerification',
+      '3': 'IncompleteAssessment',
+      '4': 'DoesNotMeetBaseline'
+    };
+
+    return labels[String(value)] ?? String(value);
+  }
+
+  hasCalculatedScore(
+    applicant: EmployerRankedApplicant
+  ): boolean {
+    return (
+      this.assessmentLabel(applicant.assessmentStatus) ===
+        'Calculated' &&
+      applicant.matchScore !== null
+    );
+  }
+
   load(): void {
     this.loading = true;
     this.errorMessage = '';

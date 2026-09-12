@@ -12,6 +12,9 @@ import {
   EmployerVacancy,
   EmployerJobApplication,
   EmployerRankedApplicant,
+  EmployerApplicationDetail,
+  EmployerApplicationSnapshot,
+  EmployerApplicationStatusHistory,
 
   VacancyPolicyAggregateDto,
   MatchingPolicyAggregateUpdateRequest,
@@ -81,6 +84,64 @@ export class EmployerApiService {
   ): Observable<EmployerRankedApplicant[]> {
     return this.http.get<EmployerRankedApplicant[]>(
       apiUrl(this.baseUrl, `/applications/vacancy/${vacancyId}`)
+    );
+  }
+
+  getEmployerApplication(
+    applicationId: string
+  ): Observable<EmployerApplicationDetail> {
+    return this.http.get<EmployerApplicationDetail>(
+      apiUrl(
+        this.baseUrl,
+        `/employer/applications/${applicationId}`
+      )
+    );
+  }
+
+  getApplicationSnapshot(
+    applicationId: string
+  ): Observable<EmployerApplicationSnapshot> {
+    return this.http.get<EmployerApplicationSnapshot>(
+      apiUrl(
+        this.baseUrl,
+        `/applications/${applicationId}/snapshot`
+      )
+    );
+  }
+
+  getApplicationStatusHistory(
+    applicationId: string
+  ): Observable<EmployerApplicationStatusHistory[]> {
+    return this.http.get<EmployerApplicationStatusHistory[]>(
+      apiUrl(
+        this.baseUrl,
+        `/applications/${applicationId}/status-history`
+      )
+    );
+  }
+
+  updateApplicationStatus(
+    applicationId: string,
+    status: string
+  ): Observable<EmployerJobApplication> {
+    return this.http.put<EmployerJobApplication>(
+      apiUrl(
+        this.baseUrl,
+        `/applications/${applicationId}/status`
+      ),
+      { status }
+    );
+  }
+
+  downloadApplicationResume(
+    applicationId: string
+  ): Observable<Blob> {
+    return this.http.get(
+      apiUrl(
+        this.baseUrl,
+        `/employer/applications/${applicationId}/resume`
+      ),
+      { responseType: 'blob' }
     );
   }
   createVacancy(request: EmployerVacancy): Observable<EmployerVacancy> {

@@ -298,6 +298,7 @@ export interface EmployerMatchFamilyResult {
 export interface EmployerRankedApplicant {
   applicationId: string;
   candidateId: string;
+  candidateDisplayName: string;
   vacancyId: string;
   appliedAt: string;
   status: string;
@@ -343,3 +344,58 @@ export interface EmployerWorkflowSummary {
   talentPoolEntries:EmployerTalentPoolEntry[];
 }
 export interface EmployerNotification { id:string; message:string; isRead:boolean; createdAtUtc:string; }
+
+export interface EmployerApplicationDetail {
+  applicationId: string;
+  candidateId: string;
+  candidateDisplayName: string;
+  vacancyId: string;
+  vacancyTitle: string;
+  submittedAtUtc: string;
+  status: string;
+  assessmentStatus: string | number;
+  displayCompatibility: number | null;
+  eligibility: string | number;
+  eligibilityReason: string | null;
+  matchedSkills: string[];
+  missingSkills: string[];
+  missingInputs: string[];
+  families: EmployerMatchFamilyResult[];
+  resumeVersionId: string | null;
+  capturedAtUtc: string | null;
+}
+
+export interface EmployerApplicationSnapshot {
+  id: string;
+  jobApplicationId: string;
+  resumeVersionId: string | null;
+  matchingPolicyRevisionId: string | null;
+  compatibilityScore: number | null;
+  rawCompatibilityScore: number | null;
+  displayCompatibilityScore: number | null;
+  highTierAggregateScore: number | null;
+  mediumTierAggregateScore: number | null;
+  coverage: number;
+  compatibilityStatus: string;
+  eligibilityStatus: string;
+  eligibilityReason: string | null;
+  isEligible: boolean;
+  applyDecision: string;
+  matchedSkillsJson: string;
+  gapSkillsJson: string;
+  evidenceSummaryJson: string;
+  matchResultJson: string;
+  candidateSnapshotJson: string;
+  vacancySnapshotJson: string;
+  capturedAtUtc: string;
+}
+
+export interface EmployerApplicationStatusHistory {
+  id: string;
+  jobApplicationId: string;
+  previousStatus: string | null;
+  newStatus: string;
+  changedByUserId: string;
+  changedAtUtc: string;
+  notes: string;
+}

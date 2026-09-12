@@ -57,7 +57,7 @@
             <div class="identity-row">
               <div>
                 <p class="eyebrow">Candidate</p>
-                <h2>{{ applicant.candidateId }}</h2>
+                <h2>{{ applicant.candidateDisplayName || applicant.candidateId }}</h2>
               </div>
 
               <span class="status-badge">
@@ -69,7 +69,7 @@
               <div>
                 <dt>Compatibility</dt>
                 <dd>
-                  @if (applicant.matchScore !== null) {
+                  @if (hasCalculatedScore(applicant)) {
                     {{ applicant.matchScore | number: '1.0-1' }}
                   } @else {
                     —
@@ -79,12 +79,12 @@
 
               <div>
                 <dt>Assessment</dt>
-                <dd>{{ applicant.assessmentStatus }}</dd>
+                <dd>{{ assessmentLabel(applicant.assessmentStatus) }}</dd>
               </div>
 
               <div>
                 <dt>Eligibility</dt>
-                <dd>{{ applicant.eligibility }}</dd>
+                <dd>{{ eligibilityLabel(applicant.eligibility) }}</dd>
               </div>
 
               <div>
@@ -132,12 +132,11 @@
             <a
               class="primary-button"
               [routerLink]="[
-                '/employer/applications',
+                '/employer/vacancies',
+                vacancyId,
+                'applicants',
                 applicant.applicationId
               ]"
-              [queryParams]="{
-                vacancyId: vacancyId
-              }"
             >
               View applicant detail
             </a>

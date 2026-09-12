@@ -27,13 +27,14 @@ describe('EmployerRankedApplicantsComponent', () => {
     {
       applicationId: 'application-1',
       candidateId: 'candidate-1',
+      candidateDisplayName: 'A. Mendis',
       vacancyId: 'vacancy-1',
       appliedAt: '2026-09-12T10:00:00Z',
-      status: 'Applied',
+      status: 'UnderReview',
       rawCompatibility: 87.25,
       matchScore: 87.3,
-      assessmentStatus: 'Calculated',
-      eligibility: 'MeetsBaseline',
+      assessmentStatus: 1,
+      eligibility: 1,
       eligibilityReason: null,
       highTierAggregate: 90,
       mediumTierAggregate: 85,
@@ -93,13 +94,22 @@ describe('EmployerRankedApplicantsComponent', () => {
     expect(component.applicants.length).toBe(1);
   });
 
-  it('preserves backend applicant order', () => {
+  it('preserves backend applicant order and candidate display name', () => {
     expect(component.applicants[0].applicationId)
       .toBe('application-1');
+    expect(component.applicants[0].candidateDisplayName)
+      .toBe('A. Mendis');
   });
 
-  it('uses server compatibility without client calculation', () => {
+  it('maps numeric backend assessment enums without recalculating score', () => {
+    expect(component.assessmentLabel(1))
+      .toBe('Calculated');
+    expect(component.eligibilityLabel(1))
+      .toBe('MeetsBaseline');
     expect(component.applicants[0].matchScore)
       .toBe(87.3);
+    expect(component.hasCalculatedScore(
+      component.applicants[0]
+    )).toBeTrue();
   });
 });
