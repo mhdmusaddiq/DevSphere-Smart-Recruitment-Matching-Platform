@@ -56,7 +56,7 @@ describe('AdminApiService', () => {
     });
   });
 
-  it('loads only PendingReview company verifications', () => {
+  it('loads PendingReview company verifications', () => {
     service
       .getPendingCompanyVerifications()
       .subscribe();
@@ -70,6 +70,73 @@ describe('AdminApiService', () => {
 
     expect(request.request.method).toBe('GET');
     request.flush([]);
+  });
+
+  it('loads verification detail without exposing a storage route', () => {
+    service
+      .getCompanyVerification('verification 1')
+      .subscribe();
+
+    const request = http.expectOne(
+      'https://api.example.test/api/admin/company-verifications/verification%201'
+    );
+
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      id: 'verification 1',
+      companyId: null,
+      companyName: 'Example',
+      status: 'PendingReview',
+      evidenceStorageKey: 'private/path',
+      notes: '',
+      submittedAtUtc: '2026-09-12T00:00:00Z',
+      reviewedAtUtc: null,
+      reviewedByUserId: null
+    });
+  });
+
+  it('downloads evidence only through the task-scoped protected route', () => {
+    service
+      .downloadCompanyVerificationEvidence('verification-1')
+      .subscribe();
+
+    const request = http.expectOne(
+      'https://api.example.test/api/admin/company-verifications/verification-1/evidence'
+    );
+
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    request.flush(new Blob(['evidence']));
+  });
+
+  it('reviews a verification with only the backend decision field', () => {
+    service
+      .reviewCompanyVerification(
+        'verification-1',
+        'Verified'
+      )
+      .subscribe();
+
+    const request = http.expectOne(
+      'https://api.example.test/api/admin/company-verifications/verification-1/review'
+    );
+
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({
+      decision: 'Verified'
+    });
+
+    request.flush({
+      id: 'verification-1',
+      companyId: null,
+      companyName: 'Example',
+      status: 'Verified',
+      evidenceStorageKey: 'private/path',
+      notes: '',
+      submittedAtUtc: '2026-09-12T00:00:00Z',
+      reviewedAtUtc: '2026-09-12T01:00:00Z',
+      reviewedByUserId: 'admin-1'
+    });
   });
 
   it('sends server-side user filters and pagination', () => {
@@ -128,6 +195,42 @@ describe('AdminApiService', () => {
       role: 'JobSeeker',
       isActive: false,
       createdAtUtc: '2026-09-12T00:00:00Z'
+    });
+  });
+
+  it('loads all skill concepts including inactive records', () => {
+    service.getSkillConcepts(true).subscribe();
+
+    const request = http.expectOne(req =>
+      req.url ===
+        'https://api.example.test/api/admin/catalogue/skills' &&
+      req.params.get('includeInactive') === 'true'
+    );
+
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
+
+  it('updates alias status without inventing extra governance fields', () => {
+    service
+      .setSkillAliasStatus('alias-1', false)
+      .subscribe();
+
+    const request = http.expectOne(
+      'https://api.example.test/api/admin/catalogue/aliases/alias-1/status'
+    );
+
+    expect(request.request.body).toEqual({
+      isActive: false
+    });
+
+    request.flush({
+      id: 'alias-1',
+      skillConceptId: 'skill-1',
+      skillConceptName: 'Angular',
+      alias: 'AngularJS',
+      isActive: false,
+      skillConceptIsActive: true
     });
   });
 });

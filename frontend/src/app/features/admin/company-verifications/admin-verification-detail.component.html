@@ -1,0 +1,244 @@
+<section class="detail-page">
+  <a
+    class="back-link"
+    routerLink="/admin/company-verifications"
+  >
+    ← Back to verification queue
+  </a>
+
+  @if (loading()) {
+    <div class="loading-card">
+      Loading verification review…
+    </div>
+  } @else if (missing()) {
+    <div class="missing-card">
+      <strong>Verification not found</strong>
+      <span>
+        This review may have been removed or the link may be stale.
+      </span>
+      <button type="button" (click)="backToQueue()">
+        Return to queue
+      </button>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="error-card" role="alert">
+      <strong>Review unavailable</strong>
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    @if (verification(); as item) {
+    <header class="page-heading">
+      <div class="company-heading">
+        <apt-company-monogram
+          [companyName]="item.companyName"
+          [size]="52"
+        />
+
+        <div>
+          <p class="eyebrow">AD03 · Verification detail</p>
+          <h1>{{ item.companyName }}</h1>
+          <span
+            class="status-badge"
+            [attr.data-status]="item.status"
+          >
+            {{ statusLabel(item.status) }}
+          </span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="load()"
+      >
+        Reload latest state
+      </button>
+    </header>
+
+    @if (reviewMessage()) {
+      <div class="success-banner" role="status">
+        {{ reviewMessage() }}
+      </div>
+    }
+
+    @if (reviewError()) {
+      <div class="error-banner" role="alert">
+        {{ reviewError() }}
+      </div>
+    }
+
+    <div class="detail-grid">
+      <section class="facts-card">
+        <header>
+          <h2>Submitted facts</h2>
+          <p>
+            Only server-returned review facts are shown. The raw
+            evidence storage key is intentionally hidden.
+          </p>
+        </header>
+
+        <dl>
+          <div>
+            <dt>Company</dt>
+            <dd>{{ item.companyName }}</dd>
+          </div>
+          <div>
+            <dt>Submitted</dt>
+            <dd>
+              {{
+                item.submittedAtUtc
+                  | date:'dd MMM y · HH:mm'
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ statusLabel(item.status) }}</dd>
+          </div>
+          <div>
+            <dt>Owner note</dt>
+            <dd>{{ item.notes || 'No note supplied' }}</dd>
+          </div>
+
+          @if (item.reviewedAtUtc) {
+            <div>
+              <dt>Reviewed</dt>
+              <dd>
+                {{
+                  item.reviewedAtUtc
+                    | date:'dd MMM y · HH:mm'
+                }}
+              </dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="evidence-card">
+        <header>
+          <h2>Protected evidence</h2>
+          <p>
+            Evidence is downloaded only through the admin
+            task-scoped protected API route.
+          </p>
+        </header>
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="evidenceLoading()"
+          (click)="downloadEvidence()"
+        >
+          {{
+            evidenceLoading()
+              ? 'Preparing evidence…'
+              : 'Download protected evidence'
+          }}
+        </button>
+
+        @if (evidenceError()) {
+          <div class="blocking-error" role="alert">
+            {{ evidenceError() }}
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="decision-card">
+      <header>
+        <h2>Review decision</h2>
+        <p>
+          Review actions are available only while the server
+          reports PendingReview.
+        </p>
+      </header>
+
+      @if (item.status === 'PendingReview') {
+        <div class="governance-boundary">
+          <strong>Current backend boundary</strong>
+          <span>
+            Needs more information and Reject require a safe
+            owner-visible reason in canonical UX, but the current
+            review request has no reason field. Those actions are
+            intentionally blocked.
+          </span>
+        </div>
+
+        @if (confirmVerify()) {
+          <div class="confirmation">
+            <div>
+              <strong>Verify this company evidence?</strong>
+              <span>
+                This records the server-backed Verified decision
+                and updates related company membership state.
+              </span>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                class="secondary-button"
+                [disabled]="reviewing()"
+                (click)="cancelVerify()"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="primary-button"
+                [disabled]="reviewing()"
+                (click)="verify()"
+              >
+                {{
+                  reviewing()
+                    ? 'Recording…'
+                    : 'Confirm verified'
+                }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <div class="decision-actions">
+            <button
+              type="button"
+              class="primary-button"
+              (click)="beginVerify()"
+            >
+              Verify company
+            </button>
+
+            <button
+              type="button"
+              class="blocked-button"
+              disabled
+              title="Blocked until backend supports an owner-visible reason"
+            >
+              Needs more information
+            </button>
+
+            <button
+              type="button"
+              class="blocked-button"
+              disabled
+              title="Blocked until backend supports a recorded reason and review path"
+            >
+              Reject
+            </button>
+          </div>
+        }
+      } @else {
+        <div class="read-only-state">
+          <strong>
+            Review complete: {{ statusLabel(item.status) }}
+          </strong>
+          <span>
+            This page now reflects the latest server-authored
+            review state. No second review is offered.
+          </span>
+        </div>
+      }
+    </section>
+    }
+  }
+</section>

@@ -1,0 +1,349 @@
+<section class="catalogue-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">
+        AD04 · Knowledge base governance
+      </p>
+      <h1>Catalogue management</h1>
+      <p>
+        Moderate canonical skill concepts, curated aliases and
+        occupation concepts. Status changes affect current
+        resolution availability, never historical application truth.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="secondary-button"
+      [disabled]="loading()"
+      (click)="load()"
+    >
+      {{ loading() ? 'Refreshing…' : 'Refresh catalogue' }}
+    </button>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button
+      type="button"
+      [class.active]="activeTab() === 'skills'"
+      (click)="setTab('skills')"
+    >
+      Skill concepts
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'aliases'"
+      (click)="setTab('aliases')"
+    >
+      Aliases
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'occupations'"
+      (click)="setTab('occupations')"
+    >
+      Occupations
+    </button>
+  </div>
+
+  <div class="governance-note">
+    <strong>Current backend scope:</strong>
+    read existing catalogue entries and toggle Active/Inactive.
+    Create, rename, merge and proposal-approval controls are
+    intentionally not shown because the frozen API does not expose
+    them.
+  </div>
+
+  @if (errorMessage()) {
+    <div class="error-panel" role="alert">
+      <strong>Catalogue unavailable</strong>
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="load()">Retry</button>
+    </div>
+  } @else {
+    <div class="metric-grid">
+      <article>
+        <span>Records shown</span>
+        <strong>{{ shownCount() }}</strong>
+        <small>Including inactive in this reference</small>
+      </article>
+      <article>
+        <span>Available</span>
+        <strong>{{ activeCount() }}</strong>
+        <small>Current resolution availability</small>
+      </article>
+      <article>
+        <span>Unavailable</span>
+        <strong>{{ shownCount() - activeCount() }}</strong>
+        <small>Inactive or unavailable now</small>
+      </article>
+    </div>
+
+    <div class="filters">
+      <label>
+        <span class="sr-only">Search catalogue</span>
+        <input
+          type="search"
+          autocomplete="off"
+          [placeholder]="
+            activeTab() === 'skills'
+              ? 'Search skill concept'
+              : activeTab() === 'aliases'
+                ? 'Search alias or parent skill'
+                : 'Search occupation'
+          "
+          [formControl]="searchControl"
+        />
+      </label>
+
+      <label>
+        <span class="sr-only">Catalogue status</span>
+        <select [formControl]="statusControl">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </label>
+    </div>
+
+    @if (actionMessage()) {
+      <div
+        class="action-banner action-banner--success"
+        role="status"
+      >
+        {{ actionMessage() }}
+      </div>
+    }
+
+    @if (actionError()) {
+      <div
+        class="action-banner action-banner--error"
+        role="alert"
+      >
+        {{ actionError() }}
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="loading-list">
+        @for (item of [1,2,3,4]; track item) {
+          <span></span>
+        }
+      </div>
+    } @else if (activeTab() === 'skills') {
+      <section class="list-card">
+        <header>
+          <h2>Skill concepts</h2>
+          <p>
+            Preferred canonical terms. Deactivation changes
+            current availability, not old snapshot truth.
+          </p>
+        </header>
+
+        @if (filteredSkills().length) {
+          @for (
+            skill of filteredSkills();
+            track skill.id
+          ) {
+            <article class="record-row">
+              <div>
+                <strong>{{ skill.name }}</strong>
+                <span>Canonical SkillConcept</span>
+              </div>
+
+              <span class="meta">
+                {{ skill.aliases.length }}
+                {{
+                  skill.aliases.length === 1
+                    ? 'alias'
+                    : 'aliases'
+                }}
+              </span>
+
+              <span
+                class="availability"
+                [class.inactive]="!skill.isActive"
+              >
+                {{ skill.isActive ? 'Available' : 'Inactive' }}
+              </span>
+
+              <button
+                type="button"
+                class="status-button"
+                (click)="requestSkillChange(skill)"
+              >
+                {{ skill.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </article>
+          }
+        } @else {
+          <div class="empty-state">
+            No skill concepts match the current filters.
+          </div>
+        }
+      </section>
+    } @else if (activeTab() === 'aliases') {
+      <section class="list-card">
+        <header>
+          <h2>Skill aliases</h2>
+          <p>
+            Effective availability is display-only:
+            alias active AND parent skill active.
+          </p>
+        </header>
+
+        @if (filteredAliases().length) {
+          @for (
+            alias of filteredAliases();
+            track alias.id
+          ) {
+            <article class="record-row">
+              <div>
+                <strong>{{ alias.alias }}</strong>
+                <span>
+                  Parent: {{ alias.skillConceptName }}
+                </span>
+              </div>
+
+              <span class="meta">
+                {{
+                  alias.skillConceptIsActive
+                    ? 'Parent active'
+                    : 'Parent inactive'
+                }}
+              </span>
+
+              <span
+                class="availability"
+                [class.inactive]="!aliasAvailable(alias)"
+              >
+                {{
+                  aliasAvailable(alias)
+                    ? 'Available'
+                    : 'Unavailable'
+                }}
+              </span>
+
+              <button
+                type="button"
+                class="status-button"
+                (click)="requestAliasChange(alias)"
+              >
+                {{ alias.isActive ? 'Deactivate' : 'Activate' }}
+              </button>
+            </article>
+          }
+        } @else {
+          <div class="empty-state">
+            No aliases match the current filters.
+          </div>
+        }
+      </section>
+    } @else {
+      <section class="list-card">
+        <header>
+          <h2>Occupation concepts</h2>
+          <p>
+            Canonical occupations used by current catalogue
+            resolution.
+          </p>
+        </header>
+
+        @if (filteredOccupations().length) {
+          @for (
+            occupation of filteredOccupations();
+            track occupation.id
+          ) {
+            <article class="record-row">
+              <div>
+                <strong>{{ occupation.name }}</strong>
+                <span>Canonical OccupationConcept</span>
+              </div>
+
+              <span class="meta">Occupation</span>
+
+              <span
+                class="availability"
+                [class.inactive]="!occupation.isActive"
+              >
+                {{
+                  occupation.isActive
+                    ? 'Available'
+                    : 'Inactive'
+                }}
+              </span>
+
+              <button
+                type="button"
+                class="status-button"
+                (click)="requestOccupationChange(occupation)"
+              >
+                {{
+                  occupation.isActive
+                    ? 'Deactivate'
+                    : 'Activate'
+                }}
+              </button>
+            </article>
+          }
+        } @else {
+          <div class="empty-state">
+            No occupations match the current filters.
+          </div>
+        }
+      </section>
+    }
+  }
+
+  @if (pendingChange(); as pending) {
+    <div class="dialog-backdrop">
+      <section
+        class="confirm-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="catalogue-confirm-title"
+      >
+        <h2 id="catalogue-confirm-title">
+          {{
+            pending.currentActive
+              ? 'Deactivate'
+              : 'Activate'
+          }}
+          {{ pending.label }}?
+        </h2>
+
+        <p>
+          This changes current catalogue availability only. It
+          does not rewrite historical application snapshots or
+          invent a new governance workflow.
+        </p>
+
+        <div>
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="updating()"
+            (click)="cancelChange()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="updating()"
+            (click)="confirmChange()"
+          >
+            {{
+              updating()
+                ? 'Updating…'
+                : pending.currentActive
+                  ? 'Confirm deactivate'
+                  : 'Confirm activate'
+            }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</section>

@@ -15,9 +15,6 @@ import {
   SessionService
 } from '../../../core/auth/session.service';
 import {
-  CompanyMonogramComponent
-} from '../../../shared/avatar/company-monogram.component';
-import {
   IdentityAvatarComponent
 } from '../../../shared/avatar/identity-avatar.component';
 import {
@@ -43,7 +40,6 @@ interface AdminNavItem {
     RouterLinkActive,
     BrandWordmarkComponent,
     IdentityAvatarComponent,
-    CompanyMonogramComponent,
     AppIconComponent
   ],
   templateUrl: './admin-shell.component.html',

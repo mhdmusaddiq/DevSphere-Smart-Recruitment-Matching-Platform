@@ -34,27 +34,33 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'company-verifications',
-        component: RoutePlaceholderComponent,
-        data: {
-          pageId: 'AD03',
-          pageName: 'Company verification'
-        }
+        loadComponent: () =>
+          import(
+            '../features/admin/company-verifications/admin-verification-queue.component'
+          ).then(
+            module =>
+              module.AdminVerificationQueueComponent
+          )
       },
       {
         path: 'company-verifications/:verificationId',
-        component: RoutePlaceholderComponent,
-        data: {
-          pageId: 'AD03',
-          pageName: 'Verification details'
-        }
+        loadComponent: () =>
+          import(
+            '../features/admin/company-verifications/admin-verification-detail.component'
+          ).then(
+            module =>
+              module.AdminVerificationDetailComponent
+          )
       },
       {
         path: 'catalogue',
-        component: RoutePlaceholderComponent,
-        data: {
-          pageId: 'AD04',
-          pageName: 'Catalogue management'
-        }
+        loadComponent: () =>
+          import(
+            '../features/admin/catalogue/admin-catalogue.component'
+          ).then(
+            module =>
+              module.AdminCatalogueComponent
+          )
       },
       {
         path: 'audit-system',

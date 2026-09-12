@@ -31,16 +31,46 @@ export interface AdminUserQuery {
   pageSize: number;
 }
 
+export type CompanyVerificationStatus =
+  | 'Draft'
+  | 'PendingReview'
+  | 'Verified'
+  | 'NeedsMoreInformation'
+  | 'Rejected'
+  | 'Suspended';
+
 export interface AdminCompanyVerification {
   id: string;
   companyId: string | null;
   companyName: string;
-  status: string;
+  status: CompanyVerificationStatus | string;
   evidenceStorageKey: string;
   notes: string;
   submittedAtUtc: string;
   reviewedAtUtc: string | null;
   reviewedByUserId: string | null;
+}
+
+export interface AdminSkillAlias {
+  id: string;
+  skillConceptId: string;
+  skillConceptName: string;
+  alias: string;
+  isActive: boolean;
+  skillConceptIsActive: boolean;
+}
+
+export interface AdminSkillConcept {
+  id: string;
+  name: string;
+  isActive: boolean;
+  aliases: AdminSkillAlias[];
+}
+
+export interface AdminOccupationConcept {
+  id: string;
+  name: string;
+  isActive: boolean;
 }
 
 export interface AuditEvent {
