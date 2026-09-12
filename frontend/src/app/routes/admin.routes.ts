@@ -4,7 +4,6 @@ import { authGuard } from '../core/guards/auth.guard';
 import { roleGuard } from '../core/guards/role.guard';
 import { verifiedAccountGuard } from '../core/guards/verified-account.guard';
 import { AdminShellComponent } from '../features/admin/shell/admin-shell.component';
-import { RoutePlaceholderComponent } from '../shared/routes/route-placeholder.component';
 
 export const adminRoutes: Routes = [
   {
@@ -64,11 +63,13 @@ export const adminRoutes: Routes = [
       },
       {
         path: 'audit-system',
-        component: RoutePlaceholderComponent,
-        data: {
-          pageId: 'AD05',
-          pageName: 'Audit and system'
-        }
+        loadComponent: () =>
+          import(
+            '../features/admin/audit-system/admin-audit-system.component'
+          ).then(
+            module =>
+              module.AdminAuditSystemComponent
+          )
       }
     ]
   }

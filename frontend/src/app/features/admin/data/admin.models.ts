@@ -73,6 +73,14 @@ export interface AdminOccupationConcept {
   isActive: boolean;
 }
 
+export interface SystemSetting {
+  id: string;
+  key: string;
+  value: string;
+  description: string;
+  isSensitive: boolean;
+}
+
 export interface AuditEvent {
   id: string;
   userId: string | null;

@@ -22,7 +22,8 @@ import {
   AdminUserPage,
   AdminUserQuery,
   AuditEvent,
-  CompanyVerificationStatus
+  CompanyVerificationStatus,
+  SystemSetting
 } from './admin.models';
 
 @Injectable({ providedIn: 'root' })
@@ -114,6 +115,15 @@ export class AdminApiService {
     return this.http.get<AuditEvent[]>(
       apiUrl(this.baseUrl, '/admin/audit-events'),
       { params }
+    );
+  }
+
+  getSystemSettings(): Observable<SystemSetting[]> {
+    return this.http.get<SystemSetting[]>(
+      apiUrl(
+        this.baseUrl,
+        '/admin/system-settings'
+      )
     );
   }
 
