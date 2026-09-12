@@ -1,0 +1,141 @@
+<main class="contacts-page">
+  <header class="page-header">
+    <div>
+      <p class="breadcrumb">Privacy / Contact permissions</p>
+      <h1>Contact requests</h1>
+      <p>Control whether an employer may receive direct contact information for an application.</p>
+    </div>
+
+    <button class="secondary" type="button" [disabled]="refreshing || loading" (click)="loadRequests(false)">
+      {{ refreshing ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </header>
+
+  @if (successMessage) {
+    <div class="notice success" role="status">{{ successMessage }}</div>
+  }
+
+  @if (conflictMessage) {
+    <div class="notice conflict" role="alert">{{ conflictMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <apt-error-state
+      title="Contact requests unavailable"
+      [message]="errorMessage"
+      (retry)="loadRequests()" />
+  } @else if (loading) {
+    <apt-loading-state message="Loading contact requests…" />
+  } @else {
+    <nav class="filters" aria-label="Contact request filters">
+      @for (item of filters; track item) {
+        <button
+          type="button"
+          [class.active]="filter === item"
+          [attr.aria-pressed]="filter === item"
+          (click)="setFilter(item)">
+          {{ item }}
+        </button>
+      }
+    </nav>
+
+    <section class="request-list">
+      @for (request of filteredRequests; track request.id) {
+        <article class="request-card">
+          <apt-company-monogram [companyName]="request.companyName" [size]="48" />
+
+          <div class="request-copy">
+            <div class="request-title">
+              <div>
+                <strong>{{ request.companyName }}</strong>
+                <span>{{ request.employerDisplayName }}</span>
+              </div>
+              <span class="status-pill">{{ request.status }}</span>
+            </div>
+
+            <h2>{{ request.vacancyTitle }}</h2>
+
+            @if (request.status === 'Pending') {
+              <p>This employer is asking permission to contact you directly about this application.</p>
+              <small>Accepting is optional and does not affect your application compatibility or workflow status.</small>
+            } @else if (request.status === 'Accepted') {
+              <p>Direct contact sharing is currently allowed while the server confirms the relationship remains valid.</p>
+              <small>You may revoke this permission at any time.</small>
+            } @else {
+              <p>This request is closed. Direct contact sharing is not currently granted by this request.</p>
+            }
+          </div>
+
+          <div class="actions">
+            <a class="secondary-link" [routerLink]="['/seeker/applications', request.jobApplicationId]">Application</a>
+
+            @if (request.status === 'Pending') {
+              <button class="secondary" type="button" [disabled]="busyId !== null" (click)="askAction(request, 'Declined')">Decline</button>
+              <button class="primary" type="button" [disabled]="busyId !== null" (click)="askAction(request, 'Accepted')">Accept</button>
+            } @else if (request.status === 'Accepted') {
+              <button class="danger" type="button" [disabled]="busyId !== null" (click)="askAction(request, 'Revoked')">Revoke</button>
+            }
+          </div>
+        </article>
+      } @empty {
+        <section class="empty-card">
+          <apt-empty-state-visual />
+          <h2>No contact requests yet</h2>
+          <p>Employer permission requests connected to your applications will appear here.</p>
+          <a class="primary-link" routerLink="/seeker/applications">My applications</a>
+        </section>
+      }
+    </section>
+  }
+
+  @if (selectedRequest && selectedAction) {
+    <div class="dialog-backdrop" (click)="cancelAction()">
+      <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="contact-decision-title" (click)="$event.stopPropagation()">
+        <span class="status-pill">{{ selectedRequest.status }}</span>
+
+        <h2 id="contact-decision-title">
+          {{ selectedAction === 'Accepted'
+            ? 'Allow direct contact?'
+            : selectedAction === 'Declined'
+              ? 'Decline contact request?'
+              : 'Revoke direct contact?' }}
+        </h2>
+
+        @if (selectedAction === 'Accepted') {
+          <p>{{ selectedRequest.companyName }} is asking permission to contact you directly about your {{ selectedRequest.vacancyTitle }} application.</p>
+
+          <div class="decision-note">
+            <strong>What accepting means</strong>
+            <span>The server may disclose your account email to this employer while the accepted relationship and trust checks remain valid.</span>
+          </div>
+
+          <div class="decision-note">
+            <strong>What declining means</strong>
+            <span>Your application remains active. Direct contact permission is not granted.</span>
+          </div>
+        } @else if (selectedAction === 'Declined') {
+          <p>Your application remains active. This decision only controls direct contact permission.</p>
+        } @else {
+          <p>Direct contact sharing will stop after the server accepts the revocation.</p>
+        }
+
+        <div class="dialog-actions">
+          <button class="secondary" type="button" [disabled]="busyId !== null" (click)="cancelAction()">Cancel</button>
+          <button
+            [class]="selectedAction === 'Revoked' ? 'danger solid' : 'primary'"
+            type="button"
+            [disabled]="busyId !== null"
+            (click)="confirmAction()">
+            {{ busyId
+              ? 'Updating…'
+              : selectedAction === 'Accepted'
+                ? 'Accept contact request'
+                : selectedAction === 'Declined'
+                  ? 'Decline'
+                  : 'Revoke permission' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</main>

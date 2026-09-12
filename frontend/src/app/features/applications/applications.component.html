@@ -1,213 +1,132 @@
-<div class="applications-page">
-
-  <header>
-    <a class="brand" routerLink="/jobs">
-      <span>D</span>
-      <strong>DevSphere</strong>
-    </a>
-
-    <nav>
-      <a routerLink="/jobs">Jobs</a>
-      <a class="active" routerLink="/seeker/applications">
-        My Applications
-      </a>
-    </nav>
-  </header>
-
-  <main>
-
-    <section class="intro">
-      <p class="eyebrow">APPLICATION TRACKER</p>
-      <h1>My Applications</h1>
-
-      <p>
-        Follow your applications and see how each opportunity
-        progresses through the recruitment process.
-      </p>
-    </section>
-
-    @if (errorMessage) {
-      <div class="alert">
-        {{ errorMessage }}
-      </div>
-    }
-
-    @if (loading) {
-
-      <div class="state">
-        <div class="spinner"></div>
-        <p>Loading applications...</p>
-      </div>
-
-    } @else {
-
-      <section class="application-grid">
-
-        @for (application of applications; track application.id) {
-
-          <article class="application-card">
-
-            <div class="card-top">
-              <span class="label">
-                APPLICATION
-              </span>
-
-              <span
-                class="status"
-                [ngClass]="statusClass(application.status)"
-              >
-                {{ application.status }}
-              </span>
-            </div>
-
-            <h2>
-              Vacancy
-            </h2>
-
-            <p class="vacancy-id">
-              {{ application.vacancyId }}
-            </p>
-
-            <div class="progress">
-              <div
-                class="step"
-                [class.done]="true"
-              >
-                Applied
-              </div>
-
-              <div
-                class="step"
-                [class.done]="
-                  application.status === 'UnderReview' ||
-                  application.status === 'Shortlisted' ||
-                  application.status === 'Selected'
-                "
-              >
-                Review
-              </div>
-
-              <div
-                class="step"
-                [class.done]="
-                  application.status === 'Shortlisted' ||
-                  application.status === 'Selected'
-                "
-              >
-                Shortlist
-              </div>
-
-              <div
-                class="step"
-                [class.done]="application.status === 'Selected'"
-              >
-                Selected
-              </div>
-            </div>
-
-            <button
-              type="button"
-              (click)="openHistory(application)"
-            >
-              View Status History
-            </button>
-
-          </article>
-
-        } @empty {
-
-          <div class="state">
-            <h2>No applications yet</h2>
-
-            <p>
-              Explore available jobs and submit your first application.
-            </p>
-
-            <a class="browse-button" routerLink="/jobs">
-              Browse Jobs
-            </a>
-          </div>
-
-        }
-
-      </section>
-
-    }
-
-  </main>
-
-  @if (selectedApplication) {
-
-    <div class="modal" (click)="closeHistory()">
-
-      <section
-        class="history-panel"
-        (click)="$event.stopPropagation()"
-      >
-
-        <button
-          type="button"
-          class="close"
-          (click)="closeHistory()"
-        >
-          ×
-        </button>
-
-        <p class="eyebrow">
-          STATUS TIMELINE
-        </p>
-
-        <h2>Application History</h2>
-
-        @if (historyLoading) {
-
-          <div class="state">
-            <div class="spinner"></div>
-            <p>Loading history...</p>
-          </div>
-
-        } @else {
-
-          <div class="timeline">
-
-            @for (item of history; track item.id) {
-
-              <div class="timeline-item">
-
-                <div class="dot"></div>
-
-                <div>
-                  <strong>
-                    {{ item.newStatus }}
-                  </strong>
-
-                  <p>
-                    {{ item.notes || 'Application status updated.' }}
-                  </p>
-
-                  <span>
-                    {{ item.changedAtUtc | date:'medium' }}
-                  </span>
-                </div>
-
-              </div>
-
-            } @empty {
-
-              <p class="empty-history">
-                No status changes have been recorded yet.
-              </p>
-
-            }
-
-          </div>
-
-        }
-
-      </section>
-
+<main class="applications-page">
+  <header class="page-header">
+    <div>
+      <p class="breadcrumb">Applications</p>
+      <h1>My applications</h1>
+      <p>Track submitted applications using current workflow status and immutable application-time match truth.</p>
     </div>
 
+    <button
+      class="secondary"
+      type="button"
+      [disabled]="refreshing || loading"
+      (click)="loadApplications(false)">
+      {{ refreshing ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </header>
+
+  @if (staleMessage) {
+    <section class="stale-banner" role="alert">
+      <div>
+        <strong>Could not refresh your applications</strong>
+        <p>{{ staleMessage }} Refresh before taking action.</p>
+      </div>
+      <button class="primary" type="button" [disabled]="refreshing" (click)="loadApplications(false)">Retry</button>
+    </section>
   }
 
-</div>
+  @if (actionMessage) {
+    <div class="notice" role="status">{{ actionMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <apt-error-state
+      title="Applications unavailable"
+      [message]="errorMessage"
+      (retry)="loadApplications()" />
+  } @else if (loading) {
+    <apt-loading-state message="Loading your applications…" />
+  } @else {
+    <nav class="filters" aria-label="Application status filters">
+      @for (item of filters; track item) {
+        <button
+          type="button"
+          [class.active]="filter === item"
+          [attr.aria-pressed]="filter === item"
+          (click)="setFilter(item)">
+          {{ item }}
+        </button>
+      }
+    </nav>
+
+    <section class="application-list" aria-live="polite">
+      @for (application of filteredApplications; track application.id) {
+        <article class="application-card">
+          <apt-company-monogram [companyName]="application.companyName" [size]="48" />
+
+          <div class="application-main">
+            <div class="title-row">
+              <div>
+                <strong>{{ application.vacancyTitle }}</strong>
+                <span>{{ application.companyName }}</span>
+              </div>
+              <span class="status-pill">{{ application.status }}</span>
+            </div>
+
+            <div class="meta">
+              @if (application.vacancyLocation) { <span>{{ application.vacancyLocation }}</span> }
+              @if (application.workMode) { <span>{{ application.workMode }}</span> }
+              <span>Submitted {{ application.submittedAtUtc | date:'mediumDate' }}</span>
+              @if (resumeLabel(application); as resume) { <span>{{ resume }}</span> }
+            </div>
+
+            <div class="truth-row">
+              @if (isCalculated(application)) {
+                <span><strong>{{ application.displayCompatibility }}</strong> frozen compatibility</span>
+              } @else {
+                <span>Compatibility: {{ application.frozenAssessmentStatus || 'Unavailable' }}</span>
+              }
+
+              <span>Eligibility: {{ application.eligibility || 'Unavailable' }}</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a class="primary-link" [routerLink]="['/seeker/applications', application.id]">View details</a>
+
+            @if (canWithdraw(application)) {
+              <button
+                class="danger"
+                type="button"
+                [disabled]="withdrawingId !== null"
+                (click)="askWithdraw(application)">
+                Withdraw
+              </button>
+            }
+          </div>
+        </article>
+      } @empty {
+        <section class="empty-card">
+          <apt-empty-state-visual />
+          <h2>{{ filter === 'All' ? 'No applications yet' : 'No applications in this filter' }}</h2>
+          <p>{{ filter === 'All' ? 'Your submitted applications will appear here.' : 'Try another status filter.' }}</p>
+          @if (filter === 'All') {
+            <a class="primary-link" routerLink="/jobs">Find jobs</a>
+          }
+        </section>
+      }
+    </section>
+  }
+
+  @if (withdrawCandidate) {
+    <div class="dialog-backdrop" (click)="cancelWithdraw()">
+      <section
+        class="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="withdraw-title"
+        (click)="$event.stopPropagation()">
+        <p class="danger-label">Withdraw application</p>
+        <h2 id="withdraw-title">Withdraw {{ withdrawCandidate.vacancyTitle }}?</h2>
+        <p>This changes the server workflow state to Withdrawn. You cannot continue this application after withdrawal.</p>
+
+        <div class="dialog-actions">
+          <button class="secondary" type="button" [disabled]="withdrawingId !== null" (click)="cancelWithdraw()">Keep application</button>
+          <button class="danger solid" type="button" [disabled]="withdrawingId !== null" (click)="confirmWithdraw()">
+            {{ withdrawingId ? 'Withdrawing…' : 'Confirm withdrawal' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</main>
