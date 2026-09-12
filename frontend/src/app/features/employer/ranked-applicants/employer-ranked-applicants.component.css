@@ -1,0 +1,169 @@
+:host {
+  display: block;
+}
+
+.applicants-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.page-header,
+.identity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.page-header h1,
+.identity-row h2 {
+  margin: 0.2rem 0;
+}
+
+.eyebrow,
+dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card {
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.9rem;
+  background: #fff;
+}
+
+.applicant-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.applicant-card {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.rank {
+  display: grid;
+  align-content: start;
+  gap: 0.25rem;
+  text-align: center;
+}
+
+.rank strong {
+  font-size: 1.8rem;
+}
+
+.applicant-main {
+  display: grid;
+  gap: 1rem;
+}
+
+.status-badge {
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-weight: 700;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.metrics div {
+  padding: 0.85rem;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+}
+
+dd {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.skills-grid h3 {
+  margin-top: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chips span {
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: #f5f3ff;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #6d28d9;
+  color: #fff;
+}
+
+.secondary-button {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #111827;
+}
+
+.error-state {
+  background: #fef2f2;
+}
+
+@media (max-width: 760px) {
+  .page-header,
+  .identity-row {
+    flex-direction: column;
+  }
+
+  .applicant-card {
+    grid-template-columns: 1fr;
+  }
+
+  .rank {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: left;
+  }
+
+  .metrics,
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+}

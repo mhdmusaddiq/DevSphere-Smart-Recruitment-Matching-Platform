@@ -1,0 +1,15 @@
+<section class="page">
+<header class="head"><div><h1>Contact requests</h1><p>Contact details appear only when the server authorizes disclosure.</p></div></header>
+@if(errorMessage){<div class="msg err">{{errorMessage}}</div>}
+@if(successMessage){<div class="msg ok">{{successMessage}}</div>}
+@if(loading){<div class="card">Loading contact requests...</div>}
+@else if(requests.length===0){<div class="card"><h2>No contact requests</h2></div>}
+@else{<div class="stack">
+@for(r of requests;track r.id){<article class="card">
+<div class="split"><div><h2>{{r.candidateDisplayName||r.candidateId}}</h2><p>{{r.vacancyTitle}}</p></div><span class="badge">{{r.status}}</span></div>
+@if(r.canDiscloseContact&&r.candidateEmail){<div class="msg ok">Approved contact: {{r.candidateEmail}}</div>}@else{<p>Candidate contact is not disclosed.</p>}
+<div class="actions"><a class="secondary" [routerLink]="['/employer/recruitment',r.jobApplicationId]">Recruitment workflow</a>
+@if(r.status==='Pending'){<button class="danger" type="button" [disabled]="actionId!==null" (click)="cancel(r)">{{actionId===r.id?'Cancelling...':'Cancel request'}}</button>}</div>
+</article>}
+</div>}
+</section>

@@ -1,0 +1,269 @@
+:host {
+  display: block;
+}
+
+.detail-page,
+.detail-main,
+.detail-side,
+.family-list,
+.criteria,
+.timeline {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-page {
+  gap: 1.5rem;
+}
+
+.page-header,
+.applicant-hero,
+.family-heading,
+.criterion,
+.hero-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.page-header h1,
+.applicant-hero h2,
+.card h2 {
+  margin: 0.2rem 0;
+}
+
+.subtitle,
+.applicant-hero p {
+  margin-bottom: 0;
+  color: #64748b;
+}
+
+.eyebrow,
+.label,
+dt,
+.status-action span {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.9rem;
+  background: #fff;
+}
+
+.hero-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.status-action {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.status-action select {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.6rem;
+  background: #fff;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summary-grid article {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.summary-grid strong {
+  font-size: 1.15rem;
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.facts,
+.two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.facts div {
+  min-width: 0;
+  padding: 0.8rem;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+}
+
+.compact-facts {
+  grid-template-columns: 1fr;
+}
+
+dd {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chips span {
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: #f5f3ff;
+}
+
+.notice,
+.snapshot-note,
+.message {
+  padding: 0.9rem;
+  border-radius: 0.7rem;
+  background: #f8fafc;
+}
+
+.snapshot-note {
+  color: #4338ca;
+  background: #eef2ff;
+}
+
+.message {
+  border: 1px solid transparent;
+}
+
+.error-message,
+.error-state {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.success-message {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.warning-message {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.family {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+}
+
+.criterion,
+.timeline-item {
+  padding: 0.75rem;
+  border-radius: 0.6rem;
+  background: #f8fafc;
+}
+
+.criterion p,
+.timeline-item p {
+  margin: 0.25rem 0 0;
+}
+
+.timeline-item {
+  display: grid;
+  gap: 0.25rem;
+  border-left: 3px solid #6d28d9;
+}
+
+.disclosed-contact {
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.6rem;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #6d28d9;
+  color: #fff;
+}
+
+.secondary-button {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #111827;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.status-action select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.full-width {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-header,
+  .applicant-hero,
+  .family-heading,
+  .criterion,
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .summary-grid,
+  .facts,
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-actions,
+  .status-action,
+  .primary-button,
+  .secondary-button {
+    width: 100%;
+  }
+}
