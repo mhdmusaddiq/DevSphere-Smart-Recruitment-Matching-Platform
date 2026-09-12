@@ -1,127 +1,179 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { Component, OnInit, inject } from '@angular/core';
+import { ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
+
 import { Resume, ResumeVersion } from '../../core/models/resume.model';
-import { ResumeApiService } from '../../core/services/resume-api.service';
+import { ErrorStateComponent } from '../../shared/states/error-state.component';
+import { LoadingStateComponent } from '../../shared/states/loading-state.component';
+import { CvApiService } from './cv-api.service';
 
 @Component({
   selector: 'app-resume',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    LoadingStateComponent,
+    ErrorStateComponent
+  ],
   templateUrl: './resume.component.html',
   styleUrl: './resume.component.css'
 })
 export class ResumeComponent implements OnInit {
+  private readonly fb = inject(UntypedFormBuilder);
+  private readonly api = inject(CvApiService);
+
+  readonly maxFileSizeBytes = 5 * 1024 * 1024;
+  readonly uploadForm = this.fb.group({
+    file: [null, Validators.required]
+  });
+
   resume: Resume | null = null;
   selectedFile: File | null = null;
 
   loading = true;
   uploading = false;
+  dragActive = false;
   downloadingId: string | null = null;
+  settingCurrentId: string | null = null;
 
-  message = '';
-  error = '';
-
-  readonly maxFileSizeBytes = 10 * 1024 * 1024;
-
-  constructor(private readonly api: ResumeApiService) {}
+  successMessage = '';
+  errorMessage = '';
+  fileError = '';
 
   ngOnInit(): void {
     this.loadResume();
   }
 
-  loadResume(): void {
-    this.loading = true;
-    this.error = '';
+  get currentVersion(): ResumeVersion | null {
+    if (!this.resume?.currentVersionId) {
+      return this.resume?.versions.find(version => version.isCurrent) ?? null;
+    }
+
+    return this.resume.versions.find(
+      version => version.id === this.resume?.currentVersionId
+    ) ?? null;
+  }
+
+  loadResume(showLoader = true): void {
+    if (showLoader) {
+      this.loading = true;
+    }
 
     this.api.getResume().subscribe({
       next: resume => {
         this.resume = resume;
         this.loading = false;
       },
-      error: (err: HttpErrorResponse) => {
+      error: (error: HttpErrorResponse) => {
         this.loading = false;
 
-        if (err.status === 404) {
+        if (error.status === 404) {
           this.resume = null;
           return;
         }
 
-        this.showError(err, 'Unable to load your CV.');
+        this.errorMessage = this.errorText(error, 'Unable to load your CV versions.');
       }
     });
   }
 
   onFileSelected(event: Event): void {
-    this.message = '';
-    this.error = '';
-
     const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
+    this.acceptFile(input.files?.[0] ?? null);
 
-    if (!file) {
-      this.selectedFile = null;
-      return;
-    }
-
-    if (file.size > this.maxFileSizeBytes) {
-      this.selectedFile = null;
+    if (!this.selectedFile) {
       input.value = '';
-      this.error = 'The selected CV exceeds the 10 MB upload limit.';
-      return;
     }
+  }
 
-    this.selectedFile = file;
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragActive = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.dragActive = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragActive = false;
+    this.acceptFile(event.dataTransfer?.files?.[0] ?? null);
   }
 
   upload(): void {
     if (!this.selectedFile) {
-      this.error = 'Select a CV file before uploading.';
+      this.fileError = 'Choose a PDF before uploading.';
       return;
     }
 
     this.uploading = true;
-    this.message = '';
-    this.error = '';
+    this.clearMessages();
 
-    this.api.uploadVersion(this.selectedFile).subscribe({
-      next: resume => {
-        this.resume = resume;
-        this.selectedFile = null;
-        this.uploading = false;
-        this.message = 'CV uploaded successfully.';
+    this.api
+      .uploadVersion(this.selectedFile)
+      .pipe(finalize(() => (this.uploading = false)))
+      .subscribe({
+        next: () => {
+          this.successMessage = 'CV version uploaded successfully.';
+          this.clearSelectedFile();
+          this.loadResume(false);
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 413) {
+            this.fileError = 'PDF must be 5 MB or smaller.';
+            return;
+          }
 
-        const input = document.getElementById(
-          'resumeFile'
-        ) as HTMLInputElement | null;
-
-        if (input) {
-          input.value = '';
+          this.errorMessage = this.errorText(error, 'Unable to upload this CV.');
         }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.uploading = false;
-        this.showError(err, 'Unable to upload CV.');
-      }
-    });
+      });
+  }
+
+  setCurrent(version: ResumeVersion): void {
+    if (version.isCurrent || this.settingCurrentId) {
+      return;
+    }
+
+    this.settingCurrentId = version.id;
+    this.clearMessages();
+
+    this.api
+      .setCurrentVersion(version.id)
+      .pipe(finalize(() => (this.settingCurrentId = null)))
+      .subscribe({
+        next: resume => {
+          this.resume = resume;
+          this.successMessage = `Version ${version.versionNumber} is now current.`;
+        },
+        error: (error: HttpErrorResponse) => {
+          this.errorMessage = this.errorText(
+            error,
+            'Unable to change the current CV version.'
+          );
+        }
+      });
   }
 
   download(version: ResumeVersion): void {
     this.downloadingId = version.id;
-    this.message = '';
-    this.error = '';
+    this.clearMessages();
 
-    this.api.downloadVersion(version.id).subscribe({
-      next: response => {
-        this.downloadingId = null;
-        this.saveDownload(response, version.originalFileName);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.downloadingId = null;
-        this.showError(err, 'Unable to download CV.');
-      }
-    });
+    this.api
+      .downloadVersion(version.id)
+      .pipe(finalize(() => (this.downloadingId = null)))
+      .subscribe({
+        next: response => this.saveDownload(response, version.originalFileName),
+        error: (error: HttpErrorResponse) => {
+          this.errorMessage = this.errorText(error, 'Unable to download this CV.');
+        }
+      });
   }
 
   formatFileSize(bytes: number): string {
@@ -136,40 +188,72 @@ export class ResumeComponent implements OnInit {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  private acceptFile(file: File | null): void {
+    this.fileError = '';
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!file) {
+      this.clearSelectedFile();
+      return;
+    }
+
+    const pdfType = file.type.toLowerCase() === 'application/pdf';
+    const pdfName = file.name.toLowerCase().endsWith('.pdf');
+
+    if (!pdfType && !pdfName) {
+      this.clearSelectedFile();
+      this.fileError = 'Only PDF files are allowed.';
+      return;
+    }
+
+    if (file.size > this.maxFileSizeBytes) {
+      this.clearSelectedFile();
+      this.fileError = 'PDF must be 5 MB or smaller.';
+      return;
+    }
+
+    this.selectedFile = file;
+    this.uploadForm.patchValue({ file });
+    this.uploadForm.get('file')?.updateValueAndValidity();
+  }
+
+  private clearSelectedFile(): void {
+    this.selectedFile = null;
+    this.uploadForm.reset();
+
+    const input = document.getElementById('cvFile') as HTMLInputElement | null;
+    if (input) {
+      input.value = '';
+    }
+  }
+
   private saveDownload(
     response: HttpResponse<Blob>,
     fallbackName: string
   ): void {
     if (!response.body) {
-      this.error = 'The downloaded CV was empty.';
+      this.errorMessage = 'The downloaded CV was empty.';
       return;
     }
 
-    const contentDisposition =
-      response.headers.get('content-disposition');
-
-    const fileName =
-      this.extractFileName(contentDisposition) || fallbackName;
-
+    const contentDisposition = response.headers.get('content-disposition');
+    const fileName = this.extractFileName(contentDisposition) || fallbackName;
     const objectUrl = URL.createObjectURL(response.body);
     const anchor = document.createElement('a');
 
     anchor.href = objectUrl;
     anchor.download = fileName;
     anchor.click();
-
     URL.revokeObjectURL(objectUrl);
   }
 
-  private extractFileName(
-    contentDisposition: string | null
-  ): string | null {
+  private extractFileName(contentDisposition: string | null): string | null {
     if (!contentDisposition) {
       return null;
     }
 
-    const utf8Match =
-      /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition);
+    const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition);
 
     if (utf8Match?.[1]) {
       try {
@@ -179,33 +263,30 @@ export class ResumeComponent implements OnInit {
       }
     }
 
-    const normalMatch =
-      /filename="?([^";]+)"?/i.exec(contentDisposition);
-
-    return normalMatch?.[1] ?? null;
+    return /filename="?([^";]+)"?/i.exec(contentDisposition)?.[1] ?? null;
   }
 
-  private showError(
-    error: HttpErrorResponse,
-    fallback: string
-  ): void {
-    this.message = '';
+  private clearMessages(): void {
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.fileError = '';
+  }
 
+  private errorText(error: HttpErrorResponse, fallback: string): string {
     if (
       error.error &&
       typeof error.error === 'object' &&
       'message' in error.error &&
-      typeof error.error.message === 'string'
+      typeof error.error.message === 'string' &&
+      error.error.message.trim()
     ) {
-      this.error = error.error.message;
-      return;
+      return error.error.message;
     }
 
     if (typeof error.error === 'string' && error.error.trim()) {
-      this.error = error.error;
-      return;
+      return error.error;
     }
 
-    this.error = fallback;
+    return fallback;
   }
 }

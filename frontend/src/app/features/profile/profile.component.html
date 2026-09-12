@@ -1,317 +1,411 @@
-<div class="page">
-  <nav class="profile-nav">
-    <a routerLink="/seeker/cv">Manage CV / Resume ></a>
-  </nav>
-  <header class="hero">
+<main class="profile-page">
+  <header class="page-header">
     <div>
-      <p class="eyebrow">JOB SEEKER</p>
-      <h1>Candidate Profile</h1>
-      <p>Keep your professional information accurate and up to date.</p>
+      <p class="breadcrumb">Profile / Career evidence</p>
+      <h1>Career Profile</h1>
+      <p>Structured evidence powers server-side matching and application readiness.</p>
     </div>
 
-    <span class="status" [class.ready]="profileExists">
-      {{ profileExists ? 'Profile active' : 'Profile not created' }}
-    </span>
+    <button
+      class="primary"
+      type="button"
+      [disabled]="savingProfile || loading"
+      (click)="saveProfile()">
+      {{ savingProfile ? 'Saving…' : 'Save changes' }}
+    </button>
   </header>
 
-  @if (message) {
-    <div class="alert success">{{ message }}</div>
+  @if (successMessage) {
+    <div class="notice success" role="status">{{ successMessage }}</div>
   }
 
-  @if (error) {
-    <div class="alert error">{{ error }}</div>
+  @if (errorMessage) {
+    <apt-error-state
+      title="Profile action failed"
+      [message]="errorMessage"
+      [retryable]="false" />
   }
 
   @if (loading) {
-    <div class="card loading">Loading profile...</div>
+    <apt-loading-state message="Loading your career profile…" />
   } @else {
-    <section class="card">
-      <div class="section-heading">
-        <div>
-          <h2>Personal Profile</h2>
-          <p>Your core information used by the recruitment platform.</p>
-        </div>
+    <div class="profile-layout">
+      <nav class="section-nav" aria-label="Career profile sections">
+        @for (section of sections; track section[0]) {
+          <a [href]="'#' + section[0]">{{ section[1] }}</a>
+        }
+      </nav>
+
+      <div class="profile-content">
+        <section id="profile-basics" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Profile basics</h2>
+              <p>Keep factual information current. AptLens uses these fields as structured evidence.</p>
+            </div>
+          </div>
+
+          <form class="form-grid" [formGroup]="profileForm">
+            <label>
+              Full name
+              <input formControlName="fullName" autocomplete="name">
+              @if (profileForm.controls['fullName'].touched && profileForm.controls['fullName'].invalid) {
+                <small class="field-error">Full name is required.</small>
+              }
+            </label>
+
+            <label>
+              Current location
+              <input formControlName="location" autocomplete="address-level2">
+            </label>
+
+            <label>
+              Total experience (months)
+              <input type="number" min="0" formControlName="experienceMonths">
+            </label>
+
+            <label>
+              Education summary
+              <input formControlName="education">
+            </label>
+          </form>
+
+          @if (!profileExists) {
+            <p class="helper">
+              Save profile basics first to unlock structured career evidence.
+            </p>
+          }
+        </section>
+
+        <section id="skills" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Skills</h2>
+              <p>Add canonical skill names used by your real work. Server taxonomy remains authoritative.</p>
+            </div>
+          </div>
+
+          <div class="skill-entry">
+            <input
+              [(ngModel)]="skillName"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Add a skill, e.g. Angular"
+              [disabled]="!profileExists"
+              (keyup.enter)="addSkill()">
+
+            <button
+              class="primary"
+              type="button"
+              [disabled]="!profileExists || !skillName.trim() || isBusy('skill:add')"
+              (click)="addSkill()">
+              {{ isBusy('skill:add') ? 'Adding…' : 'Add' }}
+            </button>
+          </div>
+
+          <div class="chips" aria-label="Skills">
+            @for (skill of skills; track skill.id) {
+              <span class="chip">
+                {{ skill.name }}
+                <button
+                  type="button"
+                  [attr.aria-label]="'Remove ' + skill.name"
+                  [disabled]="isBusy('skill:' + skill.id)"
+                  (click)="removeSkill(skill)">×</button>
+              </span>
+            } @empty {
+              <p class="empty-copy">No skills added yet.</p>
+            }
+          </div>
+        </section>
+
+        <section id="work-experience" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Work experience</h2>
+              <p>Record factual roles and employment periods.</p>
+            </div>
+            <button class="secondary" type="button" [disabled]="!profileExists" (click)="addWork()">Add role</button>
+          </div>
+
+          <div class="record-list">
+            @for (group of workArray.controls; track group; let i = $index) {
+              <form class="record-form" [formGroup]="$any(group)" (ngSubmit)="saveWork($any(group), i)">
+                <div class="form-grid">
+                  <label>Job title<input formControlName="jobTitle">@if (group.get('jobTitle')?.touched && group.get('jobTitle')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Company<input formControlName="companyName">@if (group.get('companyName')?.touched && group.get('companyName')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Start date<input type="date" formControlName="startDate">@if (group.get('startDate')?.touched && group.get('startDate')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>End date<input type="date" formControlName="endDate"></label>
+                  <label class="full">Description<textarea rows="3" formControlName="description"></textarea></label>
+                </div>
+                <div class="record-actions">
+                  <button class="secondary" type="submit" [disabled]="isBusy('work:' + i)">Save</button>
+                  <button class="danger" type="button" (click)="deleteWork($any(group), i)">Delete</button>
+                </div>
+              </form>
+            } @empty {
+              <p class="empty-copy">No work experience yet. Add your first factual role.</p>
+            }
+          </div>
+        </section>
+
+        <section id="education" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Education</h2>
+              <p>Qualifications used as factual career evidence.</p>
+            </div>
+            <button class="secondary" type="button" [disabled]="!profileExists" (click)="addEducation()">Add education</button>
+          </div>
+
+          <div class="record-list">
+            @for (group of educationArray.controls; track group; let i = $index) {
+              <form class="record-form" [formGroup]="$any(group)" (ngSubmit)="saveEducation($any(group), i)">
+                <div class="form-grid">
+                  <label>Institution<input formControlName="institution">@if (group.get('institution')?.touched && group.get('institution')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Qualification<input formControlName="qualification">@if (group.get('qualification')?.touched && group.get('qualification')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Field of study<input formControlName="fieldOfStudy"></label>
+                  <label>Start date<input type="date" formControlName="startDate">@if (group.get('startDate')?.touched && group.get('startDate')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>End date<input type="date" formControlName="endDate"></label>
+                </div>
+                <div class="record-actions">
+                  <button class="secondary" type="submit" [disabled]="isBusy('education:' + i)">Save</button>
+                  <button class="danger" type="button" (click)="deleteEducation($any(group), i)">Delete</button>
+                </div>
+              </form>
+            } @empty {
+              <p class="empty-copy">No education records yet.</p>
+            }
+          </div>
+        </section>
+
+        <section id="certifications" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Certifications</h2>
+              <p>Keep certification issuer and validity facts current.</p>
+            </div>
+            <button class="secondary" type="button" [disabled]="!profileExists" (click)="addCertification()">Add certification</button>
+          </div>
+
+          <div class="record-list">
+            @for (group of certificationArray.controls; track group; let i = $index) {
+              <form class="record-form" [formGroup]="$any(group)" (ngSubmit)="saveCertification($any(group), i)">
+                <div class="form-grid">
+                  <label>Name<input formControlName="name">@if (group.get('name')?.touched && group.get('name')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Issuer<input formControlName="issuer">@if (group.get('issuer')?.touched && group.get('issuer')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Issued on<input type="date" formControlName="issuedOn">@if (group.get('issuedOn')?.touched && group.get('issuedOn')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Expires on<input type="date" formControlName="expiresOn"></label>
+                  <label class="full">Credential URL<input type="url" formControlName="credentialUrl"></label>
+                </div>
+                <div class="record-actions">
+                  <button class="secondary" type="submit" [disabled]="isBusy('certification:' + i)">Save</button>
+                  <button class="danger" type="button" (click)="deleteCertification($any(group), i)">Delete</button>
+                </div>
+              </form>
+            } @empty {
+              <p class="empty-copy">No certifications yet.</p>
+            }
+          </div>
+        </section>
+
+        <section id="licences" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Licences / registrations</h2>
+              <p>Record regulatory evidence without changing server verification truth.</p>
+            </div>
+            <button class="secondary" type="button" [disabled]="!profileExists" (click)="addLicence()">Add licence</button>
+          </div>
+
+          <div class="record-list">
+            @for (group of licenceArray.controls; track group; let i = $index) {
+              <form class="record-form" [formGroup]="$any(group)" (ngSubmit)="saveLicence($any(group), i)">
+                <div class="form-grid">
+                  <label>Type<input formControlName="type">@if (group.get('type')?.touched && group.get('type')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Class<input formControlName="class"></label>
+                  <label>Issuer<input formControlName="issuer">@if (group.get('issuer')?.touched && group.get('issuer')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Identifier<input formControlName="identifier">@if (group.get('identifier')?.touched && group.get('identifier')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Issued on<input type="date" formControlName="issuedOn">@if (group.get('issuedOn')?.touched && group.get('issuedOn')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Expires on<input type="date" formControlName="expiresOn"></label>
+                  <label>
+                    Status
+                    <select formControlName="status">
+                      <option value="Valid">Valid</option>
+                      <option value="Expired">Expired</option>
+                      <option value="Suspended">Suspended</option>
+                      <option value="Revoked">Revoked</option>
+                    </select>
+                  </label>
+                  <label>
+                    Verification status
+                    <input formControlName="verificationStatus" readonly aria-readonly="true">
+                  </label>
+                </div>
+                <div class="record-actions">
+                  <button class="secondary" type="submit" [disabled]="isBusy('licence:' + i)">Save</button>
+                  <button class="danger" type="button" (click)="deleteLicence($any(group), i)">Delete</button>
+                </div>
+              </form>
+            } @empty {
+              <p class="empty-copy">No licences or registrations yet.</p>
+            }
+          </div>
+        </section>
+
+        <section id="languages" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Languages</h2>
+              <p>Add language capability and proficiency.</p>
+            </div>
+            <button class="secondary" type="button" [disabled]="!profileExists" (click)="addLanguage()">Add language</button>
+          </div>
+
+          <div class="record-list">
+            @for (group of languageArray.controls; track group; let i = $index) {
+              <form class="record-form compact" [formGroup]="$any(group)" (ngSubmit)="saveLanguage($any(group), i)">
+                <div class="form-grid">
+                  <label>Language<input formControlName="language">@if (group.get('language')?.touched && group.get('language')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Proficiency<input formControlName="proficiency">@if (group.get('proficiency')?.touched && group.get('proficiency')?.invalid) { <small class="field-error">Required.</small> }</label>
+                </div>
+                <div class="record-actions">
+                  <button class="secondary" type="submit" [disabled]="isBusy('language:' + i)">Save</button>
+                  <button class="danger" type="button" (click)="deleteLanguage($any(group), i)">Delete</button>
+                </div>
+              </form>
+            } @empty {
+              <p class="empty-copy">No languages yet.</p>
+            }
+          </div>
+        </section>
+
+        <section id="projects" class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Projects / portfolio</h2>
+              <p>Capture evidence from real projects and portfolio work.</p>
+            </div>
+            <button class="secondary" type="button" [disabled]="!profileExists" (click)="addProject()">Add project</button>
+          </div>
+
+          <div class="record-list">
+            @for (group of projectArray.controls; track group; let i = $index) {
+              <form class="record-form" [formGroup]="$any(group)" (ngSubmit)="saveProject($any(group), i)">
+                <div class="form-grid">
+                  <label>Name<input formControlName="name">@if (group.get('name')?.touched && group.get('name')?.invalid) { <small class="field-error">Required.</small> }</label>
+                  <label>Project URL<input type="url" formControlName="projectUrl"></label>
+                  <label class="full">Description<textarea rows="3" formControlName="description"></textarea></label>
+                </div>
+                <div class="record-actions">
+                  <button class="secondary" type="submit" [disabled]="isBusy('project:' + i)">Save</button>
+                  <button class="danger" type="button" (click)="deleteProject($any(group), i)">Delete</button>
+                </div>
+              </form>
+            } @empty {
+              <p class="empty-copy">No projects yet.</p>
+            }
+          </div>
+        </section>
+
+        <section id="preferences" class="card" [formGroup]="profileForm">
+          <div class="section-heading">
+            <div>
+              <h2>Job preferences</h2>
+              <p>Keep matching preferences factual and current.</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Preferred work mode
+              <select formControlName="preferredWorkMode">
+                <option value="">Select</option>
+                <option value="Onsite">Onsite</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Remote">Remote</option>
+              </select>
+            </label>
+
+            <label>Preferred location<input formControlName="preferredLocation"></label>
+
+            <label>
+              Preferred employment type
+              <select formControlName="preferredEmploymentType">
+                <option value="">Select</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </label>
+
+            <label class="check">
+              <input type="checkbox" formControlName="willingToRelocate">
+              <span>I am open to relocating for the right role.</span>
+            </label>
+          </div>
+        </section>
+
+        <section id="availability" class="card" [formGroup]="profileForm">
+          <div class="section-heading">
+            <div>
+              <h2>Availability</h2>
+              <p>Availability is factual evidence used during matching and application readiness.</p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label>
+              Availability status
+              <select formControlName="availabilityStatus">
+                <option value="">Select</option>
+                <option value="Immediately">Immediately available</option>
+                <option value="NoticePeriod">Notice period</option>
+                <option value="SpecificDate">Specific date</option>
+                <option value="Unavailable">Unavailable</option>
+              </select>
+            </label>
+
+            <label>Available from<input type="date" formControlName="availableFrom"></label>
+            <label>Notice period (days)<input type="number" min="0" formControlName="noticePeriodDays"></label>
+          </div>
+        </section>
       </div>
 
-      <form class="form-grid" (ngSubmit)="saveProfile()">
-        <label>
-          Full name
-          <input
-            name="fullName"
-            [(ngModel)]="profile.fullName"
-            placeholder="Your full name"
-            required>
-        </label>
+      <aside class="readiness-card">
+        <h2>Profile readiness</h2>
+        <p>Server checklist, not a completion percentage.</p>
 
-        <label>
-          Location
-          <input
-            name="location"
-            [(ngModel)]="profile.location"
-            placeholder="Colombo, Sri Lanka">
-        </label>
-
-        <label>
-          Experience (months)
-          <input
-            type="number"
-            min="0"
-            name="experienceMonths"
-            [(ngModel)]="profile.experienceMonths">
-        </label>
-
-        <label>
-          Education summary
-          <input
-            name="educationSummary"
-            [(ngModel)]="profile.education"
-            placeholder="BSc in Software Engineering">
-        </label>
-
-        <div class="actions full">
-          <button class="primary" type="submit" [disabled]="savingProfile">
-            {{ savingProfile
-              ? 'Saving...'
-              : (profileExists ? 'Update Profile' : 'Create Profile') }}
-          </button>
-        </div>
-      </form>
-    </section>
-
-    @if (profileExists) {
-      <section class="card">
-        <div class="section-heading">
+        <div class="readiness-line" [class.ready]="profileReadiness?.isReady">
+          <span aria-hidden="true"></span>
           <div>
-            <h2>Skills</h2>
-            <p>Add the skills employers should see.</p>
+            <strong>{{ profileReadiness?.isReady ? 'Profile ready' : 'Profile needs attention' }}</strong>
+            <small>{{ profileReadiness?.isReady ? 'Core profile requirements are present.' : 'Complete the exact missing profile items below.' }}</small>
           </div>
         </div>
 
-        <div class="inline-form">
-          <input
-            [(ngModel)]="newSkill"
-            placeholder="Example: Angular"
-            (keyup.enter)="addSkill()">
-          <button class="primary" type="button" (click)="addSkill()">
-            Add Skill
-          </button>
-        </div>
-
-        <div class="chips">
-          @for (skill of skills; track skill.id) {
-            <span class="chip">
-              {{ skill.name }}
-              <button
-                type="button"
-                aria-label="Remove skill"
-                (click)="removeSkill(skill.id)">Ãƒâ€”</button>
-            </span>
-          } @empty {
-            <p class="empty">No skills added yet.</p>
-          }
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="section-heading">
+        <div class="readiness-line" [class.ready]="applicationReadiness?.resumeReady">
+          <span aria-hidden="true"></span>
           <div>
-            <h2>Work Experience</h2>
-            <p>Add and maintain your employment history.</p>
+            <strong>{{ applicationReadiness?.resumeReady ? 'Resume ready' : 'Resume required' }}</strong>
+            <small>{{ applicationReadiness?.resumeReady ? 'A current ResumeVersion exists.' : 'Upload and select a current PDF CV.' }}</small>
           </div>
         </div>
 
-        <form class="form-grid" (ngSubmit)="saveWork()">
-          <label>
-            Job title
-            <input
-              name="jobTitle"
-              [(ngModel)]="workForm.jobTitle"
-              required>
-          </label>
-
-          <label>
-            Company
-            <input
-              name="companyName"
-              [(ngModel)]="workForm.companyName"
-              required>
-          </label>
-
-          <label>
-            Start date
-            <input
-              type="date"
-              name="workStartDate"
-              [(ngModel)]="workForm.startDate"
-              required>
-          </label>
-
-          <label>
-            End date
-            <input
-              type="date"
-              name="workEndDate"
-              [(ngModel)]="workForm.endDate">
-          </label>
-
-          <label class="full">
-            Description
-            <textarea
-              name="workDescription"
-              rows="3"
-              [(ngModel)]="workForm.description"></textarea>
-          </label>
-
-          <div class="actions full">
-            <button class="primary" type="submit">
-              {{ editingWorkId ? 'Update Experience' : 'Add Experience' }}
-            </button>
-
-            @if (editingWorkId) {
-              <button
-                class="secondary"
-                type="button"
-                (click)="cancelWorkEdit()">
-                Cancel
-              </button>
-            }
+        @if (readinessMissingItems.length) {
+          <div class="missing-box">
+            <strong>Still useful to review</strong>
+            <ul>
+              @for (item of readinessMissingItems; track item) {
+                <li>{{ item }}</li>
+              }
+            </ul>
           </div>
-        </form>
+        }
 
-        <div class="records">
-          @for (item of workExperiences; track item.id) {
-            <article class="record">
-              <div>
-                <h3>{{ item.jobTitle }}</h3>
-                <strong>{{ item.companyName }}</strong>
-                <p>
-                  {{ item.startDate }} Ã¢â‚¬â€
-                  {{ item.endDate || 'Present' }}
-                </p>
-                <p>{{ item.description }}</p>
-              </div>
-
-              <div class="record-actions">
-                <button
-                  class="secondary"
-                  type="button"
-                  (click)="editWork(item)">
-                  Edit
-                </button>
-                <button
-                  class="danger"
-                  type="button"
-                  (click)="deleteWork(item.id)">
-                  Delete
-                </button>
-              </div>
-            </article>
-          } @empty {
-            <p class="empty">No work experience added yet.</p>
-          }
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="section-heading">
-          <div>
-            <h2>Education</h2>
-            <p>Maintain your academic history.</p>
-          </div>
-        </div>
-
-        <form class="form-grid" (ngSubmit)="saveEducation()">
-          <label>
-            Institution
-            <input
-              name="institution"
-              [(ngModel)]="educationForm.institution"
-              required>
-          </label>
-
-          <label>
-            Qualification
-            <input
-              name="qualification"
-              [(ngModel)]="educationForm.qualification"
-              required>
-          </label>
-
-          <label>
-            Field of study
-            <input
-              name="fieldOfStudy"
-              [(ngModel)]="educationForm.fieldOfStudy">
-          </label>
-
-          <label>
-            Start date
-            <input
-              type="date"
-              name="educationStartDate"
-              [(ngModel)]="educationForm.startDate"
-              required>
-          </label>
-
-          <label>
-            End date
-            <input
-              type="date"
-              name="educationEndDate"
-              [(ngModel)]="educationForm.endDate">
-          </label>
-
-          <div class="actions full">
-            <button class="primary" type="submit">
-              {{ editingEducationId
-                ? 'Update Education'
-                : 'Add Education' }}
-            </button>
-
-            @if (editingEducationId) {
-              <button
-                class="secondary"
-                type="button"
-                (click)="cancelEducationEdit()">
-                Cancel
-              </button>
-            }
-          </div>
-        </form>
-
-        <div class="records">
-          @for (item of educationRecords; track item.id) {
-            <article class="record">
-              <div>
-                <h3>{{ item.qualification }}</h3>
-                <strong>{{ item.institution }}</strong>
-                <p>{{ item.fieldOfStudy }}</p>
-                <p>
-                  {{ item.startDate }} Ã¢â‚¬â€
-                  {{ item.endDate || 'Present' }}
-                </p>
-              </div>
-
-              <div class="record-actions">
-                <button
-                  class="secondary"
-                  type="button"
-                  (click)="editEducation(item)">
-                  Edit
-                </button>
-                <button
-                  class="danger"
-                  type="button"
-                  (click)="deleteEducation(item.id)">
-                  Delete
-                </button>
-              </div>
-            </article>
-          } @empty {
-            <p class="empty">No education records added yet.</p>
-          }
-        </div>
-      </section>
-    }
+        <a class="primary action-link" routerLink="/jobs">Find matching jobs</a>
+        <a class="secondary action-link" routerLink="/seeker/cv">Manage CV versions</a>
+      </aside>
+    </div>
   }
-</div>
+</main>
