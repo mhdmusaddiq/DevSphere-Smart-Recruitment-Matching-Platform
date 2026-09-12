@@ -1,0 +1,176 @@
+<main class="profile-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Employer profile</p>
+      <h1>Your employer details</h1>
+      <p class="intro">
+        Keep your employer contact and workplace information up to date.
+      </p>
+    </div>
+  </header>
+
+  <section class="identity-card" aria-labelledby="account-identity-title">
+    <div class="card-heading identity-heading">
+      <div>
+        <p class="eyebrow">Account identity</p>
+        <h2 id="account-identity-title">Signed-in employer</h2>
+        <p>
+          These account details come from your authenticated session and
+          are separate from the editable employer profile below.
+        </p>
+      </div>
+    </div>
+
+    @if (session.user(); as user) {
+      <dl class="identity-grid">
+        <div>
+          <dt>User ID</dt>
+          <dd>{{ user.userId }}</dd>
+        </div>
+        <div>
+          <dt>Display name</dt>
+          <dd>{{ user.displayName }}</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{{ user.email }}</dd>
+        </div>
+        <div>
+          <dt>Role</dt>
+          <dd>{{ user.role }}</dd>
+        </div>
+        <div>
+          <dt>Account state</dt>
+          <dd>{{ user.accountState }}</dd>
+        </div>
+        <div>
+          <dt>Email verification</dt>
+          <dd>{{ user.emailVerified ? 'Verified' : 'Not verified' }}</dd>
+        </div>
+      </dl>
+    } @else {
+      <p class="identity-unavailable">
+        Account identity is not currently available.
+      </p>
+    }
+  </section>
+
+  @if (loading) {
+    <section class="state-card" aria-live="polite">
+      <p>Loading employer profile...</p>
+    </section>
+  } @else {
+    <section class="profile-card">
+      <div class="card-heading">
+        <div>
+          <h2>Profile information</h2>
+          <p>
+            These details describe your employer profile and are separate
+            from your company verification record.
+          </p>
+        </div>
+      </div>
+
+      @if (errorMessage) {
+        <div class="message error-message" role="alert">
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (successMessage) {
+        <div class="message success-message" role="status">
+          {{ successMessage }}
+        </div>
+      }
+
+      <form [formGroup]="profileForm" (ngSubmit)="submit()" novalidate>
+        <div class="form-grid">
+          <div class="field field-wide">
+            <label for="companyName">Company name</label>
+            <input
+              id="companyName"
+              type="text"
+              formControlName="companyName"
+              autocomplete="organization"
+            />
+
+            @if (
+              profileForm.controls.companyName.touched &&
+              profileForm.controls.companyName.hasError('required')
+            ) {
+              <p class="field-error">Company name is required.</p>
+            }
+
+            @if (
+              profileForm.controls.companyName.touched &&
+              profileForm.controls.companyName.hasError('maxlength')
+            ) {
+              <p class="field-error">Company name is too long.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="contactEmail">Contact email</label>
+            <input
+              id="contactEmail"
+              type="email"
+              formControlName="contactEmail"
+              autocomplete="email"
+            />
+
+            @if (
+              profileForm.controls.contactEmail.touched &&
+              profileForm.controls.contactEmail.hasError('required')
+            ) {
+              <p class="field-error">Contact email is required.</p>
+            }
+
+            @if (
+              profileForm.controls.contactEmail.touched &&
+              profileForm.controls.contactEmail.hasError('email')
+            ) {
+              <p class="field-error">Enter a valid email address.</p>
+            }
+          </div>
+
+          <div class="field">
+            <label for="website">Website</label>
+            <input
+              id="website"
+              type="url"
+              formControlName="website"
+              autocomplete="url"
+              placeholder="https://example.com"
+            />
+          </div>
+
+          <div class="field field-wide">
+            <label for="location">Location</label>
+            <input
+              id="location"
+              type="text"
+              formControlName="location"
+              autocomplete="address-level2"
+            />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="submitting"
+          >
+            @if (submitting) {
+              Saving...
+            } @else if (profileExists) {
+              Save changes
+            } @else {
+              Create profile
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+</main>

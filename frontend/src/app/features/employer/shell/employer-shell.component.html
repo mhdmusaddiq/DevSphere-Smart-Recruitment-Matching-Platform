@@ -1,0 +1,170 @@
+<div class="employer-shell">
+  <aside class="sidebar" aria-label="Employer workspace">
+    <a
+      class="brand"
+      routerLink="/employer/dashboard"
+      aria-label="AptLens employer dashboard"
+    >
+      <span class="brand-mark" aria-hidden="true">A</span>
+      <span>AptLens</span>
+    </a>
+
+    <div class="workspace-card">
+      <span class="workspace-label">Workspace</span>
+      <strong>Employer</strong>
+    </div>
+
+    <nav class="desktop-nav" aria-label="Employer navigation">
+      <a
+        routerLink="/employer/dashboard"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Dashboard
+      </a>
+
+      <a
+        routerLink="/employer/vacancies"
+        routerLinkActive="active"
+      >
+        Vacancies
+      </a>
+
+      <a
+        routerLink="/employer/contact-requests"
+        routerLinkActive="active"
+      >
+        Contact Requests
+      </a>
+
+      <a
+        routerLink="/employer/notifications"
+        routerLinkActive="active"
+      >
+        Notifications
+      </a>
+
+      <a
+        routerLink="/employer/company"
+        routerLinkActive="active"
+      >
+        Company
+      </a>
+
+      <a
+        routerLink="/employer/profile"
+        routerLinkActive="active"
+      >
+        Employer Profile
+      </a>
+    </nav>
+
+    <div class="account-summary">
+      <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+
+      @if (session.user(); as user) {
+        <div>
+          <strong>{{ user.displayName }}</strong>
+          <span>{{ user.email }}</span>
+        </div>
+      } @else {
+        <div>
+          <strong>Employer</strong>
+          <span>Authenticated workspace</span>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <div class="shell-content">
+    <header class="desktop-topbar">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <span>Employer</span>
+        <span class="breadcrumb-separator" aria-hidden="true">/</span>
+        <strong>{{ currentPageName() }}</strong>
+      </nav>
+    </header>
+    <header class="mobile-header">
+      <a
+        class="mobile-brand"
+        routerLink="/employer/dashboard"
+        (click)="closeMobileNavigation()"
+      >
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span>AptLens</span>
+      </a>
+
+      <button
+        type="button"
+        class="menu-button"
+        aria-label="Toggle employer navigation"
+        aria-controls="employer-mobile-navigation"
+        [attr.aria-expanded]="mobileNavigationOpen()"
+        (click)="toggleMobileNavigation()"
+      >
+        Menu
+      </button>
+    </header>
+
+    @if (mobileNavigationOpen()) {
+      <nav
+        id="employer-mobile-navigation"
+        class="mobile-nav"
+        aria-label="Employer mobile navigation"
+      >
+        <a
+          routerLink="/employer/dashboard"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="closeMobileNavigation()"
+        >
+          Dashboard
+        </a>
+
+        <a
+          routerLink="/employer/vacancies"
+          routerLinkActive="active"
+          (click)="closeMobileNavigation()"
+        >
+          Vacancies
+        </a>
+
+        <a
+          routerLink="/employer/contact-requests"
+          routerLinkActive="active"
+          (click)="closeMobileNavigation()"
+        >
+          Contact Requests
+        </a>
+
+        <a
+          routerLink="/employer/notifications"
+          routerLinkActive="active"
+          (click)="closeMobileNavigation()"
+        >
+          Notifications
+        </a>
+
+        <a
+          routerLink="/employer/company"
+          routerLinkActive="active"
+          (click)="closeMobileNavigation()"
+        >
+          Company
+        </a>
+
+        <a
+          routerLink="/employer/profile"
+          routerLinkActive="active"
+          (click)="closeMobileNavigation()"
+        >
+          Employer Profile
+        </a>
+      </nav>
+    }
+
+    <main class="route-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
