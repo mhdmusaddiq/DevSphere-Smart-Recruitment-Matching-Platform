@@ -12,8 +12,10 @@ import { EmployerVacancyManagementComponent } from '../features/employer/vacancy
 import { EmployerRankedApplicantsComponent } from '../features/employer/ranked-applicants/employer-ranked-applicants.component';
 import { EmployerApplicantDetailComponent } from '../features/employer/applicant-detail/employer-applicant-detail.component';
 import { EmployerShellComponent } from '../features/employer/shell/employer-shell.component';
-import { RoutePlaceholderComponent } from '../shared/routes/route-placeholder.component';
 
+import { EmployerContactRequestsComponent } from '../features/employer/contact-requests/employer-contact-requests.component';
+import { EmployerRecruitmentWorkflowComponent } from '../features/employer/recruitment-workflow/employer-recruitment-workflow.component';
+import { EmployerNotificationsComponent } from '../features/employer/notifications/employer-notifications.component';
 export const employerRoutes: Routes = [
   {
     path: 'employer',
@@ -30,9 +32,9 @@ export const employerRoutes: Routes = [
       { path: 'vacancies/:vacancyId', component: EmployerVacancyManagementComponent, data: { pageId: 'E06', pageName: 'Vacancy management' } },
       { path: 'vacancies/:vacancyId/applicants', component: EmployerRankedApplicantsComponent, data: { pageId: 'E07', pageName: 'Ranked applicants' } },
       { path: 'applications/:applicationId', component: EmployerApplicantDetailComponent, data: { pageId: 'E08', pageName: 'Applicant details' } },
-      { path: 'contact-requests', component: RoutePlaceholderComponent, data: { pageId: 'E09', pageName: 'Contact requests' } },
-      { path: 'recruitment/:applicationId', component: RoutePlaceholderComponent, data: { pageId: 'E10', pageName: 'Recruitment workflow' } },
-      { path: 'notifications', component: RoutePlaceholderComponent, data: { pageId: 'E11', pageName: 'Notifications' } }
+      { path: 'contact-requests', component: EmployerContactRequestsComponent, data: { pageId: 'E09', pageName: 'Contact requests' } },
+      { path: 'recruitment/:applicationId', component: EmployerRecruitmentWorkflowComponent, data: { pageId: 'E10', pageName: 'Recruitment workflow' } },
+      { path: 'notifications', component: EmployerNotificationsComponent, data: { pageId: 'E11', pageName: 'Notifications' } }
     ]
   }
 ];

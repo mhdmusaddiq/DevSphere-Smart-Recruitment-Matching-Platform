@@ -20,6 +20,16 @@ import {
   SubmitCompanyVerificationRequest
 } from './employer.models';
 
+import {
+  EmployerContactRequest,
+  EmployerInterview,
+  EmployerInterviewSlot,
+  EmployerNotification,
+  EmployerOffer,
+  EmployerScorecard,
+  EmployerTalentPoolEntry,
+  EmployerWorkflowSummary
+} from './employer.models';
 @Injectable({
   providedIn: 'root'
 })
@@ -178,5 +188,45 @@ export class EmployerApiService {
       apiUrl(this.baseUrl, `/companies/${companyId}/verification`),
       request
     );
+  }
+
+  getEmployerContactRequests(): Observable<EmployerContactRequest[]> {
+    return this.http.get<EmployerContactRequest[]>(apiUrl(this.baseUrl, '/contact-requests/employer'));
+  }
+  sendContactRequest(applicationId:string): Observable<EmployerContactRequest> {
+    return this.http.post<EmployerContactRequest>(apiUrl(this.baseUrl, `/contact-requests/applications/${applicationId}`), {});
+  }
+  cancelContactRequest(id:string): Observable<EmployerContactRequest> {
+    return this.http.put<EmployerContactRequest>(apiUrl(this.baseUrl, `/contact-requests/${id}/employer-status`), {status:'Cancelled'});
+  }
+  getEmployerWorkflowSummary(applicationId:string): Observable<EmployerWorkflowSummary> {
+    return this.http.get<EmployerWorkflowSummary>(apiUrl(this.baseUrl, `/employer-workflow/applications/${applicationId}/summary`));
+  }
+  createInterview(applicationId:string,notes:string): Observable<EmployerInterview> {
+    return this.http.post<EmployerInterview>(apiUrl(this.baseUrl, '/employer-workflow/interviews'), {jobApplicationId:applicationId,notes});
+  }
+  updateInterviewStatus(id:string,status:'Completed'|'Cancelled'): Observable<EmployerInterview> {
+    return this.http.put<EmployerInterview>(apiUrl(this.baseUrl, `/employer-workflow/interviews/${id}/status`), {status});
+  }
+  addInterviewSlot(id:string,startsAtUtc:string,endsAtUtc:string,locationOrMeetingUrl:string): Observable<EmployerInterviewSlot> {
+    return this.http.post<EmployerInterviewSlot>(apiUrl(this.baseUrl, `/employer-workflow/interviews/${id}/slots`), {startsAtUtc,endsAtUtc,locationOrMeetingUrl});
+  }
+  createScorecard(applicationId:string,interviewId:string|null,overallRating:number,notes:string): Observable<EmployerScorecard> {
+    return this.http.post<EmployerScorecard>(apiUrl(this.baseUrl, '/employer-workflow/scorecards'), {jobApplicationId:applicationId,interviewId,overallRating,notes});
+  }
+  createOffer(applicationId:string,offeredSalary:number|null,expiresAtUtc:string|null,notes:string): Observable<EmployerOffer> {
+    return this.http.post<EmployerOffer>(apiUrl(this.baseUrl, '/employer-workflow/offers'), {jobApplicationId:applicationId,offeredSalary,expiresAtUtc,notes});
+  }
+  updateOfferStatus(id:string,status:'Extended'|'Accepted'|'Declined'|'Withdrawn'): Observable<EmployerOffer> {
+    return this.http.put<EmployerOffer>(apiUrl(this.baseUrl, `/employer-workflow/offers/${id}/status`), {status});
+  }
+  addTalentPoolEntry(applicationId:string,hasCandidateConsent:boolean,notes:string): Observable<EmployerTalentPoolEntry> {
+    return this.http.post<EmployerTalentPoolEntry>(apiUrl(this.baseUrl, '/employer-workflow/talent-pool'), {jobApplicationId:applicationId,hasCandidateConsent,notes});
+  }
+  getNotifications(): Observable<EmployerNotification[]> {
+    return this.http.get<EmployerNotification[]>(apiUrl(this.baseUrl, '/notifications'));
+  }
+  markNotificationRead(id:string): Observable<{message:string}> {
+    return this.http.put<{message:string}>(apiUrl(this.baseUrl, `/notifications/${id}/read`), {});
   }
 }

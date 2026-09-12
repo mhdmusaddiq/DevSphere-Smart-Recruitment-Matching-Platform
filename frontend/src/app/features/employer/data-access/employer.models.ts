@@ -314,3 +314,32 @@ export interface EmployerRankedApplicant {
   missingInputs: string[];
   families: EmployerMatchFamilyResult[];
 }
+export interface EmployerContactRequest {
+  id: string;
+  jobApplicationId: string;
+  employerId: string;
+  candidateId: string;
+  status: string;
+  vacancyId: string;
+  vacancyTitle: string;
+  companyId: string | null;
+  companyName: string;
+  candidateDisplayName: string;
+  employerDisplayName: string;
+  canDiscloseContact: boolean;
+  candidateEmail: string | null;
+}
+export interface EmployerInterview { id:string; jobApplicationId:string; status:string; notes:string; }
+export interface EmployerInterviewSlot { id:string; interviewId:string; startsAtUtc:string; endsAtUtc:string; locationOrMeetingUrl:string; }
+export interface EmployerScorecard { id:string; jobApplicationId:string; interviewId:string|null; overallRating:number; notes:string; }
+export interface EmployerOffer { id:string; jobApplicationId:string; status:string; offeredSalary:number|null; expiresAtUtc:string|null; extendedAtUtc:string|null; notes:string; }
+export interface EmployerTalentPoolEntry { id:string; jobApplicationId:string; candidateUserId:string; hasCandidateConsent:boolean; consentRecordedAtUtc:string|null; isActive:boolean; notes:string; }
+export interface EmployerWorkflowSummary {
+  jobApplicationId:string;
+  interviews:EmployerInterview[];
+  interviewSlots:EmployerInterviewSlot[];
+  scorecards:EmployerScorecard[];
+  offers:EmployerOffer[];
+  talentPoolEntries:EmployerTalentPoolEntry[];
+}
+export interface EmployerNotification { id:string; message:string; isRead:boolean; createdAtUtc:string; }
