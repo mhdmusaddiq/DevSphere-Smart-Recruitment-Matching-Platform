@@ -1,0 +1,132 @@
+/// <reference types="jasmine" />
+
+import { HttpErrorResponse } from '@angular/common/http';
+import { TestBed } from '@angular/core/testing';
+import {
+  of,
+  throwError
+} from 'rxjs';
+
+import {
+  AdminApiService
+} from '../data/admin-api.service';
+import {
+  AdminUsersComponent
+} from './admin-users.component';
+
+describe('AdminUsersComponent', () => {
+  let api: jasmine.SpyObj<AdminApiService>;
+
+  const page = {
+    page: 1,
+    pageSize: 25,
+    totalCount: 1,
+    items: [
+      {
+        userId: 'admin-1',
+        email: 'admin@example.test',
+        displayName: 'Admin One',
+        role: 'Admin',
+        isActive: true,
+        createdAtUtc: '2026-09-12T00:00:00Z'
+      }
+    ]
+  };
+
+  beforeEach(async () => {
+    api = jasmine.createSpyObj<AdminApiService>(
+      'AdminApiService',
+      [
+        'getUsers',
+        'setUserStatus'
+      ]
+    );
+
+    api.getUsers.and.returnValue(of(page));
+    api.setUserStatus.and.returnValue(
+      of({
+        ...page.items[0],
+        isActive: false
+      })
+    );
+
+    await TestBed.configureTestingModule({
+      imports: [AdminUsersComponent],
+      providers: [
+        {
+          provide: AdminApiService,
+          useValue: api
+        }
+      ]
+    }).compileComponents();
+  });
+
+  it('loads users with server-side pagination', () => {
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    expect(api.getUsers).toHaveBeenCalledWith({
+      q: '',
+      role: undefined,
+      isActive: undefined,
+      page: 1,
+      pageSize: 25
+    });
+    expect(
+      fixture.componentInstance.result()?.totalCount
+    ).toBe(1);
+  });
+
+  it('replaces the returned user after a successful status update', () => {
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleStatus(
+      page.items[0]
+    );
+
+    expect(api.setUserStatus)
+      .toHaveBeenCalledOnceWith(
+        'admin-1',
+        false
+      );
+    expect(
+      fixture.componentInstance.result()?.items[0]
+        .isActive
+    ).toBeFalse();
+  });
+
+  it('renders the exact backend 409 safeguard message', () => {
+    api.setUserStatus.and.returnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: {
+              message:
+                'Administrators cannot disable their own account.'
+            }
+          })
+      )
+    );
+
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleStatus(
+      page.items[0]
+    );
+
+    expect(
+      fixture.componentInstance.actionError()
+    ).toBe(
+      'Administrators cannot disable their own account.'
+    );
+  });
+});

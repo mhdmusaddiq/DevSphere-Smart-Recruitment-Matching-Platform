@@ -1,0 +1,89 @@
+<div class="admin-shell">
+  <aside
+    class="sidebar"
+    [class.sidebar--open]="menuOpen()"
+  >
+    <div class="sidebar-brand">
+      <apt-brand-wordmark />
+    </div>
+
+    <div class="workspace-card">
+      <span>Workspace</span>
+      <strong>Platform administration</strong>
+    </div>
+
+    <nav
+      class="admin-nav"
+      aria-label="Administration"
+    >
+      @for (item of navItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="nav-link--active"
+          class="nav-link"
+          (click)="closeMenu()"
+        >
+          <span class="nav-icon">
+            <apt-app-icon
+              [name]="item.icon"
+              [size]="17"
+            />
+          </span>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-note">
+      <strong>Operational console</strong>
+      <span>
+        Backend authorization remains authoritative.
+      </span>
+    </div>
+  </aside>
+
+  @if (menuOpen()) {
+    <button
+      type="button"
+      class="drawer-backdrop"
+      aria-label="Close administration menu"
+      (click)="closeMenu()"
+    ></button>
+  }
+
+  <section class="main-column">
+    <header class="topbar">
+      <button
+        type="button"
+        class="menu-button"
+        aria-label="Open administration menu"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="toggleMenu()"
+      >
+        <apt-app-icon
+          name="menu"
+          [size]="20"
+        />
+      </button>
+
+      <div class="breadcrumb">
+        AptLens <span>/</span> Admin
+      </div>
+
+      <div class="admin-identity">
+        <apt-identity-avatar
+          [displayName]="displayName()"
+          [size]="34"
+        />
+        <div>
+          <strong>{{ displayName() }}</strong>
+          <span>Verified admin session</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-content">
+      <router-outlet />
+    </main>
+  </section>
+</div>

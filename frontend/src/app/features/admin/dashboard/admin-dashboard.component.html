@@ -1,0 +1,244 @@
+<section class="dashboard-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Administration overview</p>
+      <h1>Platform operations at a glance</h1>
+      <p class="intro">
+        Factual account counts, moderation workload and recent
+        audit activity. No revenue, growth or hiring-success
+        analytics are inferred.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="refresh-button"
+      [disabled]="loading()"
+      (click)="load()"
+    >
+      {{ loading() ? 'Refreshing…' : 'Refresh data' }}
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="error-panel" role="alert">
+      <strong>Administration data unavailable</strong>
+      <span>{{ errorMessage() }}</span>
+      <button type="button" (click)="load()">Retry</button>
+    </div>
+  } @else if (loading() && !metrics()) {
+    <div class="loading-grid" aria-label="Loading administration overview">
+      @for (item of [1,2,3,4,5,6]; track item) {
+        <span></span>
+      }
+    </div>
+  } @else {
+    @if (metrics(); as data) {
+    <div class="metric-grid">
+      <article class="metric-card">
+        <div>
+          <span>Total users</span>
+          <i class="dot dot--neutral"></i>
+        </div>
+        <strong>{{ data.totalUsers }}</strong>
+        <small>All platform accounts</small>
+      </article>
+
+      <article class="metric-card">
+        <div>
+          <span>Active users</span>
+          <i class="dot dot--success"></i>
+        </div>
+        <strong>{{ data.activeUsers }}</strong>
+        <small>Currently enabled</small>
+      </article>
+
+      <article class="metric-card">
+        <div>
+          <span>Disabled</span>
+          <i class="dot dot--error"></i>
+        </div>
+        <strong>{{ data.disabledUsers }}</strong>
+        <small>Disabled accounts</small>
+      </article>
+
+      <article class="metric-card">
+        <div>
+          <span>Admins</span>
+          <i class="dot dot--violet"></i>
+        </div>
+        <strong>{{ data.adminUsers }}</strong>
+        <small>Administrator accounts</small>
+      </article>
+
+      <article class="metric-card">
+        <div>
+          <span>Employers</span>
+          <i class="dot dot--info"></i>
+        </div>
+        <strong>{{ data.employerUsers }}</strong>
+        <small>Employer accounts</small>
+      </article>
+
+      <article class="metric-card">
+        <div>
+          <span>Job seekers</span>
+          <i class="dot dot--warning"></i>
+        </div>
+        <strong>{{ data.jobSeekerUsers }}</strong>
+        <small>Job seeker accounts</small>
+      </article>
+    </div>
+
+    <div class="overview-grid">
+      <section class="panel">
+        <header class="panel-header">
+          <div>
+            <h2>Pending company reviews</h2>
+            <p>
+              Current PendingReview submissions requiring
+              admin action
+            </p>
+          </div>
+
+          <a routerLink="/admin/company-verifications">
+            Open queue →
+          </a>
+        </header>
+
+        @if (pending().length) {
+          <div class="queue-list">
+            @for (
+              verification of pending().slice(0, 4);
+              track verification.id
+            ) {
+              <a
+                class="queue-row"
+                [routerLink]="[
+                  '/admin/company-verifications',
+                  verification.id
+                ]"
+              >
+                <apt-company-monogram
+                  [companyName]="verification.companyName"
+                  [size]="42"
+                />
+
+                <div class="queue-copy">
+                  <strong>
+                    {{ verification.companyName }}
+                  </strong>
+                  <span>
+                    Submitted
+                    {{
+                      verification.submittedAtUtc
+                        | date:'dd MMM y · HH:mm'
+                    }}
+                  </span>
+                </div>
+
+                <span class="pending-badge">
+                  Pending review
+                </span>
+              </a>
+            }
+          </div>
+        } @else {
+          <div class="empty-block">
+            <strong>No pending company reviews</strong>
+            <span>
+              There are no PendingReview submissions requiring
+              action right now.
+            </span>
+          </div>
+        }
+      </section>
+
+      <section class="panel">
+        <header class="panel-header">
+          <div>
+            <h2>Recent audit events</h2>
+            <p>Newest platform administration events</p>
+          </div>
+
+          <a routerLink="/admin/audit-system">
+            View audit →
+          </a>
+        </header>
+
+        @if (auditEvents().length) {
+          <div class="audit-list">
+            @for (
+              event of auditEvents();
+              track event.id
+            ) {
+              <article class="audit-row">
+                <span class="audit-mark">
+                  {{ event.action.charAt(0).toUpperCase() }}
+                </span>
+
+                <div>
+                  <strong>{{ event.action }}</strong>
+                  <span>
+                    {{ event.entityName }}
+                    @if (event.details) {
+                      · {{ event.details }}
+                    }
+                  </span>
+                </div>
+
+                <time>
+                  {{
+                    event.occurredAtUtc
+                      | date:'dd MMM · HH:mm'
+                  }}
+                </time>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="empty-block">
+            <strong>No audit events</strong>
+            <span>
+              No recent administration events were returned.
+            </span>
+          </div>
+        }
+      </section>
+    </div>
+
+    <section class="next-actions">
+      <h2>Next actions</h2>
+
+      <div>
+        <a routerLink="/admin/company-verifications">
+          <strong>Review company verification</strong>
+          <span>
+            Inspect pending submissions and protected evidence
+            before a decision.
+          </span>
+        </a>
+
+        <a
+          routerLink="/admin/users"
+          [queryParams]="{ status: 'disabled' }"
+        >
+          <strong>Manage disabled users</strong>
+          <span>
+            Inspect account status with server-side filters
+            before changing access.
+          </span>
+        </a>
+
+        <a routerLink="/admin/catalogue">
+          <strong>Moderate catalogue</strong>
+          <span>
+            Manage active/inactive catalogue records without
+            rewriting history.
+          </span>
+        </a>
+      </div>
+    </section>
+    }
+  }
+</section>
