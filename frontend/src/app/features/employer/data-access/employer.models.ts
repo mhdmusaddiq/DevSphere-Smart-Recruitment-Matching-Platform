@@ -274,3 +274,43 @@ export interface EmployerJobApplication {
   capturedAtUtc: string | null;
   applyDecision: EmployerApplyDecision | null;
 }
+
+export interface EmployerMatchCriterionResult {
+  requirementId: string | null;
+  alternativeSetId: string | null;
+  family: string;
+  mode: string;
+  importance: string;
+  state: string | number;
+  score: number | null;
+  isRegulatoryGate: boolean;
+  label: string;
+}
+
+export interface EmployerMatchFamilyResult {
+  family: string;
+  importance: string;
+  rawScore: number | null;
+  displayScore: number | null;
+  criteria: EmployerMatchCriterionResult[];
+}
+
+export interface EmployerRankedApplicant {
+  applicationId: string;
+  candidateId: string;
+  vacancyId: string;
+  appliedAt: string;
+  status: string;
+  rawCompatibility: number | null;
+  matchScore: number | null;
+  assessmentStatus: string | number;
+  eligibility: string | number;
+  eligibilityReason: string | null;
+  highTierAggregate: number | null;
+  mediumTierAggregate: number | null;
+  coverage: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  missingInputs: string[];
+  families: EmployerMatchFamilyResult[];
+}

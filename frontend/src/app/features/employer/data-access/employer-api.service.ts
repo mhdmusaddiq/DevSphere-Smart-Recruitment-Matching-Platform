@@ -11,6 +11,7 @@ import {
   EmployerProfile,
   EmployerVacancy,
   EmployerJobApplication,
+  EmployerRankedApplicant,
 
   VacancyPolicyAggregateDto,
   MatchingPolicyAggregateUpdateRequest,
@@ -67,8 +68,8 @@ export class EmployerApiService {
 
   getVacancyApplications(
     vacancyId: string
-  ): Observable<EmployerJobApplication[]> {
-    return this.http.get<EmployerJobApplication[]>(
+  ): Observable<EmployerRankedApplicant[]> {
+    return this.http.get<EmployerRankedApplicant[]>(
       apiUrl(this.baseUrl, `/applications/vacancy/${vacancyId}`)
     );
   }

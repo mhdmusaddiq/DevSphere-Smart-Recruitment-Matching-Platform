@@ -6,7 +6,7 @@ import { forkJoin } from 'rxjs';
 
 import { EmployerApiService } from '../data-access/employer-api.service';
 import {
-  EmployerJobApplication,
+  EmployerRankedApplicant,
   EmployerVacancy,
   MatchingPolicyRevisionDto
 } from '../data-access/employer.models';
@@ -27,7 +27,7 @@ export class EmployerVacancyManagementComponent implements OnInit {
 
   vacancy: EmployerVacancy | null = null;
   policy: MatchingPolicyRevisionDto | null = null;
-  applications: EmployerJobApplication[] = [];
+  applications: EmployerRankedApplicant[] = [];
 
   loading = true;
   actionLoading = false;

@@ -62,7 +62,7 @@
       <article class="card metric-card">
         <span class="label">Policy revision</span>
         <strong>
-          {{ policy ? policy.revisionNumber : '—' }}
+          {{ policy ? policy.revisionNumber : 'â€”' }}
         </strong>
       </article>
     </section>
@@ -111,44 +111,44 @@
       <dl class="facts-grid">
         <div>
           <dt>Company</dt>
-          <dd>{{ vacancy.companyName || '—' }}</dd>
+          <dd>{{ vacancy.companyName || 'â€”' }}</dd>
         </div>
 
         <div>
           <dt>Company verification</dt>
           <dd>
-            {{ vacancy.companyVerificationStatus || '—' }}
+            {{ vacancy.companyVerificationStatus || 'â€”' }}
           </dd>
         </div>
 
         <div>
           <dt>Location</dt>
-          <dd>{{ vacancy.location || '—' }}</dd>
+          <dd>{{ vacancy.location || 'â€”' }}</dd>
         </div>
 
         <div>
           <dt>Work mode</dt>
-          <dd>{{ vacancy.workMode || '—' }}</dd>
+          <dd>{{ vacancy.workMode || 'â€”' }}</dd>
         </div>
 
         <div>
           <dt>Employment type</dt>
-          <dd>{{ vacancy.employmentType || '—' }}</dd>
+          <dd>{{ vacancy.employmentType || 'â€”' }}</dd>
         </div>
 
         <div>
           <dt>Education</dt>
-          <dd>{{ vacancy.requiredEducation || '—' }}</dd>
+          <dd>{{ vacancy.requiredEducation || 'â€”' }}</dd>
         </div>
 
         <div>
           <dt>Assessment status</dt>
-          <dd>{{ vacancy.assessmentStatus || '—' }}</dd>
+          <dd>{{ vacancy.assessmentStatus || 'â€”' }}</dd>
         </div>
 
         <div>
           <dt>Eligibility</dt>
-          <dd>{{ vacancy.eligibility || '—' }}</dd>
+          <dd>{{ vacancy.eligibility || 'â€”' }}</dd>
         </div>
 
         <div>
@@ -157,7 +157,7 @@
             {{
               vacancy.closingDateUtc
                 ? (vacancy.closingDateUtc | date: 'mediumDate')
-                : '—'
+                : 'â€”'
             }}
           </dd>
         </div>
@@ -168,7 +168,7 @@
             {{
               vacancy.publishedAtUtc
                 ? (vacancy.publishedAtUtc | date: 'mediumDate')
-                : '—'
+                : 'â€”'
             }}
           </dd>
         </div>
@@ -221,7 +221,7 @@
               {{
                 policy.materiallyLockedAtUtc
                   ? (policy.materiallyLockedAtUtc | date: 'medium')
-                  : '—'
+                  : 'â€”'
               }}
             </dd>
           </div>
@@ -283,18 +283,18 @@
         <div class="application-list">
           @for (
             application of applications;
-            track application.id
+            track application.applicationId
           ) {
             <article class="application-row">
               <div>
                 <strong>
-                  Application {{ application.id }}
+                  Application {{ application.applicationId }}
                 </strong>
 
                 <p>
                   Submitted
                   {{
-                    application.submittedAtUtc
+                    application.appliedAt
                       | date: 'medium'
                   }}
                 </p>
@@ -304,15 +304,15 @@
                 <span>{{ application.status }}</span>
 
                 <span>
-                  {{ application.frozenAssessmentStatus }}
+                  {{ application.assessmentStatus }}
                 </span>
 
                 @if (
-                  application.displayCompatibility !== null
+                  application.matchScore !== null
                 ) {
                   <strong>
                     {{
-                      application.displayCompatibility
+                      application.matchScore
                         | number: '1.0-2'
                     }}
                   </strong>

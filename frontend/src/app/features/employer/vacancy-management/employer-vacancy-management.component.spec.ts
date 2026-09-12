@@ -43,7 +43,7 @@ describe('EmployerVacancyManagementComponent', () => {
     assessmentStatus: 'NotAssessed',
     eligibility: '',
     rawCompatibility: null,
-    displayCompatibility: null,
+    matchScore: null,
     highTierAggregate: null,
     mediumTierAggregate: null,
     coverage: null
@@ -60,7 +60,7 @@ describe('EmployerVacancyManagementComponent', () => {
 
   const applications = [
     {
-      id: 'application-1',
+      applicationId: 'application-1',
       candidateId: 'candidate-1',
       vacancyId: 'vacancy-1',
       vacancyTitle: 'Software Engineer',
@@ -68,11 +68,19 @@ describe('EmployerVacancyManagementComponent', () => {
       workMode: 'Hybrid',
       companyId: 'company-1',
       companyName: 'AptLens',
-      submittedAtUtc: '2026-09-12T10:00:00Z',
+      appliedAt: '2026-09-12T10:00:00Z',
       status: 'Submitted',
-      frozenAssessmentStatus: 'Completed',
-      displayCompatibility: 82,
+      assessmentStatus: 'Completed',
+      matchScore: 82,
       eligibility: 'Eligible',
+      eligibilityReason: null,
+      highTierAggregate: null,
+      mediumTierAggregate: null,
+      coverage: 100,
+      matchedSkills: ['Angular'],
+      missingSkills: [],
+      missingInputs: [],
+      families: [],
       resumeVersionId: null,
       capturedAtUtc: null,
       applyDecision: null

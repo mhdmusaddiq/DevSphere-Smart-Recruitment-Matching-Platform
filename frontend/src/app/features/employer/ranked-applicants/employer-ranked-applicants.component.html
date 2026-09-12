@@ -1,0 +1,149 @@
+<section class="applicants-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Applicant review</p>
+      <h1>Ranked applicants</h1>
+      <p>
+        {{ vacancy?.title || 'Vacancy' }}
+      </p>
+    </div>
+
+    <a
+      class="secondary-button"
+      [routerLink]="['/employer/vacancies', vacancyId]"
+    >
+      Back to vacancy
+    </a>
+  </header>
+
+  @if (loading) {
+    <section class="card">
+      <p>Loading ranked applicants...</p>
+    </section>
+  } @else if (errorMessage) {
+    <section class="card error-state" role="alert">
+      <h2>Applicants unavailable</h2>
+      <p>{{ errorMessage }}</p>
+
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="load()"
+      >
+        Try again
+      </button>
+    </section>
+  } @else if (applicants.length === 0) {
+    <section class="card empty-state">
+      <h2>No applications yet</h2>
+      <p>
+        Applications submitted for this vacancy will appear here.
+      </p>
+    </section>
+  } @else {
+    <section class="applicant-list">
+      @for (
+        applicant of applicants;
+        track applicant.applicationId;
+        let rank = $index
+      ) {
+        <article class="card applicant-card">
+          <div class="rank">
+            <span>Rank</span>
+            <strong>{{ rank + 1 }}</strong>
+          </div>
+
+          <div class="applicant-main">
+            <div class="identity-row">
+              <div>
+                <p class="eyebrow">Candidate</p>
+                <h2>{{ applicant.candidateId }}</h2>
+              </div>
+
+              <span class="status-badge">
+                {{ applicant.status }}
+              </span>
+            </div>
+
+            <dl class="metrics">
+              <div>
+                <dt>Compatibility</dt>
+                <dd>
+                  @if (applicant.matchScore !== null) {
+                    {{ applicant.matchScore | number: '1.0-1' }}
+                  } @else {
+                    —
+                  }
+                </dd>
+              </div>
+
+              <div>
+                <dt>Assessment</dt>
+                <dd>{{ applicant.assessmentStatus }}</dd>
+              </div>
+
+              <div>
+                <dt>Eligibility</dt>
+                <dd>{{ applicant.eligibility }}</dd>
+              </div>
+
+              <div>
+                <dt>Applied</dt>
+                <dd>{{ applicant.appliedAt | date: 'medium' }}</dd>
+              </div>
+            </dl>
+
+            <div class="skills-grid">
+              <div>
+                <h3>Matched skills</h3>
+
+                @if (applicant.matchedSkills.length > 0) {
+                  <div class="chips">
+                    @for (
+                      skill of applicant.matchedSkills;
+                      track skill
+                    ) {
+                      <span>{{ skill }}</span>
+                    }
+                  </div>
+                } @else {
+                  <p>None reported.</p>
+                }
+              </div>
+
+              <div>
+                <h3>Missing skills</h3>
+
+                @if (applicant.missingSkills.length > 0) {
+                  <div class="chips">
+                    @for (
+                      skill of applicant.missingSkills;
+                      track skill
+                    ) {
+                      <span>{{ skill }}</span>
+                    }
+                  </div>
+                } @else {
+                  <p>None reported.</p>
+                }
+              </div>
+            </div>
+
+            <a
+              class="primary-button"
+              [routerLink]="[
+                '/employer/applications',
+                applicant.applicationId
+              ]"
+              [queryParams]="{
+                vacancyId: vacancyId
+              }"
+            >
+              View applicant detail
+            </a>
+          </div>
+        </article>
+      }
+    </section>
+  }
+</section>

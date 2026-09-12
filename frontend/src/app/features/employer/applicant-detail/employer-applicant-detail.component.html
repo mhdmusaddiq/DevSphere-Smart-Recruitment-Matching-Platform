@@ -1,0 +1,220 @@
+<section class="detail-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Applicant detail</p>
+      <h1>
+        {{ applicant?.candidateId || 'Applicant' }}
+      </h1>
+    </div>
+
+    @if (vacancyId) {
+      <a
+        class="secondary-button"
+        [routerLink]="[
+          '/employer/vacancies',
+          vacancyId,
+          'applicants'
+        ]"
+      >
+        Back to ranked applicants
+      </a>
+    }
+  </header>
+
+  @if (loading) {
+    <section class="card">
+      <p>Loading applicant detail...</p>
+    </section>
+  } @else if (!applicant) {
+    <section class="card error-state" role="alert">
+      <h2>Applicant unavailable</h2>
+      <p>{{ errorMessage }}</p>
+    </section>
+  } @else {
+    <section class="summary-grid">
+      <article class="card">
+        <span class="label">Application status</span>
+        <strong>{{ applicant.status }}</strong>
+      </article>
+
+      <article class="card">
+        <span class="label">Compatibility</span>
+        <strong>
+          @if (applicant.matchScore !== null) {
+            {{ applicant.matchScore | number: '1.0-1' }}
+          } @else {
+            —
+          }
+        </strong>
+      </article>
+
+      <article class="card">
+        <span class="label">Eligibility</span>
+        <strong>{{ applicant.eligibility }}</strong>
+      </article>
+    </section>
+
+    <section class="card">
+      <p class="eyebrow">Assessment</p>
+      <h2>Server assessment evidence</h2>
+
+      <dl class="facts">
+        <div>
+          <dt>Candidate ID</dt>
+          <dd>{{ applicant.candidateId }}</dd>
+        </div>
+
+        <div>
+          <dt>Applied</dt>
+          <dd>{{ applicant.appliedAt | date: 'medium' }}</dd>
+        </div>
+
+        <div>
+          <dt>Assessment status</dt>
+          <dd>{{ applicant.assessmentStatus }}</dd>
+        </div>
+
+        <div>
+          <dt>Coverage</dt>
+          <dd>{{ applicant.coverage | number: '1.0-2' }}</dd>
+        </div>
+
+        <div>
+          <dt>High-tier aggregate</dt>
+          <dd>
+            {{
+              applicant.highTierAggregate === null
+                ? '—'
+                : (applicant.highTierAggregate | number: '1.0-2')
+            }}
+          </dd>
+        </div>
+
+        <div>
+          <dt>Medium-tier aggregate</dt>
+          <dd>
+            {{
+              applicant.mediumTierAggregate === null
+                ? '—'
+                : (applicant.mediumTierAggregate | number: '1.0-2')
+            }}
+          </dd>
+        </div>
+      </dl>
+
+      @if (applicant.eligibilityReason) {
+        <div class="notice">
+          <strong>Eligibility reason</strong>
+          <p>{{ applicant.eligibilityReason }}</p>
+        </div>
+      }
+    </section>
+
+    <section class="two-column">
+      <article class="card">
+        <h2>Matched skills</h2>
+
+        @if (applicant.matchedSkills.length > 0) {
+          <div class="chips">
+            @for (
+              skill of applicant.matchedSkills;
+              track skill
+            ) {
+              <span>{{ skill }}</span>
+            }
+          </div>
+        } @else {
+          <p>None reported.</p>
+        }
+      </article>
+
+      <article class="card">
+        <h2>Missing skills</h2>
+
+        @if (applicant.missingSkills.length > 0) {
+          <div class="chips">
+            @for (
+              skill of applicant.missingSkills;
+              track skill
+            ) {
+              <span>{{ skill }}</span>
+            }
+          </div>
+        } @else {
+          <p>None reported.</p>
+        }
+      </article>
+    </section>
+
+    @if (applicant.missingInputs.length > 0) {
+      <section class="card">
+        <h2>Missing assessment inputs</h2>
+
+        <ul>
+          @for (
+            item of applicant.missingInputs;
+            track item
+          ) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    <section class="card">
+      <p class="eyebrow">Matching evidence</p>
+      <h2>Requirement families</h2>
+
+      @if (applicant.families.length === 0) {
+        <p>No family evidence was returned.</p>
+      } @else {
+        <div class="family-list">
+          @for (
+            family of applicant.families;
+            track family.family
+          ) {
+            <article class="family">
+              <div class="family-heading">
+                <strong>{{ family.family }}</strong>
+                <span>{{ family.importance }}</span>
+              </div>
+
+              <p>
+                Score:
+                {{
+                  family.displayScore === null
+                    ? '—'
+                    : (family.displayScore | number: '1.0-2')
+                }}
+              </p>
+
+              @if (family.criteria.length > 0) {
+                <div class="criteria">
+                  @for (
+                    criterion of family.criteria;
+                    track criterion.requirementId
+                      || criterion.alternativeSetId
+                      || criterion.label
+                  ) {
+                    <div class="criterion">
+                      <div>
+                        <strong>{{ criterion.label }}</strong>
+                        <p>
+                          {{ criterion.mode }}
+                          ·
+                          {{ criterion.importance }}
+                        </p>
+                      </div>
+
+                      <span>{{ criterion.state }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>
