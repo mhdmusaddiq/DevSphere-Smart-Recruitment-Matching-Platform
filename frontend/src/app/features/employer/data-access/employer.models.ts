@@ -76,6 +76,22 @@ export interface EmployerVacancy {
   coverage: number | null;
 }
 
+export interface EmployerVacancyUpsertRequest {
+  companyId: string | null;
+  title: string;
+  description: string;
+  location: string;
+  workMode: string;
+  employmentType: string;
+  minExperienceMonths: number;
+  maxExperienceMonths: number | null;
+  requiredEducation: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  closingDateUtc: string | null;
+  requiredSkills: EmployerVacancySkill[];
+}
+
 export interface StoredFileDescriptor {
   storageKey: string;
   originalFileName: string;
@@ -273,6 +289,10 @@ export interface EmployerJobApplication {
   resumeVersionId: string | null;
   capturedAtUtc: string | null;
   applyDecision: EmployerApplyDecision | null;
+}
+
+export interface ApplicationStatusTransitionRequest {
+  status: string;
 }
 
 export interface EmployerMatchCriterionResult {

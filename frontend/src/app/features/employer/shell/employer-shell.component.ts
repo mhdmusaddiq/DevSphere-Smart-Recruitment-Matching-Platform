@@ -86,7 +86,7 @@ export class EmployerShellComponent {
       route = route.firstChild;
     }
 
-    const pageName = route.snapshot.data['pageName'];
+    const pageName = route.snapshot?.data?.['pageName'];
 
     this.currentPageName.set(
       typeof pageName === 'string'

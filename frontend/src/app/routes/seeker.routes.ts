@@ -3,7 +3,6 @@ import { Routes } from '@angular/router';
 import { authGuard } from '../core/guards/auth.guard';
 import { roleGuard } from '../core/guards/role.guard';
 import { verifiedAccountGuard } from '../core/guards/verified-account.guard';
-import { RoutePlaceholderComponent } from '../shared/routes/route-placeholder.component';
 
 export const seekerRoutes: Routes = [
   {

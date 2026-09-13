@@ -14,6 +14,7 @@ import {
   AlternativeSetType,
   CompanyProfile,
   EmployerVacancy,
+  EmployerVacancyUpsertRequest,
   FamilyPolicyAggregateUpdate,
   RequirementFamily,
   RequirementImportance,
@@ -282,6 +283,22 @@ export class EmployerVacancyEditorComponent implements OnInit {
           this.loadedVacancy = vacancy;
           this.populateForm(vacancy);
 
+          this.employerApi
+            .getVacancy(this.vacancyId!)
+            .subscribe({
+              next: latest => {
+                if (
+                  latest.lifecycleStatus !==
+                  vacancy.lifecycleStatus
+                ) {
+                  return;
+                }
+
+                this.loadedVacancy = latest;
+                this.populateForm(latest);
+              }
+            });
+
           this.publishSuccessMessage =
             'Vacancy published successfully.';
           this.publishing = false;
@@ -409,6 +426,16 @@ export class EmployerVacancyEditorComponent implements OnInit {
           next: vacancy => {
             this.loadedVacancy = vacancy;
             this.populateForm(vacancy);
+
+            this.employerApi
+              .getVacancy(this.vacancyId!)
+              .subscribe({
+                next: latest => {
+                  this.loadedVacancy = latest;
+                  this.populateForm(latest);
+                }
+              });
+
             this.successMessage =
               'Vacancy changes saved.';
             this.saving = false;
@@ -528,23 +555,16 @@ export class EmployerVacancyEditorComponent implements OnInit {
     return '';
   }
 
-  private buildVacancyRequest(): EmployerVacancy {
+  private buildVacancyRequest(): EmployerVacancyUpsertRequest {
     const value = this.form.getRawValue();
-    const existing = this.loadedVacancy;
 
     return {
-      id: existing?.id ?? '',
       companyId: value.companyId,
-      companyName: existing?.companyName ?? '',
-      companyVerificationStatus:
-        existing?.companyVerificationStatus ?? '',
       title: value.title.trim(),
       description: value.description,
       location: value.location,
       workMode: value.workMode,
       employmentType: value.employmentType,
-      requiredExperienceMonths:
-        value.minExperienceMonths,
       minExperienceMonths:
         value.minExperienceMonths,
       maxExperienceMonths:
@@ -555,29 +575,12 @@ export class EmployerVacancyEditorComponent implements OnInit {
       salaryMax: value.salaryMax,
       closingDateUtc:
         this.toUtcValue(value.closingDateUtc),
-      publishedAtUtc:
-        existing?.publishedAtUtc ?? null,
       requiredSkills: value.requiredSkills.map(
         skill => ({
           name: skill.name.trim(),
           weight: skill.weight
         })
-      ),
-      lifecycleStatus:
-        existing?.lifecycleStatus ?? 'Draft',
-      isOpen: existing?.isOpen ?? false,
-      assessmentStatus:
-        existing?.assessmentStatus ?? '',
-      eligibility: existing?.eligibility ?? '',
-      rawCompatibility:
-        existing?.rawCompatibility ?? null,
-      displayCompatibility:
-        existing?.displayCompatibility ?? null,
-      highTierAggregate:
-        existing?.highTierAggregate ?? null,
-      mediumTierAggregate:
-        existing?.mediumTierAggregate ?? null,
-      coverage: existing?.coverage ?? null
+      )
     };
   }
 
@@ -801,6 +804,17 @@ export class EmployerVacancyEditorComponent implements OnInit {
           this.populatePolicyFamilies(policy);
           this.populatePolicyRequirements(policy);
           this.populatePolicyAlternativeSets(policy);
+
+          this.employerApi
+            .getFullMatchingPolicy(this.vacancyId!)
+            .subscribe({
+              next: latest => {
+                this.policy = latest;
+                this.populatePolicyFamilies(latest);
+                this.populatePolicyRequirements(latest);
+                this.populatePolicyAlternativeSets(latest);
+              }
+            });
 
           this.policySuccessMessage =
             'Matching policy saved.';

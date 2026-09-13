@@ -7,9 +7,11 @@ import {
   CompanyProfile,
   CompanyProfileRequest,
   CompanyVerificationResult,
+  ApplicationStatusTransitionRequest,
   EmployerDashboard,
   EmployerProfile,
   EmployerVacancy,
+  EmployerVacancyUpsertRequest,
   EmployerJobApplication,
   EmployerRankedApplicant,
   EmployerApplicationDetail,
@@ -124,12 +126,14 @@ export class EmployerApiService {
     applicationId: string,
     status: string
   ): Observable<EmployerJobApplication> {
+    const request: ApplicationStatusTransitionRequest = { status };
+
     return this.http.put<EmployerJobApplication>(
       apiUrl(
         this.baseUrl,
         `/applications/${applicationId}/status`
       ),
-      { status }
+      request
     );
   }
 
@@ -144,7 +148,9 @@ export class EmployerApiService {
       { responseType: 'blob' }
     );
   }
-  createVacancy(request: EmployerVacancy): Observable<EmployerVacancy> {
+  createVacancy(
+    request: EmployerVacancyUpsertRequest
+  ): Observable<EmployerVacancy> {
     return this.http.post<EmployerVacancy>(
       apiUrl(this.baseUrl, '/vacancies'),
       request
@@ -153,7 +159,7 @@ export class EmployerApiService {
 
   updateVacancy(
     vacancyId: string,
-    request: EmployerVacancy
+    request: EmployerVacancyUpsertRequest
   ): Observable<EmployerVacancy> {
     return this.http.put<EmployerVacancy>(
       apiUrl(this.baseUrl, `/vacancies/${vacancyId}`),
