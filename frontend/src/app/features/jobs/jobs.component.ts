@@ -9,6 +9,7 @@ import { CompanyMonogramComponent } from '../../shared/avatar/company-monogram.c
 import { EmptyStateVisualComponent } from '../../shared/states/empty-state-visual.component';
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../shared/states/loading-state.component';
+import { BrandWordmarkComponent } from '../../shared/brand/brand-wordmark.component';
 import { SeekerApiService } from '../seeker/data/seeker-api.service';
 import { VacancyFilters, VacancyView } from '../seeker/data/seeker.models';
 
@@ -24,7 +25,8 @@ type DiscoveryPreset = 'all' | 'best' | 'newest' | 'remote' | 'onsite' | 'hybrid
     CompanyMonogramComponent,
     EmptyStateVisualComponent,
     ErrorStateComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    BrandWordmarkComponent
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.css'

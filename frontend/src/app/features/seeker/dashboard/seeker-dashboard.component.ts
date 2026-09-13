@@ -8,6 +8,7 @@ import { SessionService } from '../../../core/auth/session.service';
 import { CompanyMonogramComponent } from '../../../shared/avatar/company-monogram.component';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
+import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
 import {
   ApplicationReadiness,
   CandidateDashboardSummary,
@@ -41,7 +42,8 @@ interface NextStep {
     RouterLink,
     CompanyMonogramComponent,
     ErrorStateComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    BrandWordmarkComponent
   ],
   templateUrl: './seeker-dashboard.component.html',
   styleUrl: './seeker-dashboard.component.css'

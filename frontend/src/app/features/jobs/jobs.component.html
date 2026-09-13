@@ -1,6 +1,6 @@
 <div class="jobs-shell">
   <aside class="side-nav">
-    <a class="brand" routerLink="/jobs">Apt<span>Lens</span></a>
+    <a class="brand" routerLink="/" aria-label="AptLens home"><apt-brand-wordmark /></a>
     <nav>
       <a class="active" routerLink="/jobs">Find Jobs</a>
       @if (isJobSeeker) {
@@ -24,7 +24,12 @@
     </header>
 
     <div class="page-content">
-      <section class="hero">
+      <section
+        class="hero"
+        [class.hero--best]="preset === 'best'"
+        [class.hero--onsite]="preset === 'onsite'"
+        [class.hero--hybrid]="preset === 'hybrid'"
+      >
         <h1>Find Your Next Opportunity</h1>
         <p>Search published roles and understand your current alignment.</p>
         <form class="hero-form" (ngSubmit)="search(true)">
