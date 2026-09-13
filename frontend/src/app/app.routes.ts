@@ -7,7 +7,14 @@ import { seekerRoutes } from './routes/seeker.routes';
 import { SystemStatusPageComponent } from './shared/routes/system-status-page.component';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'jobs' },
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/landing/landing.component')
+        .then(component => component.LandingComponent),
+    data: { pageId: 'PUB01', pageName: 'AptLens' }
+  },
   ...publicRoutes,
   ...seekerRoutes,
   ...employerRoutes,

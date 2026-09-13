@@ -1,0 +1,53 @@
+<div class="landing-page">
+  <header class="public-header">
+    <a class="brand-link" routerLink="/" aria-label="AptLens home"><apt-brand-wordmark /></a>
+    <nav aria-label="Primary navigation">
+      <a routerLink="/jobs">Find jobs</a>
+      <a routerLink="/login">Sign in</a>
+      <a class="button button--primary" routerLink="/register">Create account</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="landing-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Evidence-first recruitment</p>
+        <h1>See the fit.<br><span>Know the why.</span></h1>
+        <p class="hero-intro">AptLens brings skills, evidence and role requirements into one clear view—so candidates and employers can make informed next moves.</p>
+        <div class="hero-actions">
+          <a class="button button--primary" routerLink="/jobs">Find your next role</a>
+          <a class="button button--secondary" routerLink="/register">Start hiring</a>
+        </div>
+        <p class="trust-line">Transparent compatibility · Evidence you control · Decisions that stay human</p>
+      </div>
+      <div class="hero-art" role="img" aria-label="Decorative evidence network illustration"></div>
+    </section>
+
+    <section class="landing-section" aria-labelledby="path-heading">
+      <div class="section-heading">
+        <p class="eyebrow">Built for both sides of the match</p>
+        <h2 id="path-heading">A clearer path from potential to progress</h2>
+      </div>
+      <div class="path-grid">
+        <article><span class="card-icon" aria-hidden="true">01</span><h3>For job seekers</h3><p>Build an evidence-rich career profile, understand compatibility and apply with confidence.</p><a routerLink="/register">Create a seeker account →</a></article>
+        <article><span class="card-icon" aria-hidden="true">02</span><h3>For employers</h3><p>Define what matters, review ranked applicants and keep every hiring decision traceable.</p><a routerLink="/register">Create an employer account →</a></article>
+      </div>
+    </section>
+
+    <section class="how-section" aria-labelledby="how-heading">
+      <div class="section-heading"><p class="eyebrow">How it works</p><h2 id="how-heading">Fit explained, not guessed</h2><p>AptLens keeps compatibility and eligibility distinct, grounded in the information already in the platform.</p></div>
+      <ol>
+        <li><strong>Define the evidence</strong><span>Candidates share their skills and experience; employers define role requirements.</span></li>
+        <li><strong>Understand the match</strong><span>See assessed compatibility, supporting evidence and gaps when the platform has calculated them.</span></li>
+        <li><strong>Move forward clearly</strong><span>Apply, review and manage hiring workflows with status and history kept visible.</span></li>
+      </ol>
+    </section>
+
+    <section class="landing-cta">
+      <div><p class="eyebrow">Ready when you are</p><h2>Make the next decision with clarity.</h2></div>
+      <div class="hero-actions"><a class="button button--light" routerLink="/jobs">Browse jobs</a><a class="button button--outline-light" routerLink="/login">Sign in</a></div>
+    </section>
+  </main>
+
+  <footer><apt-brand-wordmark [showTagline]="true" /><p>Evidence-first recruitment for better-informed decisions.</p></footer>
+</div>

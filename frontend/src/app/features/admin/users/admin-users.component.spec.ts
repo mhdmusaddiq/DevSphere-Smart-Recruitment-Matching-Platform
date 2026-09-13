@@ -3,6 +3,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import {
+  ActivatedRoute,
+  convertToParamMap
+} from '@angular/router';
+import {
   of,
   throwError
 } from 'rxjs';
@@ -16,6 +20,7 @@ import {
 
 describe('AdminUsersComponent', () => {
   let api: jasmine.SpyObj<AdminApiService>;
+  let queryParamMap: ReturnType<typeof convertToParamMap>;
 
   const page = {
     page: 1,
@@ -34,6 +39,7 @@ describe('AdminUsersComponent', () => {
   };
 
   beforeEach(async () => {
+    queryParamMap = convertToParamMap({});
     api = jasmine.createSpyObj<AdminApiService>(
       'AdminApiService',
       [
@@ -56,9 +62,38 @@ describe('AdminUsersComponent', () => {
         {
           provide: AdminApiService,
           useValue: api
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              get queryParamMap() {
+                return queryParamMap;
+              }
+            }
+          }
         }
       ]
     }).compileComponents();
+  });
+
+  it('hydrates status=disabled before the first API load', () => {
+    queryParamMap = convertToParamMap({ status: 'disabled' });
+
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    expect(api.getUsers).toHaveBeenCalledOnceWith({
+      q: '',
+      role: undefined,
+      isActive: false,
+      page: 1,
+      pageSize: 25
+    });
+    expect(fixture.componentInstance.statusControl.value)
+      .toBe('disabled');
   });
 
   it('loads users with server-side pagination', () => {

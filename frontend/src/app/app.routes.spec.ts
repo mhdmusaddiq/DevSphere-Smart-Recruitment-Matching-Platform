@@ -7,8 +7,11 @@ import { publicRoutes } from './routes/public.routes';
 import { seekerRoutes } from './routes/seeker.routes';
 
 describe('Shared Core routes', () => {
-  it('routes root to jobs and unknown paths to 404', () => {
-    expect(routes.find(route => route.path === '')?.redirectTo).toBe('jobs');
+  it('renders the landing page at root and routes unknown paths to 404', () => {
+    const root = routes.find(route => route.path === '');
+    expect(root?.loadComponent).toBeDefined();
+    expect(root?.redirectTo).toBeUndefined();
+    expect(root?.data?.['pageId']).toBe('PUB01');
     expect(routes.find(route => route.path === '**')?.redirectTo).toBe('404');
     expect(routes.some(route => route.path === '403')).toBeTrue();
     expect(routes.some(route => route.path === '404')).toBeTrue();

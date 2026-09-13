@@ -21,6 +21,7 @@ import {
   distinctUntilChanged,
   finalize
 } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 import {
   IdentityAvatarComponent
@@ -50,6 +51,7 @@ export class AdminUsersComponent
   implements OnInit {
   private readonly api = inject(AdminApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute, { optional: true });
 
   readonly searchControl =
     new FormControl('', { nonNullable: true });
@@ -125,6 +127,18 @@ export class AdminUsersComponent
   }
 
   ngOnInit(): void {
+    const requestedStatus =
+      this.route?.snapshot.queryParamMap.get('status');
+
+    if (
+      requestedStatus === 'active' ||
+      requestedStatus === 'disabled'
+    ) {
+      this.statusControl.setValue(requestedStatus, {
+        emitEvent: false
+      });
+    }
+
     this.load();
   }
 
