@@ -5,7 +5,7 @@ import { Component, input } from '@angular/core';
   standalone: true,
   template: `
     <span class="brand" aria-label="AptLens">
-      <span class="mark" aria-hidden="true">A</span>
+      <img class="mark" src="/assets/aptlens/brand/aptlens-mark.svg" alt="" aria-hidden="true" />
       <span class="copy">
         <strong>Apt<span>Lens</span></strong>
         @if (showTagline()) {
@@ -17,9 +17,9 @@ import { Component, input } from '@angular/core';
   styles: [`
     :host { display: inline-flex; }
     .brand { display: inline-flex; align-items: center; gap: .65rem; color: var(--color-brand-navy); }
-    .mark { display: grid; width: 2.25rem; aspect-ratio: 1; place-items: center; color: white; border-radius: .7rem; background: linear-gradient(135deg, var(--color-brand-violet), var(--color-brand-navy)); font-weight: 800; }
+    .mark { display: block; width: 2.25rem; height: 2.25rem; object-fit: contain; }
     .copy { display: grid; line-height: 1.05; }
-    strong { font-size: 1.15rem; letter-spacing: -.025em; }
+    strong { color: var(--color-text); font-size: 1.15rem; letter-spacing: -.035em; }
     strong span { color: var(--color-brand-violet); }
     small { margin-top: .25rem; color: var(--color-text-muted); font-size: .68rem; }
   `]

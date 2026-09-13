@@ -1,4 +1,12 @@
+@import '@fontsource/plus-jakarta-sans/400.css';
+@import '@fontsource/plus-jakarta-sans/500.css';
+@import '@fontsource/plus-jakarta-sans/600.css';
+@import '@fontsource/plus-jakarta-sans/700.css';
 @import './styles/tokens.css';
+@import './styles/aptlens-foundation.css';
+@import './styles/aptlens-components.css';
+@import './styles/aptlens-shells.css';
+@import './styles/aptlens-states.css';
 
 * {
   box-sizing: border-box;
@@ -12,6 +20,8 @@ body {
   background: var(--color-background);
   color: var(--color-text);
 }
+
+html { color-scheme: light; scroll-behavior: smooth; }
 
 body {
   min-height: 100vh;

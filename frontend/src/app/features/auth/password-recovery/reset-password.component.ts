@@ -24,6 +24,7 @@ import {
   API_BASE_URL,
   apiUrl
 } from '../../../core/config/api-base-url';
+import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
 
 interface ResetPasswordResponse {
   message: string;
@@ -57,7 +58,7 @@ const passwordsMatch: ValidatorFn = (
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, BrandWordmarkComponent],
   templateUrl: './reset-password.component.html',
   styleUrl: './password-recovery.css',
   changeDetection: ChangeDetectionStrategy.OnPush

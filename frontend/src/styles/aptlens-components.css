@@ -1,0 +1,22 @@
+body :is(.button, .primary-button, .primary, .primary-link, .action-link, .refresh-button) { min-height: 44px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 10px; background: var(--al-violet); color: #fff; font-size: 13px; font-weight: 700; line-height: 1; text-decoration: none; cursor: pointer; transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+body :is(.button, .primary-button, .primary, .primary-link, .action-link, .refresh-button):hover:not(:disabled) { background: var(--al-violet-hover); transform: translateY(-1px); }
+body :is(.button--secondary, .secondary-button, .secondary, .ghost-button, .ghost, .clear-button, .detail-button, .page-button) { min-height: 42px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--al-border); border-radius: 10px; background: #fff; color: var(--al-text-1); font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+body .button--light { background: #fff; color: var(--al-violet); }
+body .button--outline-light { border-color: rgba(255,255,255,.45); background: transparent; color: #fff; }
+body button:disabled { cursor: not-allowed; opacity: .58; transform: none; }
+body :is(input:not([type='checkbox']):not([type='radio']):not([type='file']), select, textarea) { width: 100%; min-height: 44px; border: 1px solid var(--al-border); border-radius: 10px; background: #fff; color: var(--al-text-1); }
+body :is(input, select, textarea):hover { border-color: var(--color-border-strong); }
+body :is(input, select, textarea):focus { border-color: var(--al-violet); box-shadow: var(--focus-ring); }
+body label { color: var(--al-text-1); font-size: 13px; font-weight: 600; }
+body :is(.card, .panel, .table-card, .list-card, .queue-card, .evidence-card, .facts-card, .decision-card, .boundary-card, .privacy-card, .overview-card, .summary-card, .metric-card, .application-card, .request-card) { border-color: var(--al-border); border-radius: 12px; background: var(--al-surface-1); box-shadow: 0 1px 2px rgba(15,23,42,.035); }
+body :is(.status-pill, .status-badge, .pending-badge, .role-badge, .joined-badge, .chip, .current-chip, .entity-badge) { border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: 0; }
+body :is(.page-header, .page-heading, .heading-row) h1 { margin-top: 0; color: var(--al-text-1); font-size: clamp(30px, 3vw, 36px); line-height: 1.22; letter-spacing: -.04em; }
+body .eyebrow { color: var(--al-violet); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+body :is(.breadcrumb, .back-link) { color: var(--al-muted); font-size: 12px; }
+body :is(.desktop-table, .table-card) { overflow: auto; }
+body table { width: 100%; border-collapse: collapse; }
+body th { color: var(--al-muted); background: var(--al-surface-2); font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+body th, body td { padding: 14px 16px; border-bottom: 1px solid var(--al-border); }
+body .dialog-backdrop { backdrop-filter: blur(3px); }
+body :is(.dialog, .confirm-dialog, .detail-dialog) { max-width: min(520px, calc(100vw - 32px)); border: 1px solid var(--al-border); border-radius: 16px; background: #fff; box-shadow: 0 24px 80px rgba(15,23,42,.22); }
+@media (max-width: 479px) { body :is(.button, .primary-button, .primary, .primary-link, .secondary, .secondary-button) { min-height: 44px; } }

@@ -1,7 +1,9 @@
 :root {
-  --color-brand-navy: #15254a;
-  --color-brand-violet: #6d4aff;
-  --color-teal: #0f9f91;
+  --color-brand-navy: #1d2246;
+  --color-brand-violet: #5b4fe9;
+  --color-brand-violet-hover: #4e43d5;
+  --color-teal: #0f766e;
+  --color-teal-graphic: #10b8b0;
   --color-success: #087f5b;
   --color-success-soft: #e9f8f1;
   --color-warning: #9a6700;
@@ -10,18 +12,32 @@
   --color-error-soft: #fff0ee;
   --color-info: #2456a6;
   --color-info-soft: #edf4ff;
-  --color-background: #f6f7fb;
+  --color-background: #f7f8fc;
   --color-surface: #ffffff;
-  --color-surface-tint: #f0edff;
-  --color-border: #dfe3ec;
-  --color-border-strong: #aeb6c7;
-  --color-text: #182033;
-  --color-text-muted: #667085;
+  --color-surface-tint: #f1f3f9;
+  --color-surface-2: #f1f3f9;
+  --color-surface-3: #e9edf5;
+  --color-border: #e2e7f0;
+  --color-border-strong: #b8c2d1;
+  --color-text: #111827;
+  --color-text-muted: #607287;
 
-  --radius-sm: .4rem;
-  --radius-md: .75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.4rem;
+  --al-violet: var(--color-brand-violet);
+  --al-violet-hover: var(--color-brand-violet-hover);
+  --al-teal: var(--color-teal);
+  --al-canvas: var(--color-background);
+  --al-surface-1: var(--color-surface);
+  --al-surface-2: var(--color-surface-2);
+  --al-surface-3: var(--color-surface-3);
+  --al-text-1: var(--color-text);
+  --al-text-2: #475569;
+  --al-muted: var(--color-text-muted);
+  --al-border: var(--color-border);
+
+  --radius-sm: .375rem;
+  --radius-md: .625rem;
+  --radius-lg: .75rem;
+  --radius-xl: 1rem;
 
   --space-1: .25rem;
   --space-2: .5rem;
@@ -31,12 +47,17 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
 
   --shadow-sm: 0 1px 3px rgb(20 36 72 / 8%);
-  --shadow-md: 0 14px 36px rgb(20 36 72 / 12%);
-  --focus-ring: 0 0 0 3px rgb(109 74 255 / 28%);
+  --shadow-md: 0 18px 48px rgb(20 36 72 / 12%);
+  --focus-ring: 0 0 0 3px rgb(91 79 233 / 24%);
 
-  --font-body: 400 1rem/1.5 Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-label: 700 .78rem/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
-  --font-title: 750 clamp(1.75rem, 4vw, 2.75rem)/1.1 Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 400 .875rem/1.57 var(--font-family);
+  --font-label: 700 .75rem/1.33 var(--font-family);
+  --font-title: 700 clamp(1.875rem, 4vw, 2.25rem)/1.22 var(--font-family);
 }

@@ -20,6 +20,7 @@ import {
   API_BASE_URL,
   apiUrl
 } from '../../../core/config/api-base-url';
+import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
 
 interface VerifyEmailResponse {
   message: string;
@@ -35,7 +36,7 @@ type StatusKind = 'info' | 'success' | 'error';
 @Component({
   selector: 'app-verify-email',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, BrandWordmarkComponent],
   templateUrl: './verify-email.component.html',
   styleUrl: './verify-email.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush

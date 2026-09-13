@@ -1,0 +1,37 @@
+body :is(.admin-shell, .employer-shell, .main-shell) { background: var(--al-canvas); }
+body :is(.auth-page, .register-page, .verify-page, .recovery-page) { background: #fff; }
+body .jobs-shell .brand apt-brand-wordmark { font-size: initial; }
+body .jobs-shell .hero { min-height: 190px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(120deg, #1d2246, #293563); }
+body .jobs-shell .hero--best { background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-landing-evidence-network-1200.webp') center/cover; }
+body .jobs-shell .hero--onsite { background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-jobs-onsite-growth-1200.webp') center/cover; }
+body .jobs-shell .hero--hybrid { background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-jobs-hybrid-opportunity-1200.webp') center/cover; }
+body :is(.auth-visual, .register-visual, .recovery-visual) {
+  position: relative;
+  background: linear-gradient(180deg, rgba(16,19,46,.1), rgba(16,19,46,.72)), url('/assets/aptlens/backgrounds/aptlens-auth-career-focus-1200.webp') center/cover no-repeat;
+  color: #fff;
+}
+body :is(.auth-visual, .register-visual, .recovery-visual)::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(21,25,54,.25), transparent 62%); }
+body :is(.auth-visual, .register-visual, .recovery-visual) :is(.visual-brand, .visual-copy, .visual-notes) { position: relative; z-index: 2; }
+body :is(.auth-visual, .register-visual, .recovery-visual) :is(.visual-copy h2, .visual-copy p, .visual-notes, .visual-kicker, .eyebrow) { color: #fff; }
+body .auth-visual .match-visual, body .register-visual .journey-visual { visibility: hidden; }
+body :is(.auth-panel, .register-panel, .recovery-panel) { background: #fff; }
+body :is(.admin-shell, .employer-shell) > .sidebar,
+body .main-shell > .sidebar { background: linear-gradient(180deg, #151936 0%, #11152c 100%); }
+body :is(.employer-shell, .workspace) .sidebar apt-brand-wordmark,
+body .employer-shell .mobile-header apt-brand-wordmark { filter: brightness(0) invert(1); }
+body :is(.admin-content, .route-content, .content, .page-content) { min-width: 0; }
+body :is(.admin-content, .route-content) > * { display: block; width: min(100%, 1440px); margin-inline: auto; }
+body :is(.topbar, .desktop-topbar) { border-bottom-color: var(--al-border); background: rgba(255,255,255,.94); backdrop-filter: blur(14px); }
+body :is(.admin-nav, .desktop-nav) a { transition: color 180ms ease, background-color 180ms ease; }
+@media (max-width: 1023px) {
+  body .admin-shell { display: block; }
+  body .admin-shell > .sidebar { position: fixed; width: min(82vw, 300px); transform: translateX(-102%); }
+  body .admin-shell > .sidebar.sidebar--open { transform: translateX(0); }
+  body .admin-shell .menu-button { display: grid; }
+  body .employer-shell > .sidebar { display: none; }
+  body .employer-shell .shell-content { margin-left: 0; }
+  body .employer-shell .mobile-header { display: flex; }
+  body .employer-shell .desktop-topbar { display: none; }
+}
+@media (max-width: 820px) { body :is(.auth-visual, .register-visual, .recovery-visual) { display: none; } }
+@media (max-width: 479px) { body :is(.admin-content, .route-content) { overflow-x: hidden; } }
