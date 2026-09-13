@@ -7,6 +7,9 @@ import { EmployerApiService } from '../data-access/employer-api.service';
 import {
   CompanyProfile,
   EmployerVacancy,
+  RequirementFamily,
+  RequirementImportance,
+  RequirementMode,
   VacancyPolicyAggregateDto
 } from '../data-access/employer.models';
 import { EmployerVacancyEditorComponent } from './employer-vacancy-editor.component';
@@ -224,6 +227,68 @@ describe('EmployerVacancyEditorComponent', () => {
       );
   });
 
+  it('saves the smallest Draft payload from every wizard stage without future-step skill validation', () => {
+    const draft = makeVacancy({
+      title: 'Early draft',
+      description: '',
+      location: '',
+      workMode: '',
+      employmentType: '',
+      closingDateUtc: null,
+      requiredSkills: []
+    });
+    component.loadedVacancy = draft;
+    employerApi.updateVacancy.and.returnValue(of(draft));
+    employerApi.getVacancy.and.returnValue(of(draft));
+
+    for (let stage = 0; stage < component.stages.length; stage += 1) {
+      component.activeStage = stage;
+      component.form.patchValue({
+        title: 'Early draft',
+        description: '',
+        location: '',
+        workMode: '',
+        employmentType: '',
+        closingDateUtc: null
+      });
+      component.requiredSkills.clear();
+      component.requiredSkills.push(component['createSkillGroup']());
+
+      component.saveVacancy();
+
+      expect(employerApi.updateVacancy.calls.count()).toBe(stage + 1);
+      expect(employerApi.updateVacancy.calls.mostRecent().args[1].requiredSkills)
+        .toEqual([]);
+      expect(component.errorMessage).toBe('');
+    }
+  });
+
+  it('blocks forward progress until the current step is complete', () => {
+    component.nextStage();
+
+    expect(component.activeStage).toBe(0);
+    expect(component.highestAccessibleStage).toBe(0);
+    expect(component.stageErrorMessage).toContain('Select the company');
+
+    component.form.patchValue({
+      companyId: 'company-1',
+      title: 'Software Engineer',
+      description: 'Build reliable product features.'
+    });
+    component.nextStage();
+
+    expect(component.activeStage).toBe(1);
+    expect(component.highestAccessibleStage).toBe(1);
+    expect(component.stageErrorMessage).toBe('');
+  });
+
+  it('does not expose publish when required facts are incomplete', () => {
+    component.loadedVacancy = makeVacancy({ description: '' });
+
+    expect(component.canPublish).toBeFalse();
+    expect(component.publishReadinessIssues).toContain('Add a role description.');
+  });
+
   it('saves the current matching policy aggregate', () => {
     component.loadedVacancy = makeVacancy();
     component.policy = makePolicy();
@@ -268,6 +333,33 @@ describe('EmployerVacancyEditorComponent', () => {
     });
 
     component.loadedVacancy = makeVacancy();
+    component.policyFamilies = [{
+      clientKey: 'family-1',
+      requirementFamily: RequirementFamily.Skill,
+      familyImportance: RequirementImportance.Medium,
+      isActive: true,
+      isScored: true
+    }];
+    component.policyRequirements = [{
+      clientKey: 'requirement-1',
+      familyClientKey: 'family-1',
+      requirementFamily: RequirementFamily.Skill,
+      mode: RequirementMode.Preferred,
+      importance: RequirementImportance.Medium,
+      isActive: true,
+      isScored: true,
+      description: 'Angular',
+      skillConceptId: null,
+      canonicalTargetKey: 'angular',
+      requiredMonths: null,
+      requiredValue: null,
+      acceptedValuesJson: null,
+      isRegulatoryGate: false,
+      requiresVerification: false,
+      questionText: null,
+      expectedAnswer: null,
+      displayOrder: 1
+    }];
 
     employerApi.publishVacancy.and.returnValue(
       of(published)
@@ -287,6 +379,33 @@ describe('EmployerVacancyEditorComponent', () => {
     const latest = makeVacancy();
 
     component.loadedVacancy = makeVacancy();
+    component.policyFamilies = [{
+      clientKey: 'family-1',
+      requirementFamily: RequirementFamily.Skill,
+      familyImportance: RequirementImportance.Medium,
+      isActive: true,
+      isScored: true
+    }];
+    component.policyRequirements = [{
+      clientKey: 'requirement-1',
+      familyClientKey: 'family-1',
+      requirementFamily: RequirementFamily.Skill,
+      mode: RequirementMode.Preferred,
+      importance: RequirementImportance.Medium,
+      isActive: true,
+      isScored: true,
+      description: 'Angular',
+      skillConceptId: null,
+      canonicalTargetKey: 'angular',
+      requiredMonths: null,
+      requiredValue: null,
+      acceptedValuesJson: null,
+      isRegulatoryGate: false,
+      requiresVerification: false,
+      questionText: null,
+      expectedAnswer: null,
+      displayOrder: 1
+    }];
 
     employerApi.publishVacancy.and.returnValue(
       throwError(

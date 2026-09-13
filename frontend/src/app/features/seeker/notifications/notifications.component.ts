@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { EmptyStateVisualComponent } from '../../../shared/states/empty-state-visual.component';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 import { SeekerWorkflowApiService } from '../data/seeker-workflow-api.service';
 import { NotificationView } from '../data/seeker-workflow.models';
 
@@ -20,7 +21,8 @@ type NotificationFilter = 'All' | 'Unread';
     RouterLink,
     EmptyStateVisualComponent,
     ErrorStateComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    AppIconComponent
   ],
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.css'

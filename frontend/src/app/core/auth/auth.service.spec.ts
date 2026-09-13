@@ -59,12 +59,26 @@ describe('AuthService', () => {
     expect(session.hydrate).toHaveBeenCalled();
   });
 
-  it('clears local session only after successful server logout', () => {
+  it('attempts server logout before clearing the local session', () => {
     auth.logout().subscribe();
     expect(session.clear).not.toHaveBeenCalled();
 
     http.expectOne('https://api.example.test/api/auth/logout').flush({});
 
+    expect(session.clear).toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('clears the local session when server logout fails', () => {
+    let failed = false;
+
+    auth.logout().subscribe({ error: () => failed = true });
+    expect(session.clear).not.toHaveBeenCalled();
+
+    http.expectOne('https://api.example.test/api/auth/logout')
+      .flush({}, { status: 503, statusText: 'Unavailable' });
+
+    expect(failed).toBeTrue();
     expect(session.clear).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });

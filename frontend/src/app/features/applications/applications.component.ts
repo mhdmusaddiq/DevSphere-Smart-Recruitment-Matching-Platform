@@ -8,6 +8,7 @@ import { CompanyMonogramComponent } from '../../shared/avatar/company-monogram.c
 import { EmptyStateVisualComponent } from '../../shared/states/empty-state-visual.component';
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../shared/states/loading-state.component';
+import { assessmentStatusLabel } from '../../shared/matching/match-copy';
 import { SeekerWorkflowApiService } from '../seeker/data/seeker-workflow-api.service';
 import { SeekerApplication } from '../seeker/data/seeker-workflow.models';
 
@@ -35,6 +36,8 @@ type ApplicationFilter =
 })
 export class ApplicationsComponent implements OnInit {
   private readonly api = inject(SeekerWorkflowApiService);
+
+  readonly assessmentLabel = assessmentStatusLabel;
 
   readonly filters: ApplicationFilter[] = [
     'All',
@@ -187,7 +190,7 @@ export class ApplicationsComponent implements OnInit {
           if (error.status === 409) {
             this.loadApplications(false);
             this.actionMessage =
-              'The application changed before withdrawal. We refreshed the current server status.';
+              'The application changed before withdrawal. We refreshed its current status.';
             return;
           }
 

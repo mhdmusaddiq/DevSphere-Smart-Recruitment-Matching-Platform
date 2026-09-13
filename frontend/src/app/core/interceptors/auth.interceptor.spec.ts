@@ -105,4 +105,18 @@ describe('authInterceptor', () => {
     expect(router.navigate).not.toHaveBeenCalled();
     expect(session.clear).not.toHaveBeenCalled();
   });
+
+  it('clears a stale outage banner after a successful response', () => {
+    http.get('/api/failing').subscribe({ error: () => undefined });
+    controller.expectOne('/api/failing').flush(null, {
+      status: 503,
+      statusText: 'Unavailable'
+    });
+    expect(presenter.failure()?.kind).toBe('server');
+
+    http.get('/api/recovered').subscribe();
+    controller.expectOne('/api/recovered').flush({ ok: true });
+
+    expect(presenter.failure()).toBeNull();
+  });
 });

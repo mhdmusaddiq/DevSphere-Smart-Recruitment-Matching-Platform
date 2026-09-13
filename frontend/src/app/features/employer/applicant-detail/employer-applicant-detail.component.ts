@@ -1,10 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { EmployerApiService } from '../data-access/employer-api.service';
+import {
+  assessmentStatusLabel,
+  criterionStatusLabel,
+  displayLabel,
+  eligibilityStatusLabel,
+  isCalculatedAssessment,
+  matchReasonLabel
+} from '../../../shared/matching/match-copy';
 import {
   EmployerApplicationDetail,
   EmployerApplicationSnapshot,
@@ -15,7 +24,7 @@ import {
 @Component({
   selector: 'app-employer-applicant-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './employer-applicant-detail.component.html',
   styleUrl: './employer-applicant-detail.component.css'
 })
@@ -37,6 +46,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   supplementaryWarning = '';
+  selectedStatus = '';
 
   ngOnInit(): void {
     this.applicationId =
@@ -49,7 +59,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
 
     if (!this.applicationId) {
       this.loading = false;
-      this.errorMessage = 'Application identifier is missing.';
+      this.errorMessage = 'This application could not be opened.';
       return;
     }
 
@@ -104,6 +114,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
             request =>
               request.jobApplicationId === this.applicationId
           ) ?? null;
+        this.selectedStatus = '';
 
         this.vacancyId =
           this.vacancyId || result.applicant.vacancyId;
@@ -127,37 +138,33 @@ export class EmployerApplicantDetailComponent implements OnInit {
   assessmentLabel(
     value: string | number
   ): string {
-    const labels: Record<string, string> = {
-      '1': 'Calculated',
-      '2': 'Provisional',
-      '3': 'NotCalculated',
-      '4': 'CalculationFailure'
-    };
-
-    return labels[String(value)] ?? String(value);
+    return assessmentStatusLabel(value);
   }
 
   eligibilityLabel(
     value: string | number
   ): string {
-    const labels: Record<string, string> = {
-      '1': 'MeetsBaseline',
-      '2': 'PendingVerification',
-      '3': 'IncompleteAssessment',
-      '4': 'DoesNotMeetBaseline'
-    };
-
-    return labels[String(value)] ?? String(value);
+    return eligibilityStatusLabel(value);
   }
 
   hasCalculatedScore(): boolean {
     return (
       this.applicant !== null &&
-      this.assessmentLabel(
-        this.applicant.assessmentStatus
-      ) === 'Calculated' &&
+      isCalculatedAssessment(this.applicant.assessmentStatus) &&
       this.applicant.displayCompatibility !== null
     );
+  }
+
+  reasonLabel(value: string | null | undefined): string {
+    return matchReasonLabel(value);
+  }
+
+  criterionStateLabel(value: string | number): string {
+    return criterionStatusLabel(value);
+  }
+
+  detailLabel(value: string | number | null | undefined): string {
+    return displayLabel(value);
   }
 
   get availableStatusTransitions(): string[] {
@@ -202,6 +209,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.busy = false;
+        this.selectedStatus = '';
         this.successMessage =
           `Application status updated to ${status}.`;
         this.load(false);

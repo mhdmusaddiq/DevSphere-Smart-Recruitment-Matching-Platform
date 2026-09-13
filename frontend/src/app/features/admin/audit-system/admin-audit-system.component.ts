@@ -19,6 +19,7 @@ import {
   AuditEvent,
   SystemSetting
 } from '../data/admin.models';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 
 type AdminOperationsTab =
   | 'audit'
@@ -29,7 +30,8 @@ type AdminOperationsTab =
   standalone: true,
   imports: [
     DatePipe,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    AppIconComponent
   ],
   templateUrl: './admin-audit-system.component.html',
   styleUrl: './admin-audit-system.component.css',

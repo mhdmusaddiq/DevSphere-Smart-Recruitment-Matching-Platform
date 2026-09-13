@@ -28,7 +28,20 @@ public class FilesController : ControllerBase
             return BadRequest(new { message = validation.Error });
         }
 
-        await using var stream = file.OpenReadStream();
+        await using var source = file.OpenReadStream();
+        await using var stream = await _validation.BufferAsync(
+            source,
+            cancellationToken);
+        var contentValidation = await _validation.ValidatePdfContentAsync(
+            stream,
+            cancellationToken);
+        if (!contentValidation.IsValid)
+        {
+            return BadRequest(new { message = contentValidation.Error });
+        }
+
+        stream.Position = 0;
+
         var stored = await _storage.SaveAsync(
             stream,
             file.FileName,

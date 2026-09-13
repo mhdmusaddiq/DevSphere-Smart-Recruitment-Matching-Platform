@@ -74,7 +74,7 @@
               @if (isCalculated(application)) {
                 <span><strong>{{ application.displayCompatibility }}</strong> frozen compatibility</span>
               } @else {
-                <span>Compatibility: {{ application.frozenAssessmentStatus || 'Unavailable' }}</span>
+                <span>Compatibility: {{ assessmentLabel(application.frozenAssessmentStatus) }}</span>
               }
 
               <span>Eligibility: {{ application.eligibility || 'Unavailable' }}</span>
@@ -118,7 +118,7 @@
         (click)="$event.stopPropagation()">
         <p class="danger-label">Withdraw application</p>
         <h2 id="withdraw-title">Withdraw {{ withdrawCandidate.vacancyTitle }}?</h2>
-        <p>This changes the server workflow state to Withdrawn. You cannot continue this application after withdrawal.</p>
+        <p>You cannot continue this application after withdrawal.</p>
 
         <div class="dialog-actions">
           <button class="secondary" type="button" [disabled]="withdrawingId !== null" (click)="cancelWithdraw()">Keep application</button>

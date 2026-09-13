@@ -167,7 +167,7 @@ export class EmployerDashboardComponent implements OnInit {
 
   private getErrorMessage(error: HttpErrorResponse): string {
     if (error.status === 0) {
-      return 'Unable to reach the server. Please try again.';
+      return 'Unable to reach AptLens. Please try again.';
     }
 
     if (error.status === 401) {

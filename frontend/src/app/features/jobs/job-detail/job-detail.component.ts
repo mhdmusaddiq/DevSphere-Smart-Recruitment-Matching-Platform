@@ -7,6 +7,17 @@ import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 
 import { SessionService } from '../../../core/auth/session.service';
 import { CompanyMonogramComponent } from '../../../shared/avatar/company-monogram.component';
+import { AccountMenuComponent } from '../../../shared/account/account-menu.component';
+import {
+  assessmentStatusLabel,
+  criterionStatusLabel,
+  displayLabel,
+  eligibilityStatusLabel,
+  isCalculatedAssessment,
+  matchActionLabel,
+  matchReasonLabel
+} from '../../../shared/matching/match-copy';
+import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
 import { SeekerApiService } from '../../seeker/data/seeker-api.service';
@@ -37,6 +48,8 @@ interface OptionalResult<T> {
     CommonModule,
     FormsModule,
     RouterLink,
+    AccountMenuComponent,
+    BrandWordmarkComponent,
     CompanyMonogramComponent,
     ErrorStateComponent,
     LoadingStateComponent
@@ -172,7 +185,7 @@ export class JobDetailComponent implements OnInit {
         }
 
         if (error.status === 409) {
-          this.applyError = message || 'Your application preflight changed. The server decision has been refreshed.';
+          this.applyError = message || 'Your readiness changed before submission. The latest decision is shown.';
           this.loadPersonalized();
           return;
         }
@@ -183,30 +196,33 @@ export class JobDetailComponent implements OnInit {
   }
 
   isCalculated(): boolean {
-    return this.assessmentLabel(this.match?.assessmentStatus) === 'Calculated'
+    return isCalculatedAssessment(this.match?.assessmentStatus)
       && this.match?.displayCompatibility !== null
       && this.match?.displayCompatibility !== undefined;
   }
 
   assessmentLabel(value: MatchResultView['assessmentStatus'] | undefined): string {
-    const numeric: Record<number, string> = {
-      1: 'Calculated', 2: 'Provisional', 3: 'NotCalculated', 4: 'CalculationFailure'
-    };
-    return typeof value === 'number' ? numeric[value] ?? 'Unknown' : value ?? 'Unavailable';
+    return assessmentStatusLabel(value);
   }
 
   eligibilityLabel(value: MatchEligibilityValue | undefined): string {
-    const numeric: Record<number, string> = {
-      1: 'MeetsBaseline', 2: 'PendingVerification', 3: 'IncompleteAssessment', 4: 'DoesNotMeetBaseline'
-    };
-    return typeof value === 'number' ? numeric[value] ?? 'Unknown' : value ?? 'Unavailable';
+    return eligibilityStatusLabel(value);
   }
 
   criterionStateLabel(value: MatchCriterionStateValue): string {
-    const numeric: Record<number, string> = {
-      1: 'Met', 2: 'NotMet', 3: 'NotDemonstrated', 4: 'Incomplete', 5: 'PendingVerification', 6: 'NotApplicable'
-    };
-    return typeof value === 'number' ? numeric[value] ?? 'Unknown' : value;
+    return criterionStatusLabel(value);
+  }
+
+  reasonLabel(value: string | null | undefined): string {
+    return matchReasonLabel(value);
+  }
+
+  actionLabel(value: string | null | undefined): string {
+    return matchActionLabel(value);
+  }
+
+  detailLabel(value: string | number | null | undefined): string {
+    return displayLabel(value);
   }
 
   experienceLabel(months: number): string {
@@ -248,7 +264,7 @@ export class JobDetailComponent implements OnInit {
     if (error.status === 401) return 'Sign in again to load this personalized section.';
     if (error.status === 403) return 'This account cannot access this personalized section yet.';
     if (error.status === 404) return 'The required candidate information was not found.';
-    if (error.status === 409) return this.extractMessage(error) || 'The server reports a current-state conflict.';
+    if (error.status === 409) return this.extractMessage(error) || 'This information changed. Refresh and try again.';
     return 'This personalized section is temporarily unavailable.';
   }
 

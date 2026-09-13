@@ -1,30 +1,4 @@
-<div class="workspace">
-  <aside class="sidebar" aria-label="Job Seeker navigation">
-    <a class="brand" routerLink="/seeker/dashboard" aria-label="AptLens seeker dashboard"><apt-brand-wordmark /></a>
-    <nav>
-      <a class="active" routerLink="/seeker/dashboard">Dashboard</a>
-      <a routerLink="/jobs">Find Jobs</a>
-      <a routerLink="/seeker/applications">My Applications</a>
-      <a routerLink="/seeker/profile">Profile</a>
-      <a routerLink="/seeker/cv">CV</a>
-      <a routerLink="/seeker/contact-requests">Contact Requests</a>
-      <a routerLink="/seeker/notifications">Notifications</a>
-    </nav>
-    <div class="sidebar-user">
-      <span class="avatar">{{ displayName.charAt(0).toUpperCase() }}</span>
-      <div><strong>{{ displayName }}</strong><small>Job Seeker</small></div>
-    </div>
-  </aside>
-
-  <section class="main-shell">
-    <header class="topbar">
-      <form class="top-search" (ngSubmit)="findJobs()">
-        <input [(ngModel)]="searchQuery" name="topQuery" placeholder="Search jobs by title or skill" aria-label="Search jobs by title or skill" />
-      </form>
-      <div class="top-user"><span class="avatar small">{{ displayName.charAt(0).toUpperCase() }}</span><strong>{{ displayName }}</strong></div>
-    </header>
-
-    <main class="content">
+<main class="content">
       <div class="heading-row">
         <div>
           <h1>{{ greeting }}, {{ displayName.split(' ')[0] }}</h1>
@@ -47,9 +21,9 @@
         @if (loading) {
           <div class="summary-card skeleton"></div><div class="summary-card skeleton"></div><div class="summary-card skeleton"></div>
         } @else {
-          <article class="summary-card"><span class="metric-icon">▤</span><div><strong>{{ summary.applicationCount }}</strong><small>Applications</small></div></article>
-          <article class="summary-card"><span class="metric-icon warm">◔</span><div><strong>{{ summary.pendingContactRequestCount }}</strong><small>Pending contact requests</small></div></article>
-          <article class="summary-card"><span class="metric-icon cool">♢</span><div><strong>{{ summary.unreadNotificationCount }}</strong><small>Unread notifications</small></div></article>
+          <article class="summary-card"><span class="metric-icon"><apt-app-icon name="document" [size]="20" /></span><div><strong>{{ summary.applicationCount }}</strong><small>Applications</small></div></article>
+          <article class="summary-card"><span class="metric-icon warm"><apt-app-icon name="company" [size]="20" /></span><div><strong>{{ summary.pendingContactRequestCount }}</strong><small>Pending contact requests</small></div></article>
+          <article class="summary-card"><span class="metric-icon cool"><apt-app-icon name="notification" [size]="20" /></span><div><strong>{{ summary.unreadNotificationCount }}</strong><small>Unread notifications</small></div></article>
         }
       </section>
 
@@ -131,6 +105,4 @@
           </section>
         </aside>
       </div>
-    </main>
-  </section>
-</div>
+</main>

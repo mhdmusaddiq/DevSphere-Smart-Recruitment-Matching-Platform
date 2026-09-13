@@ -143,12 +143,12 @@
 
         <div>
           <dt>Assessment status</dt>
-          <dd>{{ vacancy.assessmentStatus || '—' }}</dd>
+          <dd>{{ assessmentLabel(vacancy.assessmentStatus) }}</dd>
         </div>
 
         <div>
           <dt>Eligibility</dt>
-          <dd>{{ vacancy.eligibility || '—' }}</dd>
+          <dd>{{ eligibilityLabel(vacancy.eligibility) }}</dd>
         </div>
 
         <div>
@@ -287,9 +287,7 @@
           ) {
             <article class="application-row">
               <div>
-                <strong>
-                  Application {{ application.applicationId }}
-                </strong>
+                <strong>Submitted application</strong>
 
                 <p>
                   Submitted
@@ -301,10 +299,10 @@
               </div>
 
               <div class="application-meta">
-                <span>{{ application.status }}</span>
+                <span>{{ detailLabel(application.status) }}</span>
 
                 <span>
-                  {{ application.assessmentStatus }}
+                  {{ assessmentLabel(application.assessmentStatus) }}
                 </span>
 
                 @if (

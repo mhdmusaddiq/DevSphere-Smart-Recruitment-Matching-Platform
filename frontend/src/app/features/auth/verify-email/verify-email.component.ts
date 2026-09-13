@@ -21,6 +21,7 @@ import {
   apiUrl
 } from '../../../core/config/api-base-url';
 import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 
 interface VerifyEmailResponse {
   message: string;
@@ -36,7 +37,7 @@ type StatusKind = 'info' | 'success' | 'error';
 @Component({
   selector: 'app-verify-email',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, BrandWordmarkComponent],
+  imports: [ReactiveFormsModule, RouterLink, BrandWordmarkComponent, AppIconComponent],
   templateUrl: './verify-email.component.html',
   styleUrl: './verify-email.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush

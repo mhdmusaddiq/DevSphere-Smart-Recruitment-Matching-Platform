@@ -6,7 +6,7 @@
       </p>
       <h1>Catalogue management</h1>
       <p>
-        Moderate canonical skill concepts, curated aliases and
+        Manage standard skills, curated aliases and
         occupation concepts. Status changes affect current
         resolution availability, never historical application truth.
       </p>
@@ -47,11 +47,10 @@
   </div>
 
   <div class="governance-note">
-    <strong>Current backend scope:</strong>
-    read existing catalogue entries and toggle Active/Inactive.
-    Create, rename, merge and proposal-approval controls are
-    intentionally not shown because the frozen API does not expose
-    them.
+    <strong>Available actions:</strong>
+    review existing catalogue entries and change whether each entry
+    is currently available. Historical application records remain
+    unchanged.
   </div>
 
   @if (errorMessage()) {
@@ -135,7 +134,7 @@
         <header>
           <h2>Skill concepts</h2>
           <p>
-            Preferred canonical terms. Deactivation changes
+            Preferred skill names. Deactivation changes
             current availability, not old snapshot truth.
           </p>
         </header>
@@ -148,7 +147,7 @@
             <article class="record-row">
               <div>
                 <strong>{{ skill.name }}</strong>
-                <span>Canonical SkillConcept</span>
+                <span>Skill name</span>
               </div>
 
               <span class="meta">
@@ -244,7 +243,7 @@
         <header>
           <h2>Occupation concepts</h2>
           <p>
-            Canonical occupations used by current catalogue
+            Standard occupations used by the current catalogue
             resolution.
           </p>
         </header>
@@ -257,7 +256,7 @@
             <article class="record-row">
               <div>
                 <strong>{{ occupation.name }}</strong>
-                <span>Canonical OccupationConcept</span>
+                <span>Occupation</span>
               </div>
 
               <span class="meta">Occupation</span>

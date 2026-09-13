@@ -37,7 +37,7 @@
     <div class="sidebar-note">
       <strong>Operational console</strong>
       <span>
-        Backend authorization remains authoritative.
+        Review access, company trust, catalogue data, and platform activity.
       </span>
     </div>
   </aside>
@@ -70,16 +70,7 @@
         AptLens <span>/</span> Admin
       </div>
 
-      <div class="admin-identity">
-        <apt-identity-avatar
-          [displayName]="displayName()"
-          [size]="34"
-        />
-        <div>
-          <strong>{{ displayName() }}</strong>
-          <span>Verified admin session</span>
-        </div>
-      </div>
+      <apt-account-menu style="margin-left: auto" />
     </header>
 
     <main class="admin-content">

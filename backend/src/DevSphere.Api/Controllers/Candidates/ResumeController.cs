@@ -85,22 +85,24 @@ public class ResumeController : ControllerBase
                 : BadRequest(response);
         }
 
-        await using var stream = file.OpenReadStream();
-
-        var signature = new byte[5];
-        var bytesRead = await stream.ReadAsync(
-            signature,
+        await using var source = file.OpenReadStream();
+        await using var stream = await _validation.BufferAsync(
+            source,
             cancellationToken);
-        stream.Position = 0;
 
-        if (bytesRead != signature.Length ||
-            !signature.SequenceEqual("%PDF-"u8.ToArray()))
+        var contentValidation = await _validation.ValidatePdfContentAsync(
+            stream,
+            cancellationToken);
+
+        if (!contentValidation.IsValid)
         {
             return BadRequest(new
             {
-                message = "The uploaded file is not a valid PDF."
+                message = contentValidation.Error
             });
         }
+
+        stream.Position = 0;
 
         var resume = await _service.AddUploadedVersionAsync(
             userId,

@@ -135,9 +135,9 @@ describe('EmployerApplicantDetailComponent', () => {
 
   it('maps numeric assessment enums and preserves server score', () => {
     expect(component.assessmentLabel(1))
-      .toBe('Calculated');
+      .toBe('Assessed');
     expect(component.eligibilityLabel(1))
-      .toBe('MeetsBaseline');
+      .toBe('Meets requirements');
     expect(component.applicant?.displayCompatibility)
       .toBe(91.3);
     expect(component.hasCalculatedScore())
@@ -147,6 +147,21 @@ describe('EmployerApplicantDetailComponent', () => {
   it('uses backend application status transitions only', () => {
     expect(component.availableStatusTransitions)
       .toEqual(['Shortlisted', 'Rejected']);
+  });
+
+  it('enables the status action after a valid transition is selected', () => {
+    const select: HTMLSelectElement =
+      fixture.nativeElement.querySelector('select');
+    const button: HTMLButtonElement = Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
+    ).find(item => item.textContent?.includes('Apply status'))!;
+
+    select.value = 'Shortlisted';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(component.selectedStatus).toBe('Shortlisted');
+    expect(button.disabled).toBeFalse();
   });
 
   it('does not expose candidate email without server disclosure', () => {

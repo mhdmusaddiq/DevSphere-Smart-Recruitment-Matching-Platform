@@ -2,7 +2,7 @@
   <div class="page-heading">
     <div>
       <a class="back-link" routerLink="/employer/vacancies">
-        ← Back to vacancies
+        <apt-app-icon name="arrow-left" [size]="16" /> Back to vacancies
       </a>
 
       <h1>{{ pageTitle }}</h1>
@@ -30,6 +30,9 @@
         type="button"
         class="stage-button"
         [class.active]="activeStage === index"
+        [class.completed]="index < highestAccessibleStage"
+        [disabled]="index > highestAccessibleStage"
+        [attr.aria-current]="activeStage === index ? 'step' : null"
         (click)="goToStage(index)"
       >
         <span class="stage-number">{{ index + 1 }}</span>
@@ -41,6 +44,12 @@
   @if (errorMessage) {
     <div class="message error-message" role="alert">
       {{ errorMessage }}
+    </div>
+  }
+
+  @if (stageErrorMessage) {
+    <div #stageError class="message error-message" role="alert" tabindex="-1">
+      {{ stageErrorMessage }}
     </div>
   }
 
@@ -69,7 +78,7 @@
             <label class="field">
               <span>Company</span>
 
-              <select formControlName="companyId">
+              <select formControlName="companyId" [attr.aria-invalid]="form.controls.companyId.touched && form.controls.companyId.invalid">
                 <option [ngValue]="null">
                   Select company
                 </option>
@@ -84,6 +93,9 @@
                   </option>
                 }
               </select>
+              @if (form.controls.companyId.touched && form.controls.companyId.invalid) {
+                <small class="field-error">Select a company.</small>
+              }
             </label>
 
             @if (companiesLoading) {
@@ -117,19 +129,27 @@
             <label class="field">
               <span>Title *</span>
               <input
+                id="vacancy-title"
                 type="text"
                 formControlName="title"
                 placeholder="e.g. Senior Software Engineer"
               />
+              @if (form.controls.title.touched && form.controls.title.invalid) {
+                <small class="field-error">Enter a vacancy title.</small>
+              }
             </label>
 
             <label class="field">
               <span>Description</span>
               <textarea
+                id="vacancy-description"
                 rows="8"
                 formControlName="description"
                 placeholder="Describe the vacancy responsibilities and expectations."
               ></textarea>
+              @if (form.controls.description.touched && form.controls.description.invalid) {
+                <small class="field-error">Add a role description.</small>
+              }
             </label>
           </div>
         </section>
@@ -145,30 +165,37 @@
 
           <div class="form-grid">
             <label class="field">
-              <span>Location</span>
+              <span>Location *</span>
               <input
                 type="text"
                 formControlName="location"
                 placeholder="e.g. Colombo"
               />
+              @if (form.controls.location.touched && form.controls.location.invalid) {
+                <small class="field-error">Enter the role location.</small>
+              }
             </label>
 
             <label class="field">
-              <span>Work mode</span>
-              <input
-                type="text"
-                formControlName="workMode"
-                placeholder="e.g. Hybrid"
-              />
+              <span>Work mode *</span>
+              <select formControlName="workMode">
+                <option value="">Select work mode</option>
+                @for (option of workModeOptions; track option) { <option [value]="option">{{ option }}</option> }
+              </select>
+              @if (form.controls.workMode.touched && form.controls.workMode.invalid) {
+                <small class="field-error">Select a work mode.</small>
+              }
             </label>
 
             <label class="field">
-              <span>Employment type</span>
-              <input
-                type="text"
-                formControlName="employmentType"
-                placeholder="e.g. Full-time"
-              />
+              <span>Employment type *</span>
+              <select formControlName="employmentType">
+                <option value="">Select employment type</option>
+                @for (option of employmentTypeOptions; track option) { <option [value]="option">{{ option }}</option> }
+              </select>
+              @if (form.controls.employmentType.touched && form.controls.employmentType.invalid) {
+                <small class="field-error">Select an employment type.</small>
+              }
             </label>
           </div>
         </section>
@@ -241,11 +268,14 @@
             </label>
 
             <label class="field full-width">
-              <span>Closing date</span>
+              <span>Closing date *</span>
               <input
                 type="datetime-local"
                 formControlName="closingDateUtc"
               />
+              @if (form.controls.closingDateUtc.touched && form.controls.closingDateUtc.invalid) {
+                <small class="field-error">Set a future closing date.</small>
+              }
             </label>
           </div>
         </section>
@@ -327,9 +357,7 @@
               <p class="stage-label">Step 6 of 7</p>
               <h2>Matching Policy</h2>
               <p class="section-description">
-                Configure server-backed requirement families.
-                Compatibility and assessment results are never
-                calculated in this editor.
+                Group the evidence that matters for this role and choose how strongly each requirement should influence matching.
               </p>
             </div>
 
@@ -368,9 +396,7 @@
 
             @if (policy?.revision?.isMateriallyLocked) {
               <div class="message readonly-message">
-                This matching policy is materially locked after
-                the first application. Server policy truth is
-                read-only.
+                This matching policy is locked after the first application so every applicant is assessed against the same rules.
               </div>
             }
 
@@ -446,9 +472,6 @@
                                 )
                               }}
                             </strong>
-                            <span class="policy-family-key">
-                              {{ family.clientKey }}
-                            </span>
                           </div>
 
                           <button
@@ -472,7 +495,7 @@
                                   index,
                                   {
                                     familyImportance:
-                                      $any($event.target).valueAsNumber
+                                      selectNumber($event)
                                   }
                                 )
                               "
@@ -532,8 +555,7 @@
                             <div>
                               <h4>Requirements</h4>
                               <p class="section-description">
-                                Add the server policy requirements
-                                that belong to this family.
+                                Add the evidence requirements that belong to this family.
                               </p>
                             </div>
 
@@ -632,9 +654,7 @@
                                             requirement.clientKey,
                                             {
                                               mode:
-                                                $any(
-                                                  $event.target
-                                                ).valueAsNumber
+                                                selectNumber($event)
                                             }
                                           )
                                         "
@@ -667,9 +687,7 @@
                                             requirement.clientKey,
                                             {
                                               importance:
-                                                $any(
-                                                  $event.target
-                                                ).valueAsNumber
+                                                selectNumber($event)
                                             }
                                           )
                                         "
@@ -689,7 +707,7 @@
                                     </label>
 
                                     <label class="field">
-                                      <span>Target key</span>
+                                      <span>Skill or evidence target</span>
                                       <input
                                         type="text"
                                         [disabled]="
@@ -760,9 +778,7 @@
                                                   $event.target
                                                 ).value === ''
                                                   ? null
-                                                  : $any(
-                                                      $event.target
-                                                    ).valueAsNumber
+                                                  : selectNumber($event)
                                             }
                                           )
                                         "
@@ -996,9 +1012,7 @@
                                             set.clientKey,
                                             {
                                               setType:
-                                                $any(
-                                                  $event.target
-                                                ).valueAsNumber
+                                                selectNumber($event)
                                             }
                                           )
                                         "
@@ -1042,9 +1056,7 @@
                                               set.clientKey,
                                               {
                                                 minimumSatisfiedCount:
-                                                  $any(
-                                                    $event.target
-                                                  ).valueAsNumber
+                                                  selectNumber($event)
                                               }
                                             )
                                           "
@@ -1135,8 +1147,7 @@
           <h2>Review & publish readiness</h2>
 
           <p class="section-description">
-            Review the saved vacancy and matching policy.
-            Final publish eligibility is decided by the server.
+            Confirm every visible fact and matching rule before publishing.
           </p>
 
           @if (!vacancyId || !loadedVacancy) {
@@ -1235,8 +1246,10 @@
 
                 <div>
                   <dt>Required skills</dt>
-                  <dd>
-                    {{ loadedVacancy.requiredSkills.length }}
+                  <dd class="review-skill-list">
+                    @for (skill of loadedVacancy.requiredSkills; track skill.name) {
+                      <span>{{ skill.name }} · weight {{ skill.weight }}</span>
+                    } @empty { <span>Not provided</span> }
                   </dd>
                 </div>
 
@@ -1251,6 +1264,27 @@
                     }}
                     months
                   </dd>
+                </div>
+
+                <div>
+                  <dt>Education</dt>
+                  <dd>{{ loadedVacancy.requiredEducation || 'Not provided' }}</dd>
+                </div>
+
+                <div>
+                  <dt>Salary range</dt>
+                  <dd>
+                    @if (loadedVacancy.salaryMin !== null || loadedVacancy.salaryMax !== null) {
+                      {{ loadedVacancy.salaryMin !== null ? (loadedVacancy.salaryMin | currency:'LKR':'symbol':'1.0-0') : 'No minimum' }}
+                      –
+                      {{ loadedVacancy.salaryMax !== null ? (loadedVacancy.salaryMax | currency:'LKR':'symbol':'1.0-0') : 'No maximum' }}
+                    } @else { Not provided }
+                  </dd>
+                </div>
+
+                <div class="full-width">
+                  <dt>Description</dt>
+                  <dd class="review-description">{{ loadedVacancy.description || 'Not provided' }}</dd>
                 </div>
 
                 <div>
@@ -1312,6 +1346,20 @@
                   after the first application.
                 </div>
               }
+
+              @if (policyRequirements.length > 0) {
+                <ul class="policy-review-list">
+                  @for (requirement of policyRequirements; track requirement.clientKey) {
+                    <li>
+                      <strong>{{ familyLabel(requirement.requirementFamily) }}</strong>
+                      <span>{{ requirement.description || requirement.requiredValue || 'Requirement details not provided' }}</span>
+                      <small>{{ requirement.mode }} · {{ requirement.importance }}</small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="section-description">No advanced requirements. The required skill list remains part of matching.</p>
+              }
             </article>
 
             @if (
@@ -1323,10 +1371,15 @@
                   <h3>Publish vacancy</h3>
 
                   <p class="section-description">
-                    The server verifies employer status,
-                    company trust, closing date and current
-                    matching-policy requirements.
+                    Confirm the vacancy facts and matching rules before making this role public.
                   </p>
+                  @if (publishReadinessIssues.length > 0) {
+                    <ul class="readiness-list" aria-label="Items required before publishing">
+                      @for (issue of publishReadinessIssues; track issue) { <li>{{ issue }}</li> }
+                    </ul>
+                  } @else {
+                    <p class="ready-copy">Ready to publish.</p>
+                  }
                 </div>
 
                 <button

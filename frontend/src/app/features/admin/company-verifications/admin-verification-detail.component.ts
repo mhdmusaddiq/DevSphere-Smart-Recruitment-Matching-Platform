@@ -17,6 +17,7 @@ import { finalize } from 'rxjs';
 import {
   CompanyMonogramComponent
 } from '../../../shared/avatar/company-monogram.component';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 import {
   AdminApiService
 } from '../data/admin-api.service';
@@ -31,7 +32,8 @@ import {
   imports: [
     DatePipe,
     RouterLink,
-    CompanyMonogramComponent
+    CompanyMonogramComponent,
+    AppIconComponent
   ],
   templateUrl: './admin-verification-detail.component.html',
   styleUrl: './admin-verification-detail.component.css',
@@ -203,7 +205,7 @@ export class AdminVerificationDetailComponent
           this.verification.set(reviewed);
           this.confirmVerify.set(false);
           this.reviewMessage.set(
-            'Verification reviewed successfully. The server-authored status is shown below.'
+            'Verification reviewed successfully. The latest status is shown below.'
           );
         },
         error: (error: HttpErrorResponse) => {
@@ -221,7 +223,7 @@ export class AdminVerificationDetailComponent
 
             this.reviewError.set(
               problem?.message?.trim() ||
-              'This verification is no longer pending. Reload the latest server state.'
+              'This verification is no longer pending. Reload the latest status.'
             );
             return;
           }

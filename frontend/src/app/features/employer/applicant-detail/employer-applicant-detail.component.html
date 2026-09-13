@@ -67,12 +67,10 @@
         <h2>
           {{
             applicant.candidateDisplayName ||
-              applicant.candidateId
+              'Candidate'
           }}
         </h2>
-        <p>
-          Application {{ applicant.applicationId }}
-        </p>
+        <p>Submitted application</p>
       </div>
 
       <div class="hero-actions">
@@ -106,7 +104,7 @@
           <label class="status-action">
             <span>Update status</span>
             <select
-              #statusSelect
+              [(ngModel)]="selectedStatus"
               [disabled]="busy"
             >
               <option value="">Choose next status</option>
@@ -126,9 +124,9 @@
             type="button"
             class="primary-button"
             [disabled]="
-              busy || !statusSelect.value
+              busy || !selectedStatus
             "
-            (click)="updateStatus(statusSelect.value)"
+            (click)="updateStatus(selectedStatus)"
           >
             {{ busy ? 'Updating...' : 'Apply status' }}
           </button>
@@ -184,7 +182,7 @@
           @if (applicant.eligibilityReason) {
             <div class="notice">
               <strong>Eligibility reason</strong>
-              <p>{{ applicant.eligibilityReason }}</p>
+              <p>{{ reasonLabel(applicant.eligibilityReason) }}</p>
             </div>
           }
 
@@ -253,8 +251,8 @@
               ) {
                 <article class="family">
                   <div class="family-heading">
-                    <strong>{{ family.family }}</strong>
-                    <span>{{ family.importance }}</span>
+                    <strong>{{ detailLabel(family.family) }}</strong>
+                    <span>{{ detailLabel(family.importance) }}</span>
                   </div>
 
                   <p>
@@ -283,14 +281,14 @@
                               {{ criterion.label }}
                             </strong>
                             <p>
-                              {{ criterion.mode }}
+                              {{ detailLabel(criterion.mode) }}
                               ·
-                              {{ criterion.importance }}
+                              {{ detailLabel(criterion.importance) }}
                             </p>
                           </div>
 
                           <span>
-                            {{ criterion.state }}
+                            {{ criterionStateLabel(criterion.state) }}
                           </span>
                         </div>
                       }
@@ -336,10 +334,7 @@
           <h2>Application-time resume</h2>
 
           @if (applicant.resumeVersionId) {
-            <p>
-              Frozen ResumeVersion:
-              {{ applicant.resumeVersionId }}
-            </p>
+            <p>This submitted CV version is locked to the application record.</p>
 
             <button
               type="button"
@@ -392,7 +387,7 @@
             } @else {
               <p>
                 Candidate contact is not disclosed until
-                the server authorizes it.
+                the candidate approves sharing.
               </p>
             }
           }

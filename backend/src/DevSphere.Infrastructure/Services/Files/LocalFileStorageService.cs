@@ -26,15 +26,35 @@ public class LocalFileStorageService : IFileStorageService
         var storageKey = $"{Guid.NewGuid():N}{extension}";
         var fullPath = ResolvePath(storageKey);
 
-        await using var destination = new FileStream(
-            fullPath,
-            FileMode.CreateNew,
-            FileAccess.Write,
-            FileShare.None,
-            81920,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        try
+        {
+            await using (var destination = new FileStream(
+                fullPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                81920,
+                FileOptions.Asynchronous | FileOptions.SequentialScan))
+            {
+                await content.CopyToAsync(destination, cancellationToken);
+                await destination.FlushAsync(cancellationToken);
 
-        await content.CopyToAsync(destination, cancellationToken);
+                if (destination.Length != fileSizeBytes)
+                {
+                    throw new InvalidDataException(
+                        "Stored file length does not match the uploaded file length.");
+                }
+            }
+        }
+        catch
+        {
+            if (File.Exists(fullPath))
+            {
+                File.Delete(fullPath);
+            }
+
+            throw;
+        }
 
         return new StoredFileDescriptor
         {
@@ -56,6 +76,21 @@ public class LocalFileStorageService : IFileStorageService
             81920,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
         return Task.FromResult(stream);
+    }
+
+    public Task DeleteAsync(
+        string storageKey,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var fullPath = ResolvePath(storageKey);
+
+        if (File.Exists(fullPath))
+        {
+            File.Delete(fullPath);
+        }
+
+        return Task.CompletedTask;
     }
 
     private string ResolvePath(string storageKey)

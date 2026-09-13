@@ -3,9 +3,14 @@
     <div>
       <p class="breadcrumb">My applications / Application details</p>
       <h1>Application details</h1>
-      <p>Current workflow status plus the immutable facts captured when you submitted.</p>
+      <p>
+        Current workflow status plus the immutable facts captured when you
+        submitted.
+      </p>
     </div>
-    <a class="secondary-link" routerLink="/seeker/applications">Back to applications</a>
+    <a class="secondary-link" routerLink="/seeker/applications"
+      >Back to applications</a
+    >
   </header>
 
   @if (actionMessage) {
@@ -18,20 +23,31 @@
     <apt-error-state
       title="Application unavailable"
       [message]="coreError"
-      (retry)="loadApplication()" />
+      (retry)="loadApplication()"
+    />
   } @else if (application) {
     <section class="identity-card">
-      <apt-company-monogram [companyName]="application.companyName" [size]="48" />
+      <apt-company-monogram
+        [companyName]="application.companyName"
+        [size]="48"
+      />
 
       <div class="identity-copy">
         <span>{{ application.companyName }}</span>
         <h2>{{ application.vacancyTitle }}</h2>
         <div class="meta">
-          @if (application.vacancyLocation) { <span>{{ application.vacancyLocation }}</span> }
-          @if (application.workMode) { <span>{{ application.workMode }}</span> }
-          <span>Submitted {{ application.submittedAtUtc | date:'mediumDate' }}</span>
+          @if (application.vacancyLocation) {
+            <span>{{ application.vacancyLocation }}</span>
+          }
+          @if (application.workMode) {
+            <span>{{ application.workMode }}</span>
+          }
+          <span
+            >Submitted
+            {{ application.submittedAtUtc | date: "mediumDate" }}</span
+          >
           @if (submittedResumeVersion) {
-            <span>Resume version {{ submittedResumeVersion.versionNumber }}</span>
+            <span>CV version {{ submittedResumeVersion.versionNumber }}</span>
           }
         </div>
       </div>
@@ -45,7 +61,10 @@
           <div class="section-heading">
             <div>
               <h2>Application-time match snapshot</h2>
-              <p>Historical evidence from submission. Your current profile does not rewrite it.</p>
+              <p>
+                Historical evidence from submission. Your current profile does
+                not rewrite it.
+              </p>
             </div>
           </div>
 
@@ -53,7 +72,8 @@
             <apt-error-state
               title="Snapshot unavailable"
               [message]="snapshotError"
-              [retryable]="false" />
+              [retryable]="false"
+            />
           } @else if (!snapshot) {
             <apt-loading-state message="Loading immutable snapshot…" />
           } @else {
@@ -64,17 +84,31 @@
                   <span>Compatibility at apply</span>
                 } @else {
                   <strong>—</strong>
-                  <span>{{ snapshot.compatibilityStatus || 'Not calculated' }}</span>
+                  <span>{{
+                    snapshot.compatibilityStatus || "Not calculated"
+                  }}</span>
                 }
               </div>
 
               <dl>
-                <div><dt>Assessment status</dt><dd>{{ snapshot.compatibilityStatus }}</dd></div>
-                <div><dt>Eligibility</dt><dd>{{ snapshot.eligibilityStatus }}</dd></div>
+                <div>
+                  <dt>Assessment status</dt>
+                  <dd>{{ snapshot.compatibilityStatus }}</dd>
+                </div>
+                <div>
+                  <dt>Eligibility</dt>
+                  <dd>{{ snapshot.eligibilityStatus }}</dd>
+                </div>
                 @if (snapshot.eligibilityReason) {
-                  <div><dt>Eligibility reason</dt><dd>{{ snapshot.eligibilityReason }}</dd></div>
+                  <div>
+                    <dt>Eligibility reason</dt>
+                    <dd>{{ reasonLabel(snapshot.eligibilityReason) }}</dd>
+                  </div>
                 }
-                <div><dt>Captured</dt><dd>{{ snapshot.capturedAtUtc | date:'medium' }}</dd></div>
+                <div>
+                  <dt>Captured</dt>
+                  <dd>{{ snapshot.capturedAtUtc | date: "medium" }}</dd>
+                </div>
               </dl>
             </div>
 
@@ -95,7 +129,10 @@
           <div class="section-heading">
             <div>
               <h2>Submitted CV</h2>
-              <p>The exact ResumeVersion linked to this application. A newer current CV is never substituted.</p>
+              <p>
+                The exact CV version linked to this application. A newer current
+                CV is never substituted.
+              </p>
             </div>
           </div>
 
@@ -103,28 +140,39 @@
             <apt-error-state
               title="CV metadata unavailable"
               [message]="resumeError"
-              [retryable]="false" />
+              [retryable]="false"
+            />
           }
 
           @if (snapshot?.resumeVersionId || application.resumeVersionId) {
             <div class="file-row">
               <span class="pdf-icon">PDF</span>
               <div>
-                <strong>{{ submittedResumeVersion?.originalFileName || 'Historical submitted CV' }}</strong>
+                <strong>{{
+                  submittedResumeVersion?.originalFileName ||
+                    "Historical submitted CV"
+                }}</strong>
                 <span>
                   @if (submittedResumeVersion) {
-                    Resume version {{ submittedResumeVersion.versionNumber }}
+                    CV version {{ submittedResumeVersion.versionNumber }}
                   } @else {
                     Exact historical version linked by the application snapshot
                   }
                 </span>
               </div>
-              <button class="secondary" type="button" [disabled]="downloading" (click)="downloadSubmittedResume()">
-                {{ downloading ? 'Downloading…' : 'Download' }}
+              <button
+                class="secondary"
+                type="button"
+                [disabled]="downloading"
+                (click)="downloadSubmittedResume()"
+              >
+                {{ downloading ? "Downloading…" : "Download" }}
               </button>
             </div>
           } @else {
-            <p class="muted">No submitted ResumeVersion is recorded for this application.</p>
+            <p class="muted">
+              No submitted CV version is recorded for this application.
+            </p>
           }
         </section>
 
@@ -132,7 +180,9 @@
           <div class="section-heading">
             <div>
               <h2>Status history</h2>
-              <p>Recorded workflow events from the server. No invented completion percentage.</p>
+              <p>
+                Your application activity and recorded hiring stages.
+              </p>
             </div>
           </div>
 
@@ -140,7 +190,8 @@
             <apt-error-state
               title="History unavailable"
               [message]="historyError"
-              [retryable]="false" />
+              [retryable]="false"
+            />
           } @else {
             <div class="timeline">
               @for (item of history; track item.id) {
@@ -149,10 +200,16 @@
                   <div>
                     <strong>{{ item.newStatus }}</strong>
                     @if (item.previousStatus) {
-                      <span>{{ item.previousStatus }} → {{ item.newStatus }}</span>
+                      <span
+                        >{{ item.previousStatus }}
+                        <apt-app-icon name="arrow-right" [size]="14" />
+                        {{ item.newStatus }}</span
+                      >
                     }
-                    @if (item.notes) { <p>{{ item.notes }}</p> }
-                    <small>{{ item.changedAtUtc | date:'medium' }}</small>
+                    @if (item.notes) {
+                      <p>{{ item.notes }}</p>
+                    }
+                    <small>{{ item.changedAtUtc | date: "medium" }}</small>
                   </div>
                 </article>
               } @empty {
@@ -166,7 +223,10 @@
           <div class="section-heading">
             <div>
               <h2>Contact permission</h2>
-              <p>You control whether this employer may receive direct contact information for this application.</p>
+              <p>
+                You control whether this employer may receive direct contact
+                information for this application.
+              </p>
             </div>
           </div>
 
@@ -174,7 +234,8 @@
             <apt-error-state
               title="Contact status unavailable"
               [message]="contactError"
-              [retryable]="false" />
+              [retryable]="false"
+            />
           } @else if (!contactRequest) {
             <p class="muted">No contact request exists for this application.</p>
           } @else {
@@ -186,17 +247,44 @@
               <span class="status-pill">{{ contactRequest.status }}</span>
             </div>
 
-            @if (contactRequest.status === 'Pending') {
-              <p class="consent-copy">This employer is asking permission to contact you directly about this application.</p>
+            @if (contactRequest.status === "Pending") {
+              <p class="consent-copy">
+                This employer is asking permission to contact you directly about
+                this application.
+              </p>
               <div class="button-row">
-                <button class="secondary" type="button" (click)="askContactAction('Declined')">Decline</button>
-                <button class="primary" type="button" (click)="askContactAction('Accepted')">Accept contact request</button>
+                <button
+                  class="secondary"
+                  type="button"
+                  (click)="askContactAction('Declined')"
+                >
+                  Decline
+                </button>
+                <button
+                  class="primary"
+                  type="button"
+                  (click)="askContactAction('Accepted')"
+                >
+                  Accept contact request
+                </button>
               </div>
-            } @else if (contactRequest.status === 'Accepted') {
-              <p class="consent-copy">Direct contact sharing is currently allowed while the server confirms the relationship remains valid.</p>
-              <button class="danger" type="button" (click)="askContactAction('Revoked')">Revoke contact permission</button>
+            } @else if (contactRequest.status === "Accepted") {
+              <p class="consent-copy">
+                Direct contact sharing remains available while this approved
+                relationship is valid.
+              </p>
+              <button
+                class="danger"
+                type="button"
+                (click)="askContactAction('Revoked')"
+              >
+                Revoke contact permission
+              </button>
             } @else {
-              <p class="muted">This contact request is closed. Current state: {{ contactRequest.status }}.</p>
+              <p class="muted">
+                This contact request is closed. Current state:
+                {{ contactRequest.status }}.
+              </p>
             }
           }
         </section>
@@ -205,7 +293,9 @@
           <div class="section-heading">
             <div>
               <h2>Recruitment workflow</h2>
-              <p>Candidate-safe interview, offer and talent-pool facts returned by the server.</p>
+              <p>
+                Interview, offer and talent-pool updates available to you.
+              </p>
             </div>
           </div>
 
@@ -213,7 +303,8 @@
             <apt-error-state
               title="Workflow unavailable"
               [message]="workflowError"
-              [retryable]="false" />
+              [retryable]="false"
+            />
           } @else if (!workflow) {
             <apt-loading-state message="Loading workflow…" />
           } @else {
@@ -224,8 +315,13 @@
                   <article class="workflow-item">
                     <strong>{{ interview.status }}</strong>
                     @for (slot of slotsFor(interview); track slot.id) {
-                      <span>{{ slot.startsAtUtc | date:'medium' }} – {{ slot.endsAtUtc | date:'shortTime' }}</span>
-                      @if (slot.locationOrMeetingUrl) { <small>{{ slot.locationOrMeetingUrl }}</small> }
+                      <span
+                        >{{ slot.startsAtUtc | date: "medium" }} –
+                        {{ slot.endsAtUtc | date: "shortTime" }}</span
+                      >
+                      @if (slot.locationOrMeetingUrl) {
+                        <small>{{ slot.locationOrMeetingUrl }}</small>
+                      }
                     }
                   </article>
                 } @empty {
@@ -238,8 +334,15 @@
                 @for (offer of workflow.offers; track offer.id) {
                   <article class="workflow-item">
                     <strong>{{ offer.status }}</strong>
-                    @if (offer.offeredSalary !== null) { <span>Salary: {{ offer.offeredSalary | number }}</span> }
-                    @if (offer.expiresAtUtc) { <small>Expires {{ offer.expiresAtUtc | date:'medium' }}</small> }
+                    @if (offer.offeredSalary !== null) {
+                      <span>Salary: {{ offer.offeredSalary | number }}</span>
+                    }
+                    @if (offer.expiresAtUtc) {
+                      <small
+                        >Expires
+                        {{ offer.expiresAtUtc | date: "medium" }}</small
+                      >
+                    }
                   </article>
                 } @empty {
                   <p class="muted">No candidate-visible offer exists.</p>
@@ -250,12 +353,24 @@
                 <h3>Talent pool consent</h3>
                 @for (entry of workflow.talentPoolEntries; track entry.id) {
                   <article class="workflow-item">
-                    <strong>{{ entry.isActive ? 'Active' : 'Inactive' }}</strong>
-                    <span>{{ entry.hasCandidateConsent ? 'Consent recorded' : 'No consent recorded' }}</span>
-                    @if (entry.consentRecordedAtUtc) { <small>{{ entry.consentRecordedAtUtc | date:'medium' }}</small> }
+                    <strong>{{
+                      entry.isActive ? "Active" : "Inactive"
+                    }}</strong>
+                    <span>{{
+                      entry.hasCandidateConsent
+                        ? "Consent recorded"
+                        : "No consent recorded"
+                    }}</span>
+                    @if (entry.consentRecordedAtUtc) {
+                      <small>{{
+                        entry.consentRecordedAtUtc | date: "medium"
+                      }}</small>
+                    }
                   </article>
                 } @empty {
-                  <p class="muted">No talent-pool consent record is returned.</p>
+                  <p class="muted">
+                    No talent-pool consent record is returned.
+                  </p>
                 }
               </section>
             </div>
@@ -266,17 +381,50 @@
       <aside class="summary-card">
         <h2>Application summary</h2>
         <dl>
-          <div><dt>Current status</dt><dd>{{ application.status }}</dd></div>
-          <div><dt>Compatibility</dt><dd>{{ frozenCompatibility !== null ? frozenCompatibility : '—' }}</dd></div>
-          <div><dt>Eligibility</dt><dd>{{ snapshot?.eligibilityStatus || application.eligibility || 'Unavailable' }}</dd></div>
-          <div><dt>Submitted CV</dt><dd>{{ submittedResumeVersion ? 'Version ' + submittedResumeVersion.versionNumber : 'Linked version' }}</dd></div>
+          <div>
+            <dt>Current status</dt>
+            <dd>{{ application.status }}</dd>
+          </div>
+          <div>
+            <dt>Compatibility</dt>
+            <dd>
+              {{ frozenCompatibility !== null ? frozenCompatibility : "—" }}
+            </dd>
+          </div>
+          <div>
+            <dt>Eligibility</dt>
+            <dd>
+              {{
+                snapshot?.eligibilityStatus ||
+                  application.eligibility ||
+                  "Unavailable"
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>Submitted CV</dt>
+            <dd>
+              {{
+                submittedResumeVersion
+                  ? "Version " + submittedResumeVersion.versionNumber
+                  : "Linked version"
+              }}
+            </dd>
+          </div>
         </dl>
 
-        <a class="primary-link" [routerLink]="['/jobs', application.vacancyId]">View job</a>
+        <a class="primary-link" [routerLink]="['/jobs', application.vacancyId]"
+          >View job</a
+        >
 
         @if (canWithdraw()) {
-          <button class="danger" type="button" (click)="openWithdraw()">Withdraw application</button>
-          <small>Withdrawal is available only while the current server status permits it.</small>
+          <button class="danger" type="button" (click)="openWithdraw()">
+            Withdraw application
+          </button>
+          <small
+            >Withdrawal is available only while the current application status
+            permits it.</small
+          >
         }
       </aside>
     </div>
@@ -284,14 +432,35 @@
 
   @if (withdrawOpen && application) {
     <div class="dialog-backdrop" (click)="closeWithdraw()">
-      <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="withdraw-title" (click)="$event.stopPropagation()">
+      <section
+        class="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="withdraw-title"
+        (click)="$event.stopPropagation()"
+      >
         <p class="danger-copy">Withdrawal confirmation</p>
         <h2 id="withdraw-title">Withdraw {{ application.vacancyTitle }}?</h2>
-        <p>This is a workflow action. Confirm only if you no longer want this application to continue.</p>
+        <p>
+          This is a workflow action. Confirm only if you no longer want this
+          application to continue.
+        </p>
         <div class="dialog-actions">
-          <button class="secondary" type="button" [disabled]="withdrawing" (click)="closeWithdraw()">Cancel</button>
-          <button class="danger solid" type="button" [disabled]="withdrawing" (click)="confirmWithdraw()">
-            {{ withdrawing ? 'Withdrawing…' : 'Withdraw application' }}
+          <button
+            class="secondary"
+            type="button"
+            [disabled]="withdrawing"
+            (click)="closeWithdraw()"
+          >
+            Cancel
+          </button>
+          <button
+            class="danger solid"
+            type="button"
+            [disabled]="withdrawing"
+            (click)="confirmWithdraw()"
+          >
+            {{ withdrawing ? "Withdrawing…" : "Withdraw application" }}
           </button>
         </div>
       </section>
@@ -300,30 +469,52 @@
 
   @if (pendingContactAction && contactRequest) {
     <div class="dialog-backdrop" (click)="cancelContactAction()">
-      <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="contact-title" (click)="$event.stopPropagation()">
+      <section
+        class="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contact-title"
+        (click)="$event.stopPropagation()"
+      >
         <p class="breadcrumb">{{ contactRequest.status }}</p>
         <h2 id="contact-title">
-          {{ pendingContactAction === 'Accepted'
-            ? 'Allow direct contact?'
-            : pendingContactAction === 'Declined'
-              ? 'Decline contact request?'
-              : 'Revoke direct contact?' }}
+          {{
+            pendingContactAction === "Accepted"
+              ? "Allow direct contact?"
+              : pendingContactAction === "Declined"
+                ? "Decline contact request?"
+                : "Revoke direct contact?"
+          }}
         </h2>
 
         <p>
-          @if (pendingContactAction === 'Accepted') {
-            The server may disclose your account email to this employer while the accepted relationship and trust checks remain valid.
-          } @else if (pendingContactAction === 'Declined') {
-            Your application remains active. Direct contact permission is not granted.
+          @if (pendingContactAction === "Accepted") {
+            AptLens may share your account email with this employer while
+            the accepted relationship and trust checks remain valid.
+          } @else if (pendingContactAction === "Declined") {
+            Your application remains active. Direct contact permission is not
+            granted.
           } @else {
-            Direct contact sharing will stop after the server accepts this revocation.
+            Direct contact sharing will stop after this revocation is confirmed.
           }
         </p>
 
         <div class="dialog-actions">
-          <button class="secondary" type="button" [disabled]="contactBusy" (click)="cancelContactAction()">Cancel</button>
-          <button class="primary" type="button" [disabled]="contactBusy" (click)="confirmContactAction()">
-            {{ contactBusy ? 'Updating…' : 'Confirm' }}
+          <button
+            class="secondary"
+            type="button"
+            [disabled]="contactBusy"
+            (click)="cancelContactAction()"
+          >
+            Cancel
+          </button>
+          <button
+            class="primary"
+            type="button"
+            [disabled]="contactBusy"
+            (click)="confirmContactAction()"
+          >
+            {{ contactBusy ? "Updating…" : "Confirm" }}
           </button>
         </div>
       </section>

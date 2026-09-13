@@ -31,6 +31,14 @@ public class ResumeRepository
         return _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task AddVersionAndSaveAsync(
+        ResumeVersion version,
+        CancellationToken cancellationToken = default)
+    {
+        await _context.ResumeVersions.AddAsync(version, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public Task<ResumeVersion?> GetVersionAsync(
         Guid versionId,
         CancellationToken cancellationToken = default)

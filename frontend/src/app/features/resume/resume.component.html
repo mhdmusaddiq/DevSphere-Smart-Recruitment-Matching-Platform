@@ -29,7 +29,7 @@
           <div class="section-heading">
             <div>
               <h2>Current CV</h2>
-              <p>This ResumeVersion is used for a new application unless you choose another version as current first.</p>
+              <p>This CV is used for a new application unless you choose another version first.</p>
             </div>
           </div>
 
@@ -64,7 +64,7 @@
           <div class="section-heading">
             <div>
               <h2>Upload a new version</h2>
-              <p>Uploads are validated by the server and stored as private PDF CV files.</p>
+              <p>PDF uploads are checked and stored privately.</p>
             </div>
           </div>
 
@@ -82,7 +82,7 @@
                 accept="application/pdf,.pdf"
                 (change)="onFileSelected($event)">
 
-              <span class="upload-icon" aria-hidden="true">↑</span>
+              <span class="upload-icon" aria-hidden="true"><apt-app-icon name="upload" [size]="24" /></span>
               <strong>Drop a PDF here or choose a file</strong>
               <p>PDF only. Maximum file size 5 MB.</p>
               <label class="primary" for="cvFile">Choose PDF</label>
@@ -112,7 +112,7 @@
           <div class="section-heading">
             <div>
               <h2>Resume version history</h2>
-              <p>Versions are immutable records. There is no delete action in this release.</p>
+              <p>Previous CV versions remain available so submitted applications keep their original CV.</p>
             </div>
           </div>
 
@@ -170,7 +170,7 @@
         </dl>
 
         <div class="privacy-note">
-          When an application succeeds, the chosen ResumeVersion ID is captured with the immutable application snapshot. Changing your current CV later does not replace that historical version.
+          When an application is submitted, the chosen CV version is preserved with the application. Changing your current CV later does not replace that historical version.
         </div>
 
         <a routerLink="/seeker/profile">Review career profile</a>

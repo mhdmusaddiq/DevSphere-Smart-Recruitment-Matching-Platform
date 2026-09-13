@@ -31,7 +31,9 @@
     <section class="notification-list">
       @for (notification of filteredNotifications; track notification.id) {
         <article class="notification-row" [class.unread]="!notification.isRead">
-          <span class="state-icon" aria-hidden="true">{{ notification.isRead ? '✓' : '●' }}</span>
+          <span class="state-icon" aria-hidden="true">
+            <apt-app-icon [name]="notification.isRead ? 'check' : 'notification'" [size]="18" />
+          </span>
 
           <div>
             <strong>{{ notification.message }}</strong>
@@ -62,7 +64,7 @@
 
     <aside class="routing-note">
       <strong>Navigation stays factual.</strong>
-      <span>The notification API contains only message, read state and timestamp, so rows do not invent deep links from message text.</span>
+      <span>Your latest account and application updates appear here.</span>
       <a routerLink="/seeker/applications">Go to My Applications</a>
     </aside>
   }

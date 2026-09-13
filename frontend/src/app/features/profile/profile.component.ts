@@ -14,6 +14,7 @@ import { Observable, finalize } from 'rxjs';
 
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../shared/states/loading-state.component';
+import { AppIconComponent } from '../../shared/icons/app-icon.component';
 import { CareerProfileApiService } from './career-profile-api.service';
 import {
   ApplicationReadiness,
@@ -37,7 +38,8 @@ import {
   ReactiveFormsModule,
     RouterLink,
     LoadingStateComponent,
-    ErrorStateComponent
+    ErrorStateComponent,
+    AppIconComponent
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css'

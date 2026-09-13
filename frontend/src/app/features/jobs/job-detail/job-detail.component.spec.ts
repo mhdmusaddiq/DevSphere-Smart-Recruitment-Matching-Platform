@@ -64,8 +64,8 @@ describe('JobDetailComponent', () => {
     const fixture = TestBed.createComponent(JobDetailComponent);
     const component = fixture.componentInstance;
 
-    expect(component.assessmentLabel(1)).toBe('Calculated');
-    expect(component.eligibilityLabel(4)).toBe('DoesNotMeetBaseline');
-    expect(component.criterionStateLabel(5)).toBe('PendingVerification');
+    expect(component.assessmentLabel(1)).toBe('Assessed');
+    expect(component.eligibilityLabel(4)).toBe('Does not meet requirements');
+    expect(component.criterionStateLabel(5)).toBe('Verification pending');
   });
 });

@@ -15,15 +15,13 @@ import {
   SessionService
 } from '../../../core/auth/session.service';
 import {
-  IdentityAvatarComponent
-} from '../../../shared/avatar/identity-avatar.component';
-import {
   BrandWordmarkComponent
 } from '../../../shared/brand/brand-wordmark.component';
 import {
   AppIconComponent,
   AppIconName
 } from '../../../shared/icons/app-icon.component';
+import { AccountMenuComponent } from '../../../shared/account/account-menu.component';
 
 interface AdminNavItem {
   label: string;
@@ -39,8 +37,8 @@ interface AdminNavItem {
     RouterLink,
     RouterLinkActive,
     BrandWordmarkComponent,
-    IdentityAvatarComponent,
-    AppIconComponent
+    AppIconComponent,
+    AccountMenuComponent
   ],
   templateUrl: './admin-shell.component.html',
   styleUrl: './admin-shell.component.css',
