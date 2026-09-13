@@ -29,6 +29,14 @@ public class FilesController : ControllerBase
         }
 
         await using var stream = file.OpenReadStream();
+        var contentValidation = await _validation.ValidatePdfContentAsync(
+            stream,
+            cancellationToken);
+        if (!contentValidation.IsValid)
+        {
+            return BadRequest(new { message = contentValidation.Error });
+        }
+
         var stored = await _storage.SaveAsync(
             stream,
             file.FileName,

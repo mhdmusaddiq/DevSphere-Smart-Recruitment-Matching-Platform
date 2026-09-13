@@ -10,6 +10,8 @@ import { EmptyStateVisualComponent } from '../../shared/states/empty-state-visua
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../shared/states/loading-state.component';
 import { BrandWordmarkComponent } from '../../shared/brand/brand-wordmark.component';
+import { AccountMenuComponent } from '../../shared/account/account-menu.component';
+import { AppIconComponent } from '../../shared/icons/app-icon.component';
 import { SeekerApiService } from '../seeker/data/seeker-api.service';
 import { VacancyFilters, VacancyView } from '../seeker/data/seeker.models';
 
@@ -26,7 +28,9 @@ type DiscoveryPreset = 'all' | 'best' | 'newest' | 'remote' | 'onsite' | 'hybrid
     EmptyStateVisualComponent,
     ErrorStateComponent,
     LoadingStateComponent,
-    BrandWordmarkComponent
+    BrandWordmarkComponent,
+    AccountMenuComponent,
+    AppIconComponent
   ],
   templateUrl: './jobs.component.html',
   styleUrl: './jobs.component.css'
@@ -90,7 +94,7 @@ export class JobsComponent implements OnInit {
       this.vacancies = [];
       this.loading = false;
       this.errorMessage = '';
-      this.noticeMessage = 'Sign in with an active Job Seeker account to see server-ranked Best Match results.';
+      this.noticeMessage = 'Sign in with an active Job Seeker account to see your Best Match results.';
       return;
     }
 

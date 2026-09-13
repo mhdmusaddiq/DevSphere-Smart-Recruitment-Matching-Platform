@@ -1,6 +1,6 @@
 <div class="detail-shell">
   <aside class="side-nav">
-    <a class="brand" routerLink="/jobs">Apt<span>Lens</span></a>
+    <a class="brand" routerLink="/jobs" aria-label="AptLens jobs"><apt-brand-wordmark /></a>
     <nav>
       @if (isJobSeeker) { <a routerLink="/seeker/dashboard">Dashboard</a> }
       <a class="active" routerLink="/jobs">Find Jobs</a>
@@ -15,7 +15,10 @@
   </aside>
 
   <main class="main">
-    <header class="topbar"><a routerLink="/jobs">Find Jobs</a>@if (vacancy) { <span>/ {{ vacancy.title }}</span> }</header>
+    <header class="topbar">
+      <div><a routerLink="/jobs">Find Jobs</a>@if (vacancy) { <span>/ {{ vacancy.title }}</span> }</div>
+      @if (isJobSeeker) { <apt-account-menu /> } @else { <a routerLink="/login" [queryParams]="{ returnUrl: '/jobs/' + vacancyId }">Sign in</a> }
+    </header>
     <div class="content">
       @if (loading) {
         <apt-loading-state message="Loading role details…" />
@@ -45,9 +48,9 @@
         }
 
         @if (!isJobSeeker && activeTab !== 'overview') {
-          <section class="panel sign-in-panel"><h2>Sign in for personalized fit and application controls</h2><p>The public role overview stays available. Compatibility, readiness and ApplyDecision are candidate-owned server results.</p><div><a class="primary-link" routerLink="/login" [queryParams]="{ returnUrl: '/jobs/' + vacancyId }">Sign in</a><a class="ghost" routerLink="/register">Create Job Seeker account</a></div></section>
+          <section class="panel sign-in-panel"><h2>Sign in for personalized fit and application controls</h2><p>The public role overview stays available. Sign in to view your compatibility, readiness and permission to apply.</p><div><a class="primary-link" routerLink="/login" [queryParams]="{ returnUrl: '/jobs/' + vacancyId }">Sign in</a><a class="ghost" routerLink="/register">Create Job Seeker account</a></div></section>
         } @else if (isJobSeeker && personalizedLoading && activeTab !== 'overview') {
-          <apt-loading-state message="Loading your server-authored fit and readiness…" />
+          <apt-loading-state message="Loading your fit and readiness…" />
         }
 
         @if (isJobSeeker && !personalizedLoading && activeTab === 'match') {
@@ -128,11 +131,11 @@
         @if (isJobSeeker && !personalizedLoading && activeTab === 'apply') {
           <div class="apply-layout">
             <section class="panel">
-              <h2>Submit your application</h2><p>Review the current ResumeVersion and the server ApplyDecision. Eligibility is checked again when you submit.</p>
+              <h2>Submit your application</h2><p>Review your current CV and application readiness. Eligibility is checked again when you submit.</p>
               @if (decisionError) { <apt-error-state title="Apply decision unavailable" [message]="decisionError" (retry)="loadPersonalized()" /> }
               @if (resumeError) { <apt-error-state title="CV unavailable" [message]="resumeError" [retryable]="false" /> }
-              @if (currentResumeVersion; as version) { <div class="resume-card"><span class="pdf">PDF</span><div><strong>{{ version.originalFileName }}</strong><small>Resume Version {{ version.versionNumber }} · {{ fileSize(version.fileSizeBytes) }} · Current</small></div><a class="ghost" routerLink="/seeker/cv">Manage CV</a></div> } @else { <div class="truth-note"><strong>No current ResumeVersion is available.</strong><a routerLink="/seeker/cv">Open CV Studio</a></div> }
-              <div class="snapshot-note"><strong>Application snapshot</strong><span>On successful submission, the current ResumeVersion and server matching result are captured as immutable application history.</span></div>
+              @if (currentResumeVersion; as version) { <div class="resume-card"><span class="pdf">PDF</span><div><strong>{{ version.originalFileName }}</strong><small>CV version {{ version.versionNumber }} · {{ fileSize(version.fileSizeBytes) }} · Current</small></div><a class="ghost" routerLink="/seeker/cv">Manage CV</a></div> } @else { <div class="truth-note"><strong>No current CV is available.</strong><a routerLink="/seeker/cv">Open CV Studio</a></div> }
+              <div class="snapshot-note"><strong>Application snapshot</strong><span>When you submit, this CV version and matching result are preserved as application history.</span></div>
               @if (decision) {
                 @if (decision.reasons.length) { <div class="decision-reasons">@for (reason of decision.reasons; track reason.code) { <div><strong>{{ reason.message }}</strong>@if (reason.targetCta) { <small>Next action: {{ reason.targetCta }}</small> }</div> }</div> }
                 @if (decision.requiresBaselineAcknowledgement) { <label class="ack"><input type="checkbox" [(ngModel)]="baselineAcknowledged" /> <span><strong>Acknowledge the baseline gap.</strong><small>I reviewed the identified gap and still want to submit this application.</small></span></label> }

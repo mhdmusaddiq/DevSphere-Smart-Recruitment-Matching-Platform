@@ -1,0 +1,8 @@
+:host { display: block; min-height: 100vh; }
+.transport-banner { position: fixed; top: .85rem; left: 50%; z-index: 200; width: min(640px, calc(100vw - 1.5rem)); box-sizing: border-box; display: grid; grid-template-columns:auto minmax(0,1fr) auto; align-items: start; gap: .75rem; transform: translateX(-50%); border: 1px solid #e4b455; border-radius: var(--radius-md); background: var(--color-warning-soft); padding: .8rem .85rem; color: var(--color-text); box-shadow: var(--shadow-md); }
+.transport-banner div { display: grid; gap: .15rem; }
+.transport-banner strong { font-size: .86rem; }
+.transport-banner span, .transport-banner small { color: var(--color-text-muted); font-size: .76rem; line-height: 1.45; }
+.transport-banner button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: .55rem; background: transparent; color: inherit; cursor: pointer; }
+.transport-banner button:hover { background: #0000000a; }
+.transport-banner button:focus-visible { outline: 3px solid var(--color-brand-violet); outline-offset: 2px; }

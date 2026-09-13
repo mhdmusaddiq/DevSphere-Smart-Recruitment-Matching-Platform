@@ -41,7 +41,7 @@ export class EmployerVacancyManagementComponent implements OnInit {
 
     if (!this.vacancyId) {
       this.loading = false;
-      this.errorMessage = 'Vacancy identifier is missing.';
+      this.errorMessage = 'This vacancy could not be opened.';
       return;
     }
 

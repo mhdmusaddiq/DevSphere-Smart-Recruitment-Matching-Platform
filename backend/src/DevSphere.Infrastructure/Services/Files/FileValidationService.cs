@@ -40,6 +40,29 @@ public class FileValidationService : IFileValidationService
         return new FileValidationResult { IsValid = true };
     }
 
+    public async Task<FileValidationResult> ValidatePdfContentAsync(
+        Stream stream,
+        CancellationToken cancellationToken)
+    {
+        if (!stream.CanRead)
+        {
+            return Invalid("The uploaded file could not be read.");
+        }
+
+        var originalPosition = stream.CanSeek ? stream.Position : 0;
+        var signature = new byte[5];
+        var bytesRead = await stream.ReadAsync(signature, cancellationToken);
+
+        if (stream.CanSeek)
+        {
+            stream.Position = originalPosition;
+        }
+
+        return bytesRead == signature.Length && signature.SequenceEqual("%PDF-"u8.ToArray())
+            ? new FileValidationResult { IsValid = true }
+            : Invalid("The uploaded file is not a valid PDF.");
+    }
+
     private static FileValidationResult Invalid(string error)
     {
         return new FileValidationResult { IsValid = false, Error = error };

@@ -110,7 +110,7 @@
                   type="button"
                   [attr.aria-label]="'Remove ' + skill.name"
                   [disabled]="isBusy('skill:' + skill.id)"
-                  (click)="removeSkill(skill)">×</button>
+                  (click)="removeSkill(skill)"><apt-app-icon name="close" [size]="14" /></button>
               </span>
             } @empty {
               <p class="empty-copy">No skills added yet.</p>
@@ -388,7 +388,7 @@
           <span aria-hidden="true"></span>
           <div>
             <strong>{{ applicationReadiness?.resumeReady ? 'Resume ready' : 'Resume required' }}</strong>
-            <small>{{ applicationReadiness?.resumeReady ? 'A current ResumeVersion exists.' : 'Upload and select a current PDF CV.' }}</small>
+            <small>{{ applicationReadiness?.resumeReady ? 'A current CV is ready.' : 'Upload and select a current PDF CV.' }}</small>
           </div>
         </div>
 

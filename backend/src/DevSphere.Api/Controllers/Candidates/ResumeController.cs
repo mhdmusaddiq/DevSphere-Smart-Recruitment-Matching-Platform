@@ -87,18 +87,15 @@ public class ResumeController : ControllerBase
 
         await using var stream = file.OpenReadStream();
 
-        var signature = new byte[5];
-        var bytesRead = await stream.ReadAsync(
-            signature,
+        var contentValidation = await _validation.ValidatePdfContentAsync(
+            stream,
             cancellationToken);
-        stream.Position = 0;
 
-        if (bytesRead != signature.Length ||
-            !signature.SequenceEqual("%PDF-"u8.ToArray()))
+        if (!contentValidation.IsValid)
         {
             return BadRequest(new
             {
-                message = "The uploaded file is not a valid PDF."
+                message = contentValidation.Error
             });
         }
 

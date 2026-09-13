@@ -3,7 +3,7 @@
     class="back-link"
     routerLink="/admin/company-verifications"
   >
-    ← Back to verification queue
+    <apt-app-icon name="arrow-left" [size]="16" /> Back to verification queue
   </a>
 
   @if (loading()) {
@@ -214,7 +214,7 @@
             Review complete: {{ statusLabel(item.status) }}
           </strong>
           <span>
-            This page now reflects the latest server-authored
+            This page now reflects the latest recorded
             review state. No second review is offered.
           </span>
         </div>

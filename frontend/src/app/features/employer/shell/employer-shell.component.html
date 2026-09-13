@@ -82,6 +82,7 @@
         <span class="breadcrumb-separator" aria-hidden="true">/</span>
         <strong>{{ currentPageName() }}</strong>
       </nav>
+      <apt-account-menu />
     </header>
     <header class="mobile-header">
       <a
@@ -92,16 +93,19 @@
         <apt-brand-wordmark />
       </a>
 
-      <button
-        type="button"
-        class="menu-button"
-        aria-label="Toggle employer navigation"
-        aria-controls="employer-mobile-navigation"
-        [attr.aria-expanded]="mobileNavigationOpen()"
-        (click)="toggleMobileNavigation()"
-      >
-        Menu
-      </button>
+      <div class="mobile-actions">
+        <apt-account-menu />
+        <button
+          type="button"
+          class="menu-button"
+          aria-label="Toggle employer navigation"
+          aria-controls="employer-mobile-navigation"
+          [attr.aria-expanded]="mobileNavigationOpen()"
+          (click)="toggleMobileNavigation()"
+        >
+          <apt-app-icon name="menu" [size]="20" />
+        </button>
+      </div>
     </header>
 
     @if (mobileNavigationOpen()) {

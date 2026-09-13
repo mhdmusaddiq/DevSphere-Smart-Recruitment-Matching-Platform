@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
@@ -7,6 +7,7 @@ import {
   Validators
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 
 import { EmployerApiService } from '../data-access/employer-api.service';
 import {
@@ -30,12 +31,15 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink
+    RouterLink,
+    AppIconComponent
   ],
   templateUrl: './employer-vacancy-editor.component.html',
   styleUrl: './employer-vacancy-editor.component.css'
 })
 export class EmployerVacancyEditorComponent implements OnInit {
+  @ViewChild('stageError') private stageError?: ElementRef<HTMLElement>;
+
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
   private readonly employerApi = inject(EmployerApiService);
@@ -50,6 +54,9 @@ export class EmployerVacancyEditorComponent implements OnInit {
     'Matching Policy',
     'Review'
   ];
+
+  readonly workModeOptions = ['Remote', 'On-site', 'Hybrid'];
+  readonly employmentTypeOptions = ['Full-time', 'Part-time', 'Contract', 'Internship'];
 
   readonly policyFamilyOptions = [
     { value: RequirementFamily.Skill, label: 'Skill' },
@@ -129,20 +136,20 @@ export class EmployerVacancyEditorComponent implements OnInit {
   readonly isEditMode = !!this.vacancyId;
 
   readonly form = this.formBuilder.group({
-    companyId: this.formBuilder.control<string | null>(null),
+    companyId: this.formBuilder.control<string | null>(null, Validators.required),
 
     title: this.formBuilder.nonNullable.control(
       '',
       Validators.required
     ),
 
-    description: this.formBuilder.nonNullable.control(''),
+    description: this.formBuilder.nonNullable.control('', Validators.required),
 
-    location: this.formBuilder.nonNullable.control(''),
+    location: this.formBuilder.nonNullable.control('', Validators.required),
 
-    workMode: this.formBuilder.nonNullable.control(''),
+    workMode: this.formBuilder.nonNullable.control('', Validators.required),
 
-    employmentType: this.formBuilder.nonNullable.control(''),
+    employmentType: this.formBuilder.nonNullable.control('', Validators.required),
 
     minExperienceMonths: this.formBuilder.nonNullable.control(
       0,
@@ -162,7 +169,7 @@ export class EmployerVacancyEditorComponent implements OnInit {
       this.formBuilder.control<number | null>(null),
 
     closingDateUtc:
-      this.formBuilder.control<string | null>(null),
+      this.formBuilder.control<string | null>(null, Validators.required),
 
     requiredSkills: this.formBuilder.array([
       this.createSkillGroup()
@@ -170,6 +177,8 @@ export class EmployerVacancyEditorComponent implements OnInit {
   });
 
   activeStage = 0;
+  highestAccessibleStage = 0;
+  stageErrorMessage = '';
   loading = false;
   saving = false;
   errorMessage = '';
@@ -218,8 +227,29 @@ export class EmployerVacancyEditorComponent implements OnInit {
     return (
       !!this.vacancyId &&
       this.loadedVacancy?.lifecycleStatus === 'Draft' &&
-      !this.publishing
+      !this.publishing &&
+      this.publishReadinessIssues.length === 0
     );
+  }
+
+  get publishReadinessIssues(): string[] {
+    if (!this.loadedVacancy) {
+      return ['Save the vacancy facts before publishing.'];
+    }
+
+    const vacancy = this.loadedVacancy;
+    const issues: string[] = [];
+    if (!vacancy.companyId) issues.push('Select a company.');
+    if (!vacancy.title.trim()) issues.push('Add a vacancy title.');
+    if (!vacancy.description.trim()) issues.push('Add a role description.');
+    if (!vacancy.location.trim()) issues.push('Add a location.');
+    if (!vacancy.workMode.trim()) issues.push('Select a work mode.');
+    if (!vacancy.employmentType.trim()) issues.push('Select an employment type.');
+    if (!vacancy.closingDateUtc || new Date(vacancy.closingDateUtc).getTime() <= Date.now()) {
+      issues.push('Set a future closing date.');
+    }
+    if (vacancy.requiredSkills.length === 0) issues.push('Add at least one required skill.');
+    return issues;
   }
 
   ngOnInit(): void {
@@ -248,10 +278,15 @@ export class EmployerVacancyEditorComponent implements OnInit {
     });
   }
   goToStage(index: number): void {
-    if (index < 0 || index >= this.stages.length) {
+    if (
+      index < 0 ||
+      index >= this.stages.length ||
+      index > this.highestAccessibleStage
+    ) {
       return;
     }
 
+    this.stageErrorMessage = '';
     this.activeStage = index;
   }
 
@@ -260,7 +295,101 @@ export class EmployerVacancyEditorComponent implements OnInit {
   }
 
   nextStage(): void {
-    this.goToStage(this.activeStage + 1);
+    const validationMessage = this.validateStage(this.activeStage);
+    if (validationMessage) {
+      this.stageErrorMessage = validationMessage;
+      this.markStageTouched(this.activeStage);
+      setTimeout(() => this.stageError?.nativeElement.focus());
+      return;
+    }
+
+    this.stageErrorMessage = '';
+    this.highestAccessibleStage = Math.max(
+      this.highestAccessibleStage,
+      Math.min(this.activeStage + 1, this.stages.length - 1)
+    );
+    this.activeStage = Math.min(this.activeStage + 1, this.stages.length - 1);
+  }
+
+  private validateStage(index: number): string {
+    const value = this.form.getRawValue();
+
+    if (index === 0) {
+      if (!value.companyId) return 'Select the company responsible for this vacancy.';
+      if (!value.title.trim()) return 'Enter a vacancy title before continuing.';
+      if (!value.description.trim()) return 'Add a role description before continuing.';
+    }
+
+    if (index === 1) {
+      if (!value.location.trim()) return 'Enter the role location before continuing.';
+      if (!value.workMode.trim()) return 'Select a work mode before continuing.';
+      if (!value.employmentType.trim()) return 'Select an employment type before continuing.';
+    }
+
+    if (index === 2) {
+      if (value.minExperienceMonths < 0) return 'Minimum experience cannot be negative.';
+      if (value.maxExperienceMonths !== null && value.maxExperienceMonths < value.minExperienceMonths) {
+        return 'Maximum experience must be greater than or equal to minimum experience.';
+      }
+    }
+
+    if (index === 3) {
+      if (value.salaryMin !== null && value.salaryMin < 0) return 'Minimum salary cannot be negative.';
+      if (value.salaryMax !== null && value.salaryMax < 0) return 'Maximum salary cannot be negative.';
+      if (value.salaryMin !== null && value.salaryMax !== null && value.salaryMax < value.salaryMin) {
+        return 'Maximum salary must be greater than or equal to minimum salary.';
+      }
+      if (!value.closingDateUtc || new Date(value.closingDateUtc).getTime() <= Date.now()) {
+        return 'Set a valid future closing date before continuing.';
+      }
+    }
+
+    if (index === 4) {
+      const skillNames = value.requiredSkills.map(skill => skill.name.trim());
+      if (skillNames.length === 0 || skillNames.some(name => !name)) {
+        return 'Add at least one named required skill before continuing.';
+      }
+      if (new Set(skillNames.map(name => name.toLocaleLowerCase())).size !== skillNames.length) {
+        return 'Remove duplicate required skills before continuing.';
+      }
+      if (value.requiredSkills.some(skill => skill.weight <= 0)) {
+        return 'Every required skill must have a weight greater than zero.';
+      }
+    }
+
+    if (index === 5 && !this.vacancyId) {
+      return 'Save the Draft before configuring its matching policy.';
+    }
+
+    return '';
+  }
+
+  private markStageTouched(index: number): void {
+    const controlsByStage = [
+      ['companyId', 'title', 'description'],
+      ['location', 'workMode', 'employmentType'],
+      ['minExperienceMonths', 'maxExperienceMonths', 'requiredEducation'],
+      ['salaryMin', 'salaryMax', 'closingDateUtc']
+    ];
+
+    if (index === 4) {
+      this.requiredSkills.markAllAsTouched();
+      return;
+    }
+
+    for (const name of controlsByStage[index] ?? []) {
+      this.form.get(name)?.markAsTouched();
+    }
+  }
+
+  private updateAccessibleStages(): void {
+    let highest = 0;
+    for (let index = 0; index < 5; index += 1) {
+      if (this.validateStage(index)) break;
+      highest = index + 1;
+    }
+    if (highest >= 5 && this.vacancyId) highest = 6;
+    this.highestAccessibleStage = Math.min(highest, this.stages.length - 1);
   }
 
   publishVacancy(): void {
@@ -319,7 +448,7 @@ export class EmployerVacancyEditorComponent implements OnInit {
     if (status === 409) {
       const conflictMessage =
         serverMessage ||
-        'Publishing is currently blocked. The latest server state has been reloaded.';
+        'Publishing is currently blocked. The latest vacancy status has been reloaded.';
 
       this.reloadAfterPublishConflict(
         conflictMessage
@@ -614,7 +743,7 @@ export class EmployerVacancyEditorComponent implements OnInit {
     if (status === 409) {
       this.errorMessage =
         serverMessage ||
-        'The vacancy state changed. Reload the latest server state before continuing.';
+        'The vacancy changed elsewhere. Reload the latest status before continuing.';
 
       if (this.vacancyId) {
         this.reloadAfterConflict(this.vacancyId);
@@ -1660,6 +1789,12 @@ export class EmployerVacancyEditorComponent implements OnInit {
     if (this.requiredSkills.length === 0) {
       this.requiredSkills.push(this.createSkillGroup());
     }
+
+    this.updateAccessibleStages();
+  }
+
+  selectNumber(event: Event): number {
+    return Number((event.target as HTMLSelectElement).value);
   }
 
   private toDateTimeLocalValue(

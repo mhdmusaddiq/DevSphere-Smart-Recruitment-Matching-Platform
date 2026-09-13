@@ -37,9 +37,9 @@
 
   @if (activeTab() === 'audit') {
     <div class="scope-note">
-      <strong>Current backend scope:</strong>
-      latest audit events only. The API supports take (1–200),
-      not server search, filters, paging or export.
+      <strong>Audit view:</strong>
+      choose how many recent events to load, then search within
+      that list.
     </div>
 
     <div class="audit-controls">
@@ -106,8 +106,8 @@
         <header>
           <h2>Recent audit history</h2>
           <p>
-            Action, target family and server-recorded detail.
-            Actor display names are not present in the current DTO.
+            Action, target family and recorded detail.
+            Actor display names are unavailable for some historical entries.
           </p>
         </header>
 
@@ -179,8 +179,8 @@
   } @else {
     <div class="scope-note">
       <strong>Read-only system settings:</strong>
-      the current Admin API exposes GET only. Sensitive setting
-      values remain redacted and are never inferred or copied.
+      sensitive values stay protected and cannot be revealed or
+      copied from this page.
     </div>
 
     <div class="settings-actions">
@@ -224,8 +224,8 @@
         <header>
           <h2>System settings</h2>
           <p>
-            Read-only operational values. No edit, secret reveal,
-            copy-secret or hard-coded fallback control exists.
+            Read-only operational values. Sensitive configuration
+            remains protected.
           </p>
         </header>
 
@@ -269,8 +269,7 @@
           <div class="empty-state">
             <strong>No system settings returned</strong>
             <span>
-              AptLens will not invent defaults or imply a current
-              setting value that the server did not provide.
+              No settings are available for this environment.
             </span>
           </div>
         }
@@ -303,7 +302,7 @@
             aria-label="Close audit detail"
             (click)="closeDetail()"
           >
-            ×
+            <apt-app-icon name="close" [size]="18" />
           </button>
         </header>
 
@@ -337,8 +336,7 @@
         </dl>
 
         <p class="detail-boundary">
-          This dialog uses the selected AuditEventDto only.
-          There is no separate audit-detail endpoint.
+          No additional detail is available for this audit entry.
         </p>
       </section>
     </div>

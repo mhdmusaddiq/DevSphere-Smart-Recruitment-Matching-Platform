@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, map, switchMap, tap } from 'rxjs';
+import { Observable, finalize, map, switchMap, tap } from 'rxjs';
 
 import { API_BASE_URL, apiUrl } from '../config/api-base-url';
 import {
@@ -33,11 +33,11 @@ export class AuthService {
     return this.http
       .post<unknown>(apiUrl(this.baseUrl, '/auth/logout'), {})
       .pipe(
-        tap(() => {
+        map(() => undefined),
+        finalize(() => {
           this.session.clear();
           void this.router.navigate(['/login']);
-        }),
-        map(() => undefined)
+        })
       );
   }
 }

@@ -304,6 +304,8 @@ public class VacancyService : IVacancyService
                 "Closed vacancies cannot be published.");
         }
 
+        EnsurePublishFactsAreComplete(vacancy);
+
         if (vacancy.ClosingDateUtc.HasValue &&
             vacancy.ClosingDateUtc.Value <= DateTime.UtcNow)
         {
@@ -330,6 +332,42 @@ public class VacancyService : IVacancyService
         return MapToDto(
             vacancy,
             skills);
+    }
+
+    private static void EnsurePublishFactsAreComplete(Vacancy vacancy)
+    {
+        var missingFacts = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(vacancy.Description))
+        {
+            missingFacts.Add("description");
+        }
+
+        if (string.IsNullOrWhiteSpace(vacancy.Location))
+        {
+            missingFacts.Add("location");
+        }
+
+        if (string.IsNullOrWhiteSpace(vacancy.WorkMode))
+        {
+            missingFacts.Add("work mode");
+        }
+
+        if (string.IsNullOrWhiteSpace(vacancy.EmploymentType))
+        {
+            missingFacts.Add("employment type");
+        }
+
+        if (!vacancy.ClosingDateUtc.HasValue)
+        {
+            missingFacts.Add("closing date");
+        }
+
+        if (missingFacts.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Complete these vacancy facts before publishing: {string.Join(", ", missingFacts)}.");
+        }
     }
 
     private async Task<Guid> EnsureCanPublishAsync(

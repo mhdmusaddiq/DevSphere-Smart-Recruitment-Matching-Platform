@@ -67,12 +67,10 @@
         <h2>
           {{
             applicant.candidateDisplayName ||
-              applicant.candidateId
+              'Candidate'
           }}
         </h2>
-        <p>
-          Application {{ applicant.applicationId }}
-        </p>
+        <p>Submitted application</p>
       </div>
 
       <div class="hero-actions">
@@ -106,7 +104,7 @@
           <label class="status-action">
             <span>Update status</span>
             <select
-              #statusSelect
+              [(ngModel)]="selectedStatus"
               [disabled]="busy"
             >
               <option value="">Choose next status</option>
@@ -126,9 +124,9 @@
             type="button"
             class="primary-button"
             [disabled]="
-              busy || !statusSelect.value
+              busy || !selectedStatus
             "
-            (click)="updateStatus(statusSelect.value)"
+            (click)="updateStatus(selectedStatus)"
           >
             {{ busy ? 'Updating...' : 'Apply status' }}
           </button>
@@ -336,10 +334,7 @@
           <h2>Application-time resume</h2>
 
           @if (applicant.resumeVersionId) {
-            <p>
-              Frozen ResumeVersion:
-              {{ applicant.resumeVersionId }}
-            </p>
+            <p>This submitted CV version is locked to the application record.</p>
 
             <button
               type="button"

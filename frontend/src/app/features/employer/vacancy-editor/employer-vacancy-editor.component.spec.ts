@@ -224,6 +224,32 @@ describe('EmployerVacancyEditorComponent', () => {
       );
   });
 
+  it('blocks forward progress until the current step is complete', () => {
+    component.nextStage();
+
+    expect(component.activeStage).toBe(0);
+    expect(component.highestAccessibleStage).toBe(0);
+    expect(component.stageErrorMessage).toContain('Select the company');
+
+    component.form.patchValue({
+      companyId: 'company-1',
+      title: 'Software Engineer',
+      description: 'Build reliable product features.'
+    });
+    component.nextStage();
+
+    expect(component.activeStage).toBe(1);
+    expect(component.highestAccessibleStage).toBe(1);
+    expect(component.stageErrorMessage).toBe('');
+  });
+
+  it('does not expose publish when required facts are incomplete', () => {
+    component.loadedVacancy = makeVacancy({ description: '' });
+
+    expect(component.canPublish).toBeFalse();
+    expect(component.publishReadinessIssues).toContain('Add a role description.');
+  });
+
   it('saves the current matching policy aggregate', () => {
     component.loadedVacancy = makeVacancy();
     component.policy = makePolicy();

@@ -1,13 +1,15 @@
 import { Component, computed, input } from '@angular/core';
 
 export type AppIconName =
-  | 'briefcase' | 'calendar' | 'check' | 'chevron' | 'clock'
+  | 'arrow-left' | 'arrow-right' | 'briefcase' | 'calendar' | 'check' | 'chevron' | 'clock'
   | 'close' | 'company' | 'dashboard' | 'document' | 'download'
   | 'edit' | 'error' | 'eye' | 'filter' | 'info' | 'location'
-  | 'lock' | 'menu' | 'notification' | 'search' | 'upload'
+  | 'lock' | 'logout' | 'menu' | 'notification' | 'search' | 'upload'
   | 'user' | 'warning';
 
 const ICON_PATHS: Record<AppIconName, string> = {
+  'arrow-left': 'M20 12H4m6-6-6 6 6 6',
+  'arrow-right': 'M4 12h16m-6-6 6 6-6 6',
   briefcase: 'M9 7V5h6v2m-9 0h12a2 2 0 0 1 2 2v9H4V9a2 2 0 0 1 2-2Zm-2 5h10',
   calendar: 'M5 7h14v13H5V7Zm3-3v6m8-6v6M5 11h14',
   check: 'm5 12 4 4L19 6',
@@ -25,6 +27,7 @@ const ICON_PATHS: Record<AppIconName, string> = {
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-9v5m0-9h.01',
   location: 'M12 21s6-6 6-12a6 6 0 1 0-12 0c0 6 6 12 6 12Zm0-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   lock: 'M6 10h12v11H6V10Zm3 0V7a3 3 0 0 1 6 0v3',
+  logout: 'M10 5H5v14h5m4-4 4-3-4-3m4 3H9',
   menu: 'M4 7h16M4 12h16M4 17h16',
   notification: 'M6 17h12l-2-3V9a4 4 0 0 0-8 0v5l-2 3Zm4 3h4',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 5 5',

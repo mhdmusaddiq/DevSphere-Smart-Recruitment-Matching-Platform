@@ -8,7 +8,7 @@ import { SessionService } from '../../../core/auth/session.service';
 import { CompanyMonogramComponent } from '../../../shared/avatar/company-monogram.component';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
-import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 import {
   ApplicationReadiness,
   CandidateDashboardSummary,
@@ -43,7 +43,7 @@ interface NextStep {
     CompanyMonogramComponent,
     ErrorStateComponent,
     LoadingStateComponent,
-    BrandWordmarkComponent
+    AppIconComponent
   ],
   templateUrl: './seeker-dashboard.component.html',
   styleUrl: './seeker-dashboard.component.css'
@@ -187,7 +187,7 @@ export class SeekerDashboardComponent implements OnInit {
       return {
         eyebrow: 'YOUR NEXT STEP',
         title: 'Add your current CV',
-        description: 'Upload or select the ResumeVersion you want the server to use for future applications.',
+        description: 'Upload or select the CV version you want to use for future applications.',
         action: 'Upload CV',
         route: '/seeker/cv'
       };

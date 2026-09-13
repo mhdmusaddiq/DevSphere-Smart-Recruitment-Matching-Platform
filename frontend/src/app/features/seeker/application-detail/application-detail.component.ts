@@ -8,6 +8,7 @@ import { Resume, ResumeVersion } from '../../../core/models/resume.model';
 import { CompanyMonogramComponent } from '../../../shared/avatar/company-monogram.component';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 import { SeekerWorkflowApiService } from '../data/seeker-workflow-api.service';
 import {
   ApplicationSnapshot,
@@ -29,7 +30,8 @@ type ContactAction = 'Accepted' | 'Declined' | 'Revoked';
     RouterLink,
     CompanyMonogramComponent,
     ErrorStateComponent,
-    LoadingStateComponent
+    LoadingStateComponent,
+    AppIconComponent
   ],
   templateUrl: './application-detail.component.html',
   styleUrl: './application-detail.component.css'
@@ -166,7 +168,7 @@ export class ApplicationDetailComponent implements OnInit {
           if (error.status === 409) {
             this.loadApplication();
             this.actionMessage =
-              'The application status changed before withdrawal. Current server state has been refreshed.';
+              'The application status changed before withdrawal. The latest status is now shown.';
             return;
           }
 
@@ -229,7 +231,7 @@ export class ApplicationDetailComponent implements OnInit {
         error: (error: HttpErrorResponse) => {
           if (error.status === 409) {
             this.contactError =
-              'This contact request changed before your decision. Current server state has been refreshed.';
+              'This contact request changed before your decision. The latest status is now shown.';
             this.reloadContact();
             return;
           }

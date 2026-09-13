@@ -18,6 +18,7 @@ import {
 import {
   AdminApiService
 } from '../data/admin-api.service';
+import { AppIconComponent } from '../../../shared/icons/app-icon.component';
 import {
   AdminAccountDashboard,
   AdminCompanyVerification,
@@ -30,7 +31,8 @@ import {
   imports: [
     DatePipe,
     RouterLink,
-    CompanyMonogramComponent
+    CompanyMonogramComponent,
+    AppIconComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',

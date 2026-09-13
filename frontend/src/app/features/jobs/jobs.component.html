@@ -15,21 +15,19 @@
         <a routerLink="/register">Create account</a>
       }
     </nav>
+    @if (isJobSeeker) {
+      <div class="side-account"><apt-account-menu [showIdentity]="false" /></div>
+    }
   </aside>
 
   <main class="jobs-main">
     <header class="topbar">
       <span>See the fit. Know the why.</span>
-      @if (isJobSeeker) { <a routerLink="/seeker/notifications">Notifications</a> } @else { <a routerLink="/login">Sign in</a> }
+      @if (isJobSeeker) { <apt-account-menu /> } @else { <a routerLink="/login">Sign in</a> }
     </header>
 
     <div class="page-content">
-      <section
-        class="hero"
-        [class.hero--best]="preset === 'best'"
-        [class.hero--onsite]="preset === 'onsite'"
-        [class.hero--hybrid]="preset === 'hybrid'"
-      >
+      <section class="hero">
         <h1>Find Your Next Opportunity</h1>
         <p>Search published roles and understand your current alignment.</p>
         <form class="hero-form" (ngSubmit)="search(true)">
@@ -52,7 +50,7 @@
       @if (activeFilters.length) {
         <div class="filter-chips" aria-label="Active filters">
           @for (filter of activeFilters; track filter.key) {
-            <button type="button" (click)="removeFilter(filter.key)">{{ filter.label }} ×</button>
+            <button type="button" (click)="removeFilter(filter.key)">{{ filter.label }} <apt-app-icon name="close" [size]="13" /></button>
           }
           <button type="button" class="clear-chip" (click)="clearFilters()">Clear all</button>
         </div>

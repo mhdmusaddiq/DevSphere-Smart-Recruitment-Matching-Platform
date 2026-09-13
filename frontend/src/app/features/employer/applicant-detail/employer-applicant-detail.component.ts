@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
@@ -15,7 +16,7 @@ import {
 @Component({
   selector: 'app-employer-applicant-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './employer-applicant-detail.component.html',
   styleUrl: './employer-applicant-detail.component.css'
 })
@@ -37,6 +38,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   supplementaryWarning = '';
+  selectedStatus = '';
 
   ngOnInit(): void {
     this.applicationId =
@@ -49,7 +51,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
 
     if (!this.applicationId) {
       this.loading = false;
-      this.errorMessage = 'Application identifier is missing.';
+      this.errorMessage = 'This application could not be opened.';
       return;
     }
 
@@ -104,6 +106,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
             request =>
               request.jobApplicationId === this.applicationId
           ) ?? null;
+        this.selectedStatus = '';
 
         this.vacancyId =
           this.vacancyId || result.applicant.vacancyId;
@@ -202,6 +205,7 @@ export class EmployerApplicantDetailComponent implements OnInit {
     ).subscribe({
       next: () => {
         this.busy = false;
+        this.selectedStatus = '';
         this.successMessage =
           `Application status updated to ${status}.`;
         this.load(false);

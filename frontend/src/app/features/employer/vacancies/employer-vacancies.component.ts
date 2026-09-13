@@ -159,7 +159,7 @@ export class EmployerVacanciesComponent implements OnInit {
     if (error.status === 409) {
       const conflictMessage =
         this.readServerMessage(error) ||
-        'The vacancy state changed. The latest server state has been reloaded.';
+        'The vacancy changed elsewhere. The latest status has been reloaded.';
 
       this.reloadVacanciesAfterConflict(conflictMessage);
       return;

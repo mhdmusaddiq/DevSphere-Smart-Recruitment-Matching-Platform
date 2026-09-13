@@ -7,6 +7,8 @@ import { Observable, catchError, forkJoin, map, of } from 'rxjs';
 
 import { SessionService } from '../../../core/auth/session.service';
 import { CompanyMonogramComponent } from '../../../shared/avatar/company-monogram.component';
+import { AccountMenuComponent } from '../../../shared/account/account-menu.component';
+import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
 import { SeekerApiService } from '../../seeker/data/seeker-api.service';
@@ -37,6 +39,8 @@ interface OptionalResult<T> {
     CommonModule,
     FormsModule,
     RouterLink,
+    AccountMenuComponent,
+    BrandWordmarkComponent,
     CompanyMonogramComponent,
     ErrorStateComponent,
     LoadingStateComponent
@@ -172,7 +176,7 @@ export class JobDetailComponent implements OnInit {
         }
 
         if (error.status === 409) {
-          this.applyError = message || 'Your application preflight changed. The server decision has been refreshed.';
+          this.applyError = message || 'Your readiness changed before submission. The latest decision is shown.';
           this.loadPersonalized();
           return;
         }

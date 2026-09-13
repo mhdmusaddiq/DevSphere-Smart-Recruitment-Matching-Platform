@@ -1,11 +1,8 @@
 body :is(.admin-shell, .employer-shell, .main-shell) { background: var(--al-canvas); }
 body :is(.auth-page, .register-page, .verify-page, .recovery-page) { background: #fff; }
 body .jobs-shell .brand apt-brand-wordmark { font-size: initial; }
-body .jobs-shell .hero { min-height: 190px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(120deg, #1d2246, #293563); }
+body .jobs-shell .hero { min-height: 190px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-landing-evidence-network-1200.webp') center/cover; }
 body .jobs-shell .hero h1 { color: #fff; }
-body .jobs-shell .hero--best { background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-landing-evidence-network-1200.webp') center/cover; }
-body .jobs-shell .hero--onsite { background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-jobs-onsite-growth-1200.webp') center/cover; }
-body .jobs-shell .hero--hybrid { background: linear-gradient(90deg, rgba(27,28,67,.94), rgba(27,28,67,.42)), url('/assets/aptlens/backgrounds/aptlens-jobs-hybrid-opportunity-1200.webp') center/cover; }
 body :is(.auth-visual, .register-visual, .recovery-visual) {
   position: relative;
   background: linear-gradient(180deg, rgba(16,19,46,.12), rgba(16,19,46,.76)), url('/assets/aptlens/backgrounds/aptlens-auth-career-focus-1200.webp') center/cover no-repeat !important;

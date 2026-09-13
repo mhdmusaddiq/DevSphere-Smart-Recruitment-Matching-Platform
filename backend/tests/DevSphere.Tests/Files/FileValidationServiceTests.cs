@@ -98,4 +98,28 @@ public class FileValidationServiceTests
 
         Assert.False(result.IsValid);
     }
+
+    [Fact]
+    public async Task ValidatePdfContentAsync_Should_Accept_Pdf_Signature_And_Reset_Stream()
+    {
+        var service = CreateService();
+        await using var stream = new MemoryStream("%PDF-1.7 test"u8.ToArray());
+
+        var result = await service.ValidatePdfContentAsync(stream, CancellationToken.None);
+
+        Assert.True(result.IsValid);
+        Assert.Equal(0, stream.Position);
+    }
+
+    [Fact]
+    public async Task ValidatePdfContentAsync_Should_Reject_Spoofed_Pdf()
+    {
+        var service = CreateService();
+        await using var stream = new MemoryStream("not a pdf"u8.ToArray());
+
+        var result = await service.ValidatePdfContentAsync(stream, CancellationToken.None);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("The uploaded file is not a valid PDF.", result.Error);
+    }
 }

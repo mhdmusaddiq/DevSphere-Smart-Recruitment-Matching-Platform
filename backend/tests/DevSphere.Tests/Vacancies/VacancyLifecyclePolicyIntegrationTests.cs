@@ -89,6 +89,8 @@ public class VacancyLifecyclePolicyIntegrationTests
             Title = "Backend Engineer",
             Description = "Build APIs",
             Location = "Colombo",
+            WorkMode = "Hybrid",
+            EmploymentType = "Full-time",
             MinExperienceMonths = 12,
             MaxExperienceMonths = 36,
             RequiredEducation = "Degree",
@@ -149,6 +151,26 @@ public class VacancyLifecyclePolicyIntegrationTests
             () => service.CloseAsync(
                 "employer-1",
                 created.Id));
+    }
+
+    [Fact]
+    public async Task IncompleteDraft_CanBeSaved_ButCannotBePublished()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+        var request = CreateRequest();
+        request.Description = string.Empty;
+        request.WorkMode = string.Empty;
+        request.ClosingDateUtc = null;
+
+        var created = await service.CreateAsync("employer-1", request);
+
+        Assert.Equal("Draft", created.LifecycleStatus);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.PublishAsync("employer-1", created.Id));
+        Assert.Contains("description", error.Message);
+        Assert.Contains("work mode", error.Message);
+        Assert.Contains("closing date", error.Message);
     }
 
     [Fact]

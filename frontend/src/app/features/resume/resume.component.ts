@@ -8,6 +8,7 @@ import { finalize } from 'rxjs';
 import { Resume, ResumeVersion } from '../../core/models/resume.model';
 import { ErrorStateComponent } from '../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../shared/states/loading-state.component';
+import { AppIconComponent } from '../../shared/icons/app-icon.component';
 import { CvApiService } from './cv-api.service';
 
 @Component({
@@ -18,7 +19,8 @@ import { CvApiService } from './cv-api.service';
     ReactiveFormsModule,
     RouterLink,
     LoadingStateComponent,
-    ErrorStateComponent
+    ErrorStateComponent,
+    AppIconComponent
   ],
   templateUrl: './resume.component.html',
   styleUrl: './resume.component.css'
