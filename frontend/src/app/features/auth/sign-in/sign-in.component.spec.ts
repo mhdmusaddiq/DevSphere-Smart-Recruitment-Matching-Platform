@@ -5,7 +5,6 @@ import { TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
   Router,
-  convertToParamMap,
   provideRouter
 } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -21,6 +20,7 @@ describe('SignInComponent', () => {
   let router: Router;
   let navigateSpy: jasmine.Spy;
   let navigateByUrlSpy: jasmine.Spy;
+  let returnUrl: string | null;
 
   const activeJobSeeker = {
     userId: 'user-1',
@@ -31,7 +31,15 @@ describe('SignInComponent', () => {
     emailVerified: true
   };
 
+  const activeAdmin = {
+    ...activeJobSeeker,
+    userId: 'admin-1',
+    email: 'admin@example.test',
+    role: 'Admin' as const
+  };
+
   beforeEach(async () => {
+    returnUrl = null;
     authService = jasmine.createSpyObj<AuthService>(
       'AuthService',
       ['login']
@@ -58,7 +66,9 @@ describe('SignInComponent', () => {
           provide: ActivatedRoute,
           useValue: {
             snapshot: {
-              queryParamMap: convertToParamMap({})
+              queryParamMap: {
+                get: (name: string) => name === 'returnUrl' ? returnUrl : null
+              }
             }
           }
         }
@@ -109,6 +119,45 @@ describe('SignInComponent', () => {
 
     expect(navigateByUrlSpy)
       .toHaveBeenCalledWith('/seeker/dashboard');
+  });
+
+  it('honors a return URL within the signed-in role', () => {
+    returnUrl = '/seeker/profile';
+    authService.login.and.returnValue(of(activeJobSeeker));
+    component.form.setValue({
+      email: 'user@example.test',
+      password: 'Password123!'
+    });
+
+    component.submit();
+
+    expect(navigateByUrlSpy).toHaveBeenCalledWith('/seeker/profile');
+  });
+
+  it('rejects a cross-role return URL and routes to the user role home', () => {
+    returnUrl = '/employer/dashboard';
+    authService.login.and.returnValue(of(activeJobSeeker));
+    component.form.setValue({
+      email: 'user@example.test',
+      password: 'Password123!'
+    });
+
+    component.submit();
+
+    expect(navigateByUrlSpy).toHaveBeenCalledWith('/seeker/dashboard');
+  });
+
+  it('routes an admin away from a stale employer return URL', () => {
+    returnUrl = '/employer/company';
+    authService.login.and.returnValue(of(activeAdmin));
+    component.form.setValue({
+      email: 'admin@example.test',
+      password: 'Password123!'
+    });
+
+    component.submit();
+
+    expect(navigateByUrlSpy).toHaveBeenCalledWith('/admin/dashboard');
   });
 
   it('shows a generic message for invalid credentials', () => {

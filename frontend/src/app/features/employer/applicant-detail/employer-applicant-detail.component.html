@@ -182,7 +182,7 @@
           @if (applicant.eligibilityReason) {
             <div class="notice">
               <strong>Eligibility reason</strong>
-              <p>{{ applicant.eligibilityReason }}</p>
+              <p>{{ reasonLabel(applicant.eligibilityReason) }}</p>
             </div>
           }
 
@@ -251,8 +251,8 @@
               ) {
                 <article class="family">
                   <div class="family-heading">
-                    <strong>{{ family.family }}</strong>
-                    <span>{{ family.importance }}</span>
+                    <strong>{{ detailLabel(family.family) }}</strong>
+                    <span>{{ detailLabel(family.importance) }}</span>
                   </div>
 
                   <p>
@@ -281,14 +281,14 @@
                               {{ criterion.label }}
                             </strong>
                             <p>
-                              {{ criterion.mode }}
+                              {{ detailLabel(criterion.mode) }}
                               ·
-                              {{ criterion.importance }}
+                              {{ detailLabel(criterion.importance) }}
                             </p>
                           </div>
 
                           <span>
-                            {{ criterion.state }}
+                            {{ criterionStateLabel(criterion.state) }}
                           </span>
                         </div>
                       }
@@ -387,7 +387,7 @@
             } @else {
               <p>
                 Candidate contact is not disclosed until
-                the server authorizes it.
+                the candidate approves sharing.
               </p>
             }
           }

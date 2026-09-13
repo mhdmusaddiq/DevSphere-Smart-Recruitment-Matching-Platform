@@ -96,6 +96,41 @@ public class LocalFileStorageServiceTests : IDisposable
         Assert.Equal(expected, actual);
     }
 
+    [Fact]
+    public async Task SaveAsync_When_Stored_Length_Differs_Removes_Partial_File()
+    {
+        var bytes = Encoding.UTF8.GetBytes("short content");
+        await using var content = new MemoryStream(bytes);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            _service.SaveAsync(
+                content,
+                "candidate.pdf",
+                "application/pdf",
+                bytes.Length + 1));
+
+        Assert.Empty(Directory.EnumerateFiles(_rootPath));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Should_Remove_Stored_Content()
+    {
+        var bytes = Encoding.UTF8.GetBytes("temporary private file");
+        await using var content = new MemoryStream(bytes);
+        var stored = await _service.SaveAsync(
+            content,
+            "candidate.pdf",
+            "application/pdf",
+            bytes.Length);
+
+        await _service.DeleteAsync(stored.StorageKey);
+
+        await Assert.ThrowsAsync<FileNotFoundException>(async () =>
+        {
+            await using var _ = await _service.OpenReadAsync(stored.StorageKey);
+        });
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_rootPath))

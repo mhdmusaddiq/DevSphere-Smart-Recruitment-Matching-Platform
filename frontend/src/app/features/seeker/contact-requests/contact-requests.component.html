@@ -59,7 +59,7 @@
               <p>This employer is asking permission to contact you directly about this application.</p>
               <small>Accepting is optional and does not affect your application compatibility or workflow status.</small>
             } @else if (request.status === 'Accepted') {
-              <p>Direct contact sharing is currently allowed while the server confirms the relationship remains valid.</p>
+              <p>Direct contact sharing remains available while this approved relationship is valid.</p>
               <small>You may revoke this permission at any time.</small>
             } @else {
               <p>This request is closed. Direct contact sharing is not currently granted by this request.</p>
@@ -106,7 +106,7 @@
 
           <div class="decision-note">
             <strong>What accepting means</strong>
-            <span>The server may disclose your account email to this employer while the accepted relationship and trust checks remain valid.</span>
+            <span>AptLens may share your account email with this employer while the accepted relationship and trust checks remain valid.</span>
           </div>
 
           <div class="decision-note">
@@ -116,7 +116,7 @@
         } @else if (selectedAction === 'Declined') {
           <p>Your application remains active. This decision only controls direct contact permission.</p>
         } @else {
-          <p>Direct contact sharing will stop after the server accepts the revocation.</p>
+          <p>Direct contact sharing will stop after this revocation is confirmed.</p>
         }
 
         <div class="dialog-actions">

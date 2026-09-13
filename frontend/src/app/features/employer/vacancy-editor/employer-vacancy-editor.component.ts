@@ -249,6 +249,21 @@ export class EmployerVacancyEditorComponent implements OnInit {
       issues.push('Set a future closing date.');
     }
     if (vacancy.requiredSkills.length === 0) issues.push('Add at least one required skill.');
+    const activeScoredFamilyKeys = new Set(
+      this.policyFamilies
+        .filter(family => family.isActive && family.isScored)
+        .map(family => family.clientKey)
+    );
+    const hasUsablePolicy = this.policyRequirements.some(
+      requirement =>
+        activeScoredFamilyKeys.has(requirement.familyClientKey) &&
+        requirement.isActive &&
+        requirement.isScored &&
+        requirement.mode !== RequirementMode.Informational
+    );
+    if (!hasUsablePolicy) {
+      issues.push('Add an active, scored matching rule.');
+    }
     return issues;
   }
 
@@ -398,6 +413,12 @@ export class EmployerVacancyEditorComponent implements OnInit {
       this.loadedVacancy?.lifecycleStatus !== 'Draft' ||
       this.publishing
     ) {
+      return;
+    }
+
+    const readinessIssues = this.publishReadinessIssues;
+    if (readinessIssues.length > 0) {
+      this.publishErrorMessage = readinessIssues[0];
       return;
     }
 
@@ -650,17 +671,10 @@ export class EmployerVacancyEditorComponent implements OnInit {
       }
     }
 
-    if (value.requiredSkills.length === 0) {
-      return 'At least one required skill is required.';
-    }
-
-    const skillNames = value.requiredSkills.map(
+    const enteredSkills = value.requiredSkills.filter(
       skill => skill.name.trim()
     );
-
-    if (skillNames.some(name => !name)) {
-      return 'Required skill name cannot be blank.';
-    }
+    const skillNames = enteredSkills.map(skill => skill.name.trim());
 
     const normalizedNames = skillNames.map(
       name => name.toLocaleLowerCase()
@@ -674,7 +688,7 @@ export class EmployerVacancyEditorComponent implements OnInit {
     }
 
     if (
-      value.requiredSkills.some(
+      enteredSkills.some(
         skill => skill.weight <= 0
       )
     ) {
@@ -704,12 +718,12 @@ export class EmployerVacancyEditorComponent implements OnInit {
       salaryMax: value.salaryMax,
       closingDateUtc:
         this.toUtcValue(value.closingDateUtc),
-      requiredSkills: value.requiredSkills.map(
-        skill => ({
+      requiredSkills: value.requiredSkills
+        .filter(skill => skill.name.trim())
+        .map(skill => ({
           name: skill.name.trim(),
           weight: skill.weight
-        })
-      )
+        }))
     };
   }
 

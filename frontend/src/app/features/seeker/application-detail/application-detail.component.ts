@@ -9,6 +9,7 @@ import { CompanyMonogramComponent } from '../../../shared/avatar/company-monogra
 import { ErrorStateComponent } from '../../../shared/states/error-state.component';
 import { LoadingStateComponent } from '../../../shared/states/loading-state.component';
 import { AppIconComponent } from '../../../shared/icons/app-icon.component';
+import { matchReasonLabel } from '../../../shared/matching/match-copy';
 import { SeekerWorkflowApiService } from '../data/seeker-workflow-api.service';
 import {
   ApplicationSnapshot,
@@ -39,6 +40,8 @@ type ContactAction = 'Accepted' | 'Declined' | 'Revoked';
 export class ApplicationDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(SeekerWorkflowApiService);
+
+  readonly reasonLabel = matchReasonLabel;
 
   applicationId = '';
   application: SeekerApplication | null = null;
@@ -223,7 +226,7 @@ export class ApplicationDetailComponent implements OnInit {
           this.contactRequest = updated;
           this.actionMessage =
             action === 'Accepted'
-              ? 'Direct contact sharing is now allowed while the server relationship remains valid.'
+              ? 'Direct contact sharing is now allowed while this approved relationship remains valid.'
               : action === 'Declined'
                 ? 'Contact request declined.'
                 : 'Direct contact sharing revoked.';

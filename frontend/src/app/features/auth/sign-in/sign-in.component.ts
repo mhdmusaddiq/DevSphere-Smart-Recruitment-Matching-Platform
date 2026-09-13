@@ -40,6 +40,12 @@ const ROLE_HOME: Record<PublicRole, string> = {
   Admin: '/admin/dashboard'
 };
 
+const ROLE_ROUTE_PREFIX: Record<PublicRole, string> = {
+  JobSeeker: '/seeker',
+  Employer: '/employer',
+  Admin: '/admin'
+};
+
 @Component({
   selector: 'app-sign-in',
   standalone: true,
@@ -141,7 +147,8 @@ export class SignInComponent {
 
           const destination =
             requestedReturnUrl &&
-            safeReturnUrl === requestedReturnUrl
+            safeReturnUrl === requestedReturnUrl &&
+            this.isReturnUrlAllowedForRole(user.role, safeReturnUrl)
               ? safeReturnUrl
               : ROLE_HOME[user.role];
 
@@ -154,6 +161,18 @@ export class SignInComponent {
           );
         }
       });
+  }
+
+  private isReturnUrlAllowedForRole(
+    role: PublicRole,
+    returnUrl: string
+  ): boolean {
+    const protectedPrefix = Object.values(ROLE_ROUTE_PREFIX)
+      .find(prefix =>
+        returnUrl === prefix || returnUrl.startsWith(`${prefix}/`)
+      );
+
+    return !protectedPrefix || protectedPrefix === ROLE_ROUTE_PREFIX[role];
   }
 
   private getErrorMessage(

@@ -12,6 +12,11 @@ import { LoadingStateComponent } from '../../shared/states/loading-state.compone
 import { BrandWordmarkComponent } from '../../shared/brand/brand-wordmark.component';
 import { AccountMenuComponent } from '../../shared/account/account-menu.component';
 import { AppIconComponent } from '../../shared/icons/app-icon.component';
+import {
+  assessmentStatusLabel,
+  eligibilityStatusLabel,
+  isCalculatedAssessment
+} from '../../shared/matching/match-copy';
 import { SeekerApiService } from '../seeker/data/seeker-api.service';
 import { VacancyFilters, VacancyView } from '../seeker/data/seeker.models';
 
@@ -203,8 +208,16 @@ export class JobsComponent implements OnInit {
   }
 
   isCalculated(vacancy: VacancyView): boolean {
-    return vacancy.assessmentStatus === 'Calculated'
+    return isCalculatedAssessment(vacancy.assessmentStatus)
       && vacancy.displayCompatibility !== null;
+  }
+
+  assessmentLabel(value: string | number | null | undefined): string {
+    return assessmentStatusLabel(value);
+  }
+
+  eligibilityLabel(value: string | number | null | undefined): string {
+    return eligibilityStatusLabel(value);
   }
 
   experienceLabel(months: number): string {

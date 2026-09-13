@@ -3,6 +3,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
+import {
+  assessmentStatusLabel,
+  displayLabel,
+  eligibilityStatusLabel
+} from '../../../shared/matching/match-copy';
 
 import { EmployerApiService } from '../data-access/employer-api.service';
 import {
@@ -69,6 +74,18 @@ export class EmployerVacancyManagementComponent implements OnInit {
       application =>
         application.status.toLowerCase() === status.toLowerCase()
     ).length;
+  }
+
+  assessmentLabel(value: string | number | null | undefined): string {
+    return assessmentStatusLabel(value);
+  }
+
+  eligibilityLabel(value: string | number | null | undefined): string {
+    return eligibilityStatusLabel(value);
+  }
+
+  detailLabel(value: string | number | null | undefined): string {
+    return displayLabel(value);
   }
 
   load(): void {
@@ -154,7 +171,7 @@ export class EmployerVacancyManagementComponent implements OnInit {
 
     if (error.status === 409) {
       this.errorMessage =
-        'The vacancy changed on the server. Current data has been reloaded.';
+        'The vacancy changed. Current information has been reloaded.';
 
       this.api.getVacancy(this.vacancyId).subscribe({
         next: vacancy => {

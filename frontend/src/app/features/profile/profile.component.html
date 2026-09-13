@@ -3,7 +3,7 @@
     <div>
       <p class="breadcrumb">Profile / Career evidence</p>
       <h1>Career Profile</h1>
-      <p>Structured evidence powers server-side matching and application readiness.</p>
+      <p>Your profile details support job matching and application readiness.</p>
     </div>
 
     <button
@@ -81,7 +81,7 @@
           <div class="section-heading">
             <div>
               <h2>Skills</h2>
-              <p>Add canonical skill names used by your real work. Server taxonomy remains authoritative.</p>
+              <p>Add the skills you use in your work so employers can understand your experience.</p>
             </div>
           </div>
 
@@ -212,7 +212,7 @@
           <div class="section-heading">
             <div>
               <h2>Licences / registrations</h2>
-              <p>Record regulatory evidence without changing server verification truth.</p>
+              <p>Record licences and registrations together with their current verification status.</p>
             </div>
             <button class="secondary" type="button" [disabled]="!profileExists" (click)="addLicence()">Add licence</button>
           </div>
@@ -374,7 +374,7 @@
 
       <aside class="readiness-card">
         <h2>Profile readiness</h2>
-        <p>Server checklist, not a completion percentage.</p>
+        <p>Items to complete before applying.</p>
 
         <div class="readiness-line" [class.ready]="profileReadiness?.isReady">
           <span aria-hidden="true"></span>

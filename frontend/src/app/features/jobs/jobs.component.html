@@ -58,7 +58,7 @@
 
       @if (noticeMessage) { <div class="notice">{{ noticeMessage }}</div> }
       @if (preset === 'best' && isJobSeeker) {
-        <div class="best-note"><strong>Best Match</strong><span>Only server-calculated assessments participate in personalized ranking.</span></div>
+        <div class="best-note"><strong>Best Match</strong><span>Roles with a completed fit assessment are included in personalized ranking.</span></div>
       }
 
       <div class="results-layout">
@@ -89,10 +89,10 @@
                   @if (isCalculated(vacancy)) {
                     <strong class="score">{{ vacancy.displayCompatibility }}</strong>
                     <span>Compatibility</span>
-                    <small>{{ vacancy.eligibility }}</small>
+                    <small>{{ eligibilityLabel(vacancy.eligibility) }}</small>
                   } @else if (preset === 'best' && vacancy.assessmentStatus) {
-                    <strong class="state-label">{{ vacancy.assessmentStatus }}</strong>
-                    <small>{{ vacancy.eligibility || 'Assessment state' }}</small>
+                    <strong class="state-label">{{ assessmentLabel(vacancy.assessmentStatus) }}</strong>
+                    <small>{{ eligibilityLabel(vacancy.eligibility) }}</small>
                   }
                 </div>
 

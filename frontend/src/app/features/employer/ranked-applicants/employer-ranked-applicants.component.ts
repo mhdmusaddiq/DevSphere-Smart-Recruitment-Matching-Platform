@@ -6,6 +6,11 @@ import { forkJoin } from 'rxjs';
 
 import { EmployerApiService } from '../data-access/employer-api.service';
 import {
+  assessmentStatusLabel,
+  eligibilityStatusLabel,
+  isCalculatedAssessment
+} from '../../../shared/matching/match-copy';
+import {
   EmployerRankedApplicant,
   EmployerVacancy
 } from '../data-access/employer.models';
@@ -44,35 +49,20 @@ export class EmployerRankedApplicantsComponent implements OnInit {
   assessmentLabel(
     value: string | number
   ): string {
-    const labels: Record<string, string> = {
-      '1': 'Calculated',
-      '2': 'Provisional',
-      '3': 'NotCalculated',
-      '4': 'CalculationFailure'
-    };
-
-    return labels[String(value)] ?? String(value);
+    return assessmentStatusLabel(value);
   }
 
   eligibilityLabel(
     value: string | number
   ): string {
-    const labels: Record<string, string> = {
-      '1': 'MeetsBaseline',
-      '2': 'PendingVerification',
-      '3': 'IncompleteAssessment',
-      '4': 'DoesNotMeetBaseline'
-    };
-
-    return labels[String(value)] ?? String(value);
+    return eligibilityStatusLabel(value);
   }
 
   hasCalculatedScore(
     applicant: EmployerRankedApplicant
   ): boolean {
     return (
-      this.assessmentLabel(applicant.assessmentStatus) ===
-        'Calculated' &&
+      isCalculatedAssessment(applicant.assessmentStatus) &&
       applicant.matchScore !== null
     );
   }

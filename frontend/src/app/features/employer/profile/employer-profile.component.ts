@@ -106,7 +106,7 @@ export class EmployerProfileComponent implements OnInit {
     fallback: string
   ): string {
     if (error.status === 0) {
-      return 'Unable to reach the server. Please try again.';
+      return 'Unable to reach AptLens. Please try again.';
     }
 
     if (error.status === 401) {

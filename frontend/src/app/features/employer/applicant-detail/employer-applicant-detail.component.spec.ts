@@ -135,9 +135,9 @@ describe('EmployerApplicantDetailComponent', () => {
 
   it('maps numeric assessment enums and preserves server score', () => {
     expect(component.assessmentLabel(1))
-      .toBe('Calculated');
+      .toBe('Assessed');
     expect(component.eligibilityLabel(1))
-      .toBe('MeetsBaseline');
+      .toBe('Meets requirements');
     expect(component.applicant?.displayCompatibility)
       .toBe(91.3);
     expect(component.hasCalculatedScore())

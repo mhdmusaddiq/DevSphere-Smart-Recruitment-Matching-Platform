@@ -7,6 +7,14 @@ import { catchError, forkJoin, of } from 'rxjs';
 
 import { EmployerApiService } from '../data-access/employer-api.service';
 import {
+  assessmentStatusLabel,
+  criterionStatusLabel,
+  displayLabel,
+  eligibilityStatusLabel,
+  isCalculatedAssessment,
+  matchReasonLabel
+} from '../../../shared/matching/match-copy';
+import {
   EmployerApplicationDetail,
   EmployerApplicationSnapshot,
   EmployerApplicationStatusHistory,
@@ -130,37 +138,33 @@ export class EmployerApplicantDetailComponent implements OnInit {
   assessmentLabel(
     value: string | number
   ): string {
-    const labels: Record<string, string> = {
-      '1': 'Calculated',
-      '2': 'Provisional',
-      '3': 'NotCalculated',
-      '4': 'CalculationFailure'
-    };
-
-    return labels[String(value)] ?? String(value);
+    return assessmentStatusLabel(value);
   }
 
   eligibilityLabel(
     value: string | number
   ): string {
-    const labels: Record<string, string> = {
-      '1': 'MeetsBaseline',
-      '2': 'PendingVerification',
-      '3': 'IncompleteAssessment',
-      '4': 'DoesNotMeetBaseline'
-    };
-
-    return labels[String(value)] ?? String(value);
+    return eligibilityStatusLabel(value);
   }
 
   hasCalculatedScore(): boolean {
     return (
       this.applicant !== null &&
-      this.assessmentLabel(
-        this.applicant.assessmentStatus
-      ) === 'Calculated' &&
+      isCalculatedAssessment(this.applicant.assessmentStatus) &&
       this.applicant.displayCompatibility !== null
     );
+  }
+
+  reasonLabel(value: string | null | undefined): string {
+    return matchReasonLabel(value);
+  }
+
+  criterionStateLabel(value: string | number): string {
+    return criterionStatusLabel(value);
+  }
+
+  detailLabel(value: string | number | null | undefined): string {
+    return displayLabel(value);
   }
 
   get availableStatusTransitions(): string[] {

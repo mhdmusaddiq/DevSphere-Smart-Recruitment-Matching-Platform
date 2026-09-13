@@ -64,58 +64,77 @@ public class ResumeService : IResumeService
             fileSizeBytes,
             cancellationToken);
 
-        var resume = await _repository.GetByCandidateProfileIdAsync(
-            profile.Id,
-            cancellationToken);
-
-        var isNew = resume == null;
-
-        resume ??= new Resume
+        try
         {
-            Id = Guid.NewGuid(),
-            CandidateProfileId = profile.Id,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        foreach (var existingVersion in resume.Versions)
-        {
-            existingVersion.IsCurrent = false;
-        }
-
-        var nextVersionNumber = resume.Versions.Count == 0
-            ? 1
-            : resume.Versions.Max(x => x.VersionNumber) + 1;
-
-        var version = new ResumeVersion
-        {
-            Id = Guid.NewGuid(),
-            ResumeId = resume.Id,
-            VersionNumber = nextVersionNumber,
-            OriginalFileName = stored.OriginalFileName,
-            StorageKey = stored.StorageKey,
-            ContentType = stored.ContentType,
-            FileSizeBytes = stored.FileSizeBytes,
-            IsCurrent = true,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        resume.Versions.Add(version);
-        resume.CurrentVersionId = version.Id;
-        resume.UpdatedAt = DateTime.UtcNow;
-
-        if (isNew)
-        {
-            await _repository.AddAsync(
-                resume,
+            var resume = await _repository.GetByCandidateProfileIdAsync(
+                profile.Id,
                 cancellationToken);
-        }
-        else
-        {
-            await _repository.SaveChangesAsync(
-                cancellationToken);
-        }
 
-        return Map(resume);
+            var isNew = resume == null;
+
+            resume ??= new Resume
+            {
+                Id = Guid.NewGuid(),
+                CandidateProfileId = profile.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            foreach (var existingVersion in resume.Versions)
+            {
+                existingVersion.IsCurrent = false;
+            }
+
+            var nextVersionNumber = resume.Versions.Count == 0
+                ? 1
+                : resume.Versions.Max(x => x.VersionNumber) + 1;
+
+            var version = new ResumeVersion
+            {
+                Id = Guid.NewGuid(),
+                ResumeId = resume.Id,
+                VersionNumber = nextVersionNumber,
+                OriginalFileName = stored.OriginalFileName,
+                StorageKey = stored.StorageKey,
+                ContentType = stored.ContentType,
+                FileSizeBytes = stored.FileSizeBytes,
+                IsCurrent = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            resume.Versions.Add(version);
+            resume.CurrentVersionId = version.Id;
+            resume.UpdatedAt = DateTime.UtcNow;
+
+            if (isNew)
+            {
+                await _repository.AddAsync(
+                    resume,
+                    cancellationToken);
+            }
+            else
+            {
+                await _repository.AddVersionAndSaveAsync(
+                    version,
+                    cancellationToken);
+            }
+
+            return Map(resume);
+        }
+        catch
+        {
+            try
+            {
+                await _storage.DeleteAsync(
+                    stored.StorageKey,
+                    CancellationToken.None);
+            }
+            catch
+            {
+                // Preserve the persistence failure; storage cleanup is best effort.
+            }
+
+            throw;
+        }
     }
 
 

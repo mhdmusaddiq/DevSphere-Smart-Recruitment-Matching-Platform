@@ -145,7 +145,7 @@ export class ContactRequestsComponent implements OnInit {
 
           this.successMessage =
             action === 'Accepted'
-              ? 'Direct contact sharing is now allowed while the server relationship remains valid.'
+              ? 'Direct contact sharing is now allowed while this approved relationship remains valid.'
               : action === 'Declined'
                 ? 'Contact request declined.'
                 : 'Direct contact sharing revoked.';

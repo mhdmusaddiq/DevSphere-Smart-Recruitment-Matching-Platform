@@ -102,7 +102,7 @@
                 @if (snapshot.eligibilityReason) {
                   <div>
                     <dt>Eligibility reason</dt>
-                    <dd>{{ snapshot.eligibilityReason }}</dd>
+                    <dd>{{ reasonLabel(snapshot.eligibilityReason) }}</dd>
                   </div>
                 }
                 <div>
@@ -181,8 +181,7 @@
             <div>
               <h2>Status history</h2>
               <p>
-                Recorded workflow events from the server. No invented completion
-                percentage.
+                Your application activity and recorded hiring stages.
               </p>
             </div>
           </div>
@@ -271,8 +270,8 @@
               </div>
             } @else if (contactRequest.status === "Accepted") {
               <p class="consent-copy">
-                Direct contact sharing is currently allowed while the server
-                confirms the relationship remains valid.
+                Direct contact sharing remains available while this approved
+                relationship is valid.
               </p>
               <button
                 class="danger"
@@ -295,8 +294,7 @@
             <div>
               <h2>Recruitment workflow</h2>
               <p>
-                Candidate-safe interview, offer and talent-pool facts returned
-                by the server.
+                Interview, offer and talent-pool updates available to you.
               </p>
             </div>
           </div>
@@ -424,7 +422,7 @@
             Withdraw application
           </button>
           <small
-            >Withdrawal is available only while the current server status
+            >Withdrawal is available only while the current application status
             permits it.</small
           >
         }
@@ -491,14 +489,13 @@
 
         <p>
           @if (pendingContactAction === "Accepted") {
-            The server may disclose your account email to this employer while
+            AptLens may share your account email with this employer while
             the accepted relationship and trust checks remain valid.
           } @else if (pendingContactAction === "Declined") {
             Your application remains active. Direct contact permission is not
             granted.
           } @else {
-            Direct contact sharing will stop after the server accepts this
-            revocation.
+            Direct contact sharing will stop after this revocation is confirmed.
           }
         </p>
 

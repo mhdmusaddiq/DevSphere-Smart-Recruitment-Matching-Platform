@@ -73,8 +73,7 @@
         <header>
           <h2>Submitted facts</h2>
           <p>
-            Only server-returned review facts are shown. The raw
-            evidence storage key is intentionally hidden.
+            Review the submitted company details and supporting evidence.
           </p>
         </header>
 
@@ -119,8 +118,7 @@
         <header>
           <h2>Protected evidence</h2>
           <p>
-            Evidence is downloaded only through the admin
-            task-scoped protected API route.
+            Evidence is available only to authorized administrators.
           </p>
         </header>
 
@@ -149,18 +147,15 @@
       <header>
         <h2>Review decision</h2>
         <p>
-          Review actions are available only while the server
-          reports PendingReview.
+          Review actions are available while this submission is pending.
         </p>
       </header>
 
       @if (item.status === 'PendingReview') {
         <div class="governance-boundary">
-          <strong>Current backend boundary</strong>
+          <strong>Available decision</strong>
           <span>
-            Other review outcomes are unavailable in this release
-            because the required owner-visible reason contract is
-            not available.
+            Verification is the available decision for this submission.
           </span>
         </div>
 
@@ -169,8 +164,7 @@
             <div>
               <strong>Verify this company evidence?</strong>
               <span>
-                This records the server-backed Verified decision
-                and updates related company membership state.
+                This verifies the company and updates its membership status.
               </span>
             </div>
 

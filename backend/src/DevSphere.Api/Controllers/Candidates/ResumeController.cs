@@ -85,7 +85,10 @@ public class ResumeController : ControllerBase
                 : BadRequest(response);
         }
 
-        await using var stream = file.OpenReadStream();
+        await using var source = file.OpenReadStream();
+        await using var stream = await _validation.BufferAsync(
+            source,
+            cancellationToken);
 
         var contentValidation = await _validation.ValidatePdfContentAsync(
             stream,
@@ -98,6 +101,8 @@ public class ResumeController : ControllerBase
                 message = contentValidation.Error
             });
         }
+
+        stream.Position = 0;
 
         var resume = await _service.AddUploadedVersionAsync(
             userId,

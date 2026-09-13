@@ -196,9 +196,8 @@ public class VacancyService : IVacancyService
             vacancy,
             skills);
 
-        return MapToDto(
-            vacancy,
-            skills);
+        return (await MapManyAsync(new[] { vacancy }))
+            .Single();
     }
 
     public async Task<VacancyDto> UpdateAsync(
@@ -274,9 +273,8 @@ public class VacancyService : IVacancyService
             vacancy,
             skills);
 
-        return MapToDto(
-            vacancy,
-            skills);
+        return (await MapManyAsync(new[] { vacancy }))
+            .Single();
     }
 
     public async Task<VacancyDto> PublishAsync(
@@ -306,6 +304,15 @@ public class VacancyService : IVacancyService
 
         EnsurePublishFactsAreComplete(vacancy);
 
+        var requiredSkillCount = await _context!.RequiredSkills
+            .CountAsync(x => x.VacancyId == vacancy.Id);
+
+        if (requiredSkillCount == 0)
+        {
+            throw new InvalidOperationException(
+                "Add at least one required skill before publishing.");
+        }
+
         if (vacancy.ClosingDateUtc.HasValue &&
             vacancy.ClosingDateUtc.Value <= DateTime.UtcNow)
         {
@@ -326,17 +333,18 @@ public class VacancyService : IVacancyService
 
         await _repository.UpdateAsync(vacancy);
 
-        var skills = await _repository
-            .GetRequiredSkillsAsync(vacancy.Id);
-
-        return MapToDto(
-            vacancy,
-            skills);
+        return (await MapManyAsync(new[] { vacancy }))
+            .Single();
     }
 
     private static void EnsurePublishFactsAreComplete(Vacancy vacancy)
     {
         var missingFacts = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(vacancy.Title))
+        {
+            missingFacts.Add("title");
+        }
 
         if (string.IsNullOrWhiteSpace(vacancy.Description))
         {
@@ -433,17 +441,28 @@ public class VacancyService : IVacancyService
         var currentPolicy = await _policyService
             .GetCurrentRevisionAsync(employerId, vacancy.Id);
 
-        var hasPolicyInputs =
+        var activeScoredFamilyIds = await _context.FamilyPolicies
+            .AsNoTracking()
+            .Where(x =>
+                x.MatchingPolicyRevisionId == currentPolicy.Id &&
+                x.IsActive &&
+                x.IsScored)
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        var hasPolicyInputs = activeScoredFamilyIds.Count > 0 &&
             await _context.VacancyRequirements.AnyAsync(x =>
                 x.MatchingPolicyRevisionId == currentPolicy.Id &&
-                x.IsActive) ||
-            await _context.RequiredSkills.AnyAsync(x =>
-                x.VacancyId == vacancy.Id);
+                x.FamilyPolicyId.HasValue &&
+                activeScoredFamilyIds.Contains(x.FamilyPolicyId.Value) &&
+                x.IsActive &&
+                x.IsScored &&
+                x.Mode != RequirementMode.Informational);
 
         if (!hasPolicyInputs)
         {
             throw new InvalidOperationException(
-                "A valid vacancy matching policy is required to publish.");
+                "Add an active, scored matching-policy family with at least one active, scored requirement before publishing.");
         }
 
         return publishCompanyId;
@@ -482,12 +501,8 @@ public class VacancyService : IVacancyService
 
         await _repository.UpdateAsync(vacancy);
 
-        var skills = await _repository
-            .GetRequiredSkillsAsync(vacancy.Id);
-
-        return MapToDto(
-            vacancy,
-            skills);
+        return (await MapManyAsync(new[] { vacancy }))
+            .Single();
     }
 
     private async Task<Vacancy> GetOwnedVacancyAsync(
@@ -729,12 +744,7 @@ public class VacancyService : IVacancyService
                 "Closing date must be in the future.");
         }
 
-        if (request.RequiredSkills == null ||
-            request.RequiredSkills.Count == 0)
-        {
-            throw new ArgumentException(
-                "At least one required skill is required.");
-        }
+        request.RequiredSkills ??= new List<VacancyRequiredSkillDto>();
 
         if (request.RequiredSkills.Any(
             x => string.IsNullOrWhiteSpace(x.Name)))
