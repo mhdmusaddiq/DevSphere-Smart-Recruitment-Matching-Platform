@@ -33,16 +33,6 @@
     >
       System settings
     </button>
-
-    <button
-      type="button"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'trust'"
-      [class.active]="activeTab() === 'trust'"
-      (click)="setTab('trust')"
-    >
-      Trust &amp; safety
-    </button>
   </div>
 
   @if (activeTab() === 'audit') {
@@ -186,7 +176,7 @@
         }
       </section>
     }
-  } @else if (activeTab() === 'settings') {
+  } @else {
     <div class="scope-note">
       <strong>Read-only system settings:</strong>
       the current Admin API exposes GET only. Sensitive setting
@@ -286,33 +276,6 @@
         }
       </section>
     }
-  } @else {
-    <section class="boundary-card">
-      <p class="eyebrow">Backend boundary</p>
-      <h2>Trust &amp; safety moderation is not executable here</h2>
-      <p>
-        Canonical product scope references TrustSafetyReport
-        moderation, but the inspected backend exposes no
-        executable Admin route, service or entity workflow for
-        it on this release.
-      </p>
-
-      <div>
-        <strong>No fake moderation controls</strong>
-        <span>
-          No approve, reject, resolve, assign or status mutation
-          is rendered without a server contract.
-        </span>
-      </div>
-
-      <div>
-        <strong>Integration note</strong>
-        <span>
-          Add this surface only after an integration-owned
-          persistence model and Admin API contract are approved.
-        </span>
-      </div>
-    </section>
   }
 
   @if (selectedEvent(); as selected) {

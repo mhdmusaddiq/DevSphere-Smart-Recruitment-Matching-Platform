@@ -158,10 +158,9 @@
         <div class="governance-boundary">
           <strong>Current backend boundary</strong>
           <span>
-            Needs more information and Reject require a safe
-            owner-visible reason in canonical UX, but the current
-            review request has no reason field. Those actions are
-            intentionally blocked.
+            Other review outcomes are unavailable in this release
+            because the required owner-visible reason contract is
+            not available.
           </span>
         </div>
 
@@ -206,24 +205,6 @@
               (click)="beginVerify()"
             >
               Verify company
-            </button>
-
-            <button
-              type="button"
-              class="blocked-button"
-              disabled
-              title="Blocked until backend supports an owner-visible reason"
-            >
-              Needs more information
-            </button>
-
-            <button
-              type="button"
-              class="blocked-button"
-              disabled
-              title="Blocked until backend supports a recorded reason and review path"
-            >
-              Reject
             </button>
           </div>
         }

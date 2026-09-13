@@ -22,8 +22,7 @@ import {
 
 type AdminOperationsTab =
   | 'audit'
-  | 'settings'
-  | 'trust';
+  | 'settings';
 
 @Component({
   selector: 'app-admin-audit-system',

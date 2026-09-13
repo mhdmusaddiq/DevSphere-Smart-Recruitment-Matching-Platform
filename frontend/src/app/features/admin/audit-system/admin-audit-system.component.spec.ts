@@ -83,6 +83,27 @@ describe('AdminAuditSystemComponent', () => {
     ).toBe(1);
   });
 
+  it('renders only the Audit events and System settings release tabs', () => {
+    const fixture =
+      TestBed.createComponent(
+        AdminAuditSystemComponent
+      );
+
+    fixture.detectChanges();
+
+    const tabElements =
+      fixture.nativeElement.querySelectorAll(
+        '[role="tab"]'
+      ) as NodeListOf<HTMLElement>;
+    const tabs = Array.from(tabElements)
+      .map(tab => tab.textContent?.trim());
+
+    expect(tabs).toEqual([
+      'Audit events',
+      'System settings'
+    ]);
+  });
+
   it('filters only the currently loaded audit window', () => {
     const fixture =
       TestBed.createComponent(

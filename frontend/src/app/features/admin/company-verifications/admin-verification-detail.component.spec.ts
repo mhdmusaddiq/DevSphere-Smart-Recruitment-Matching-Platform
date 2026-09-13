@@ -118,6 +118,24 @@ describe('AdminVerificationDetailComponent', () => {
     ).toBe('Verified');
   });
 
+  it('renders only the server-backed Verify company action while pending', () => {
+    const fixture =
+      TestBed.createComponent(
+        AdminVerificationDetailComponent
+      );
+
+    fixture.detectChanges();
+
+    const actionElements =
+      fixture.nativeElement.querySelectorAll(
+        '.decision-actions button'
+      ) as NodeListOf<HTMLButtonElement>;
+    const actions = Array.from(actionElements)
+      .map(button => button.textContent?.trim());
+
+    expect(actions).toEqual(['Verify company']);
+  });
+
   it('treats a 409 as stale server state', () => {
     api.reviewCompanyVerification.and.returnValue(
       throwError(
