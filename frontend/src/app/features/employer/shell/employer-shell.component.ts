@@ -17,6 +17,7 @@ import {
 import { filter } from 'rxjs';
 
 import { SessionService } from '../../../core/auth/session.service';
+import { BrandWordmarkComponent } from '../../../shared/brand/brand-wordmark.component';
 
 @Component({
   selector: 'app-employer-shell',
@@ -24,7 +25,8 @@ import { SessionService } from '../../../core/auth/session.service';
   imports: [
     RouterLink,
     RouterLinkActive,
-    RouterOutlet
+    RouterOutlet,
+    BrandWordmarkComponent
   ],
   templateUrl: './employer-shell.component.html',
   styleUrl: './employer-shell.component.css'
