@@ -3,7 +3,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  HostListener,
   OnInit,
+  ViewChild,
   computed,
   inject,
   signal
@@ -71,6 +74,14 @@ export class AdminUsersComponent
   readonly loading = signal(true);
   readonly pendingUserId =
     signal<string | null>(null);
+
+  readonly disableCandidate =
+    signal<AdminUser | null>(null);
+
+  @ViewChild('cancelDisableButton')
+  private cancelDisableButton?: ElementRef<HTMLButtonElement>;
+
+  private statusTrigger?: HTMLElement;
 
   readonly errorMessage =
     signal<string | null>(null);
@@ -175,7 +186,60 @@ export class AdminUsersComponent
     this.load();
   }
 
-  toggleStatus(user: AdminUser): void {
+  toggleStatus(
+    user: AdminUser,
+    trigger?: EventTarget | null
+  ): void {
+    if (this.pendingUserId()) {
+      return;
+    }
+
+    if (user.isActive) {
+      this.statusTrigger =
+        trigger instanceof HTMLElement
+          ? trigger
+          : undefined;
+      this.disableCandidate.set(user);
+
+      setTimeout(() => {
+        this.cancelDisableButton?.nativeElement.focus();
+      });
+
+      return;
+    }
+
+    this.updateStatus(user, true);
+  }
+
+  cancelDisable(): void {
+    if (this.pendingUserId()) {
+      return;
+    }
+
+    this.closeDisableDialog();
+  }
+
+  confirmDisable(): void {
+    const user = this.disableCandidate();
+
+    if (!user || this.pendingUserId()) {
+      return;
+    }
+
+    this.updateStatus(user, false);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeDisableOnEscape(): void {
+    if (this.disableCandidate()) {
+      this.cancelDisable();
+    }
+  }
+
+  private updateStatus(
+    user: AdminUser,
+    nextStatus: boolean
+  ): void {
     if (this.pendingUserId()) {
       return;
     }
@@ -183,8 +247,6 @@ export class AdminUsersComponent
     this.pendingUserId.set(user.userId);
     this.actionMessage.set(null);
     this.actionError.set(null);
-
-    const nextStatus = !user.isActive;
 
     this.api
       .setUserStatus(
@@ -199,6 +261,7 @@ export class AdminUsersComponent
       .subscribe({
         next: updated => {
           this.replaceUser(updated);
+          this.closeDisableDialog();
           this.actionMessage.set(
             `${updated.displayName || updated.email} is now ${
               updated.isActive ? 'active' : 'disabled'
@@ -206,11 +269,24 @@ export class AdminUsersComponent
           );
         },
         error: (error: HttpErrorResponse) => {
+          this.closeDisableDialog();
           this.actionError.set(
             this.statusErrorMessage(error)
           );
         }
       });
+  }
+
+  private closeDisableDialog(restoreFocus = true): void {
+    this.disableCandidate.set(null);
+
+    if (restoreFocus) {
+      const trigger = this.statusTrigger;
+
+      setTimeout(() => trigger?.focus());
+    }
+
+    this.statusTrigger = undefined;
   }
 
   load(): void {

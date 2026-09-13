@@ -91,7 +91,8 @@
               "buildTarget": "devsphere-web:build:production"
             },
             "development": {
-              "buildTarget": "devsphere-web:build:development"
+              "buildTarget": "devsphere-web:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

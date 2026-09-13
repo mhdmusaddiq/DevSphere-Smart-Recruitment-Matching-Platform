@@ -171,6 +171,110 @@
         </table>
       </div>
     </div>
+
+    <div class="vacancy-cards">
+      @for (vacancy of filteredVacancies; track vacancy.id) {
+        <article class="vacancy-card">
+          <header>
+            <div>
+              <span class="card-label">Vacancy</span>
+              <h2>{{ vacancy.title }}</h2>
+              <p class="vacancy-meta">
+                {{ vacancy.location || 'Location not specified' }}
+
+                @if (vacancy.requiredSkills.length > 0) {
+                  <span aria-hidden="true"> · </span>
+                  {{ vacancy.requiredSkills[0].name }}
+
+                  @if (vacancy.requiredSkills.length > 1) {
+                    <span>
+                      +{{ vacancy.requiredSkills.length - 1 }}
+                    </span>
+                  }
+                }
+              </p>
+            </div>
+
+            <span
+              class="status-badge"
+              [class.status-draft]="vacancy.lifecycleStatus === 'Draft'"
+              [class.status-published]="vacancy.lifecycleStatus === 'Published'"
+              [class.status-closed]="vacancy.lifecycleStatus === 'Closed'"
+            >
+              {{ vacancy.lifecycleStatus }}
+            </span>
+          </header>
+
+          <dl class="vacancy-card-details">
+            <div>
+              <dt>Work mode</dt>
+              <dd>{{ vacancy.workMode || '—' }}</dd>
+            </div>
+            <div>
+              <dt>Employment type</dt>
+              <dd>{{ vacancy.employmentType || '—' }}</dd>
+            </div>
+            <div>
+              <dt>Closing</dt>
+              <dd>{{ formatClosingDate(vacancy.closingDateUtc) }}</dd>
+            </div>
+          </dl>
+
+          <div class="card-actions">
+            @if (vacancy.lifecycleStatus === 'Draft') {
+              <a
+                class="secondary-button"
+                [routerLink]="[
+                  '/employer/vacancies',
+                  vacancy.id,
+                  'edit'
+                ]"
+              >
+                Edit
+              </a>
+              <button
+                type="button"
+                class="primary-small-button"
+                [disabled]="actionVacancyId !== null"
+                (click)="publishVacancy(vacancy)"
+              >
+                {{
+                  actionVacancyId === vacancy.id
+                    ? 'Publishing...'
+                    : 'Publish'
+                }}
+              </button>
+            } @else if (vacancy.lifecycleStatus === 'Published') {
+              <a
+                class="secondary-button"
+                [routerLink]="['/employer/vacancies', vacancy.id]"
+              >
+                Manage
+              </a>
+              <button
+                type="button"
+                class="danger-button"
+                [disabled]="actionVacancyId !== null"
+                (click)="closeVacancy(vacancy)"
+              >
+                {{
+                  actionVacancyId === vacancy.id
+                    ? 'Closing...'
+                    : 'Close'
+                }}
+              </button>
+            } @else {
+              <a
+                class="secondary-button"
+                [routerLink]="['/employer/vacancies', vacancy.id]"
+              >
+                View
+              </a>
+            }
+          </div>
+        </article>
+      }
+    </div>
   }
 
   <div class="lifecycle-note">

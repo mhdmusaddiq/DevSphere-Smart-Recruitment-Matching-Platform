@@ -264,6 +264,91 @@ tbody tr:last-child td {
   border: 0;
 }
 
+.vacancy-cards {
+  display: none;
+}
+
+.vacancy-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.vacancy-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.vacancy-card header > div {
+  min-width: 0;
+}
+
+.card-label,
+.vacancy-card-details dt {
+  color: #667085;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.vacancy-card h2 {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.vacancy-card .vacancy-meta {
+  overflow-wrap: anywhere;
+}
+
+.vacancy-card-details {
+  margin: 16px 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.vacancy-card-details div:last-child {
+  grid-column: 1 / -1;
+}
+
+.vacancy-card-details dt,
+.vacancy-card-details dd {
+  margin: 0;
+}
+
+.vacancy-card-details dd {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card-actions {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.card-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.card-actions a,
+.card-actions button {
+  width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
 @media (max-width: 820px) {
   .vacancies-page {
     padding: 20px 16px 32px;
@@ -275,5 +360,35 @@ tbody tr:last-child td {
 
   .primary-button {
     width: 100%;
+  }
+
+  .table-card {
+    display: none;
+  }
+
+  .vacancy-cards {
+    display: grid;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .filter-row {
+    display: grid;
+  }
+
+  .filter-button {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .vacancy-card-details,
+  .card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .vacancy-card-details div:last-child,
+  .card-actions > :only-child {
+    grid-column: auto;
   }
 }

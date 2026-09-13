@@ -148,7 +148,7 @@
                 class="status-button"
                 [class.status-button--enable]="!user.isActive"
                 [disabled]="pendingUserId() !== null"
-                (click)="toggleStatus(user)"
+                (click)="toggleStatus(user, $event.currentTarget)"
               >
                 @if (pendingUserId() === user.userId) {
                   Updating…
@@ -209,7 +209,7 @@
                 class="status-button status-button--wide"
                 [class.status-button--enable]="!user.isActive"
                 [disabled]="pendingUserId() !== null"
-                (click)="toggleStatus(user)"
+                (click)="toggleStatus(user, $event.currentTarget)"
               >
                 @if (pendingUserId() === user.userId) {
                   Updating…
@@ -279,3 +279,49 @@
     }
   }
 </section>
+
+@if (disableCandidate(); as user) {
+  <div class="dialog-backdrop" (click)="cancelDisable()">
+    <section
+      class="confirmation-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="disable-account-title"
+      aria-describedby="disable-account-description"
+      [attr.aria-busy]="pendingUserId() ? 'true' : null"
+      (click)="$event.stopPropagation()"
+    >
+      <p class="dialog-eyebrow">Access safeguard</p>
+      <h2 id="disable-account-title">Disable account?</h2>
+      <p id="disable-account-description">
+        This account will be unable to sign in until an administrator
+        enables it again.
+      </p>
+
+      <div class="dialog-account">
+        <strong>{{ user.displayName || user.email }}</strong>
+        <span>{{ user.email }}</span>
+      </div>
+
+      <div class="dialog-actions">
+        <button
+          #cancelDisableButton
+          type="button"
+          class="dialog-cancel"
+          [disabled]="pendingUserId() !== null"
+          (click)="cancelDisable()"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="dialog-confirm"
+          [disabled]="pendingUserId() !== null"
+          (click)="confirmDisable()"
+        >
+          {{ pendingUserId() ? 'Disabling…' : 'Confirm disable' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

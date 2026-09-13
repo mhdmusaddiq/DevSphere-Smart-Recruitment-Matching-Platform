@@ -8,6 +8,7 @@ import {
 } from '@angular/router';
 import {
   of,
+  Subject,
   throwError
 } from 'rxjs';
 
@@ -114,21 +115,68 @@ describe('AdminUsersComponent', () => {
     ).toBe(1);
   });
 
-  it('replaces the returned user after a successful status update', () => {
+  it('opens confirmation without disabling when Disable is clicked', () => {
     const fixture =
       TestBed.createComponent(AdminUsersComponent);
 
     fixture.detectChanges();
 
-    fixture.componentInstance.toggleStatus(
-      page.items[0]
-    );
+    const disableButton = fixture.nativeElement.querySelector(
+      '.desktop-table .status-button'
+    ) as HTMLButtonElement;
+
+    disableButton.click();
+    fixture.detectChanges();
+
+    expect(api.setUserStatus).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.disableCandidate())
+      .toEqual(page.items[0]);
+    expect(fixture.nativeElement.querySelector('[role="dialog"]'))
+      .not.toBeNull();
+  });
+
+  it('cancels disable confirmation without calling the API', () => {
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleStatus(page.items[0]);
+    fixture.componentInstance.cancelDisable();
+
+    expect(api.setUserStatus).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.disableCandidate()).toBeNull();
+  });
+
+  it('confirms disable exactly once while the request is pending', () => {
+    const pending = new Subject<typeof page.items[0]>();
+    api.setUserStatus.and.returnValue(pending.asObservable());
+
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleStatus(page.items[0]);
+    fixture.componentInstance.confirmDisable();
+    fixture.componentInstance.confirmDisable();
 
     expect(api.setUserStatus)
       .toHaveBeenCalledOnceWith(
         'admin-1',
         false
       );
+  });
+
+  it('replaces the returned user after a confirmed status update', () => {
+    const fixture =
+      TestBed.createComponent(AdminUsersComponent);
+
+    fixture.detectChanges();
+
+    fixture.componentInstance.toggleStatus(page.items[0]);
+    fixture.componentInstance.confirmDisable();
+
     expect(
       fixture.componentInstance.result()?.items[0]
         .isActive
@@ -157,6 +205,7 @@ describe('AdminUsersComponent', () => {
     fixture.componentInstance.toggleStatus(
       page.items[0]
     );
+    fixture.componentInstance.confirmDisable();
 
     expect(
       fixture.componentInstance.actionError()

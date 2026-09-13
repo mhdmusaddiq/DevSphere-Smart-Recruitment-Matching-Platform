@@ -227,4 +227,41 @@ describe('EmployerVacanciesComponent', () => {
 
     pending.complete();
   });
+
+  it('renders complete mobile cards with lifecycle-specific actions', () => {
+    employerApi.getVacancies.and.returnValue(of([
+      makeVacancy({
+        id: 'draft-1',
+        lifecycleStatus: 'Draft'
+      }),
+      makeVacancy({
+        id: 'published-1',
+        lifecycleStatus: 'Published'
+      }),
+      makeVacancy({
+        id: 'closed-1',
+        lifecycleStatus: 'Closed'
+      })
+    ]));
+
+    fixture.detectChanges();
+
+    const cards = Array.from(
+      fixture.nativeElement.querySelectorAll('.vacancy-card')
+    ) as HTMLElement[];
+    const cardText = cards.map(card => card.textContent ?? '');
+
+    expect(cards.length).toBe(3);
+    expect(cardText[0]).toContain('Software Engineer');
+    expect(cardText[0]).toContain('Colombo');
+    expect(cardText[0]).toContain('Angular');
+    expect(cardText[0]).toContain('Hybrid');
+    expect(cardText[0]).toContain('FullTime');
+    expect(cardText[0]).toContain('Draft');
+    expect(cardText[0]).toContain('Edit');
+    expect(cardText[0]).toContain('Publish');
+    expect(cardText[1]).toContain('Manage');
+    expect(cardText[1]).toContain('Close');
+    expect(cardText[2]).toContain('View');
+  });
 });

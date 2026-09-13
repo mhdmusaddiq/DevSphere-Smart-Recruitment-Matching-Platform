@@ -2,7 +2,7 @@ import { InjectionToken } from '@angular/core';
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
   providedIn: 'root',
-  factory: () => 'https://localhost:7097/api'
+  factory: () => '/api'
 });
 
 export function apiUrl(baseUrl: string, path: string): string {

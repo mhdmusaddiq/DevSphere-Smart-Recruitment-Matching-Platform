@@ -1,7 +1,7 @@
 # AptLens Runtime Visual QA Manifest
 
-Date: 2026-09-13  
-Branch: `design/frontend-final-visual-20260913`  
+Date: 2026-09-13
+Branch: `design/frontend-final-visual-20260913`
 Runtime: Angular development server at `http://127.0.0.1:4200`
 
 ## Responsive checks
