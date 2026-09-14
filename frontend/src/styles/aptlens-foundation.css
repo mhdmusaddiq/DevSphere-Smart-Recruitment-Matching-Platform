@@ -1,0 +1,12 @@
+:root { color-scheme: light; }
+body { min-width: 320px; overflow-x: hidden; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body, button, input, select, textarea { font-family: var(--font-family); }
+h1, h2, h3, h4, strong { text-wrap: balance; }
+h1, h2, h3 { color: var(--al-text-1); }
+p { text-wrap: pretty; }
+a { color: var(--al-violet); text-underline-offset: .2em; }
+img, svg { max-width: 100%; }
+::selection { color: #fff; background: var(--al-violet); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}

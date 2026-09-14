@@ -1,0 +1,236 @@
+﻿<main class="company-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Company & verification</p>
+      <h1>Company profile</h1>
+      <p class="intro">
+        Manage your company information and verification status.
+      </p>
+    </div>
+  </header>
+
+  @if (loading) {
+    <section class="state-card" aria-live="polite">
+      <p>Loading company information...</p>
+    </section>
+  } @else {
+    @if (errorMessage) {
+      <div class="message error-message" role="alert">
+        {{ errorMessage }}
+      </div>
+    }
+
+    @if (successMessage) {
+      <div class="message success-message" role="status">
+        {{ successMessage }}
+      </div>
+    }
+
+    <div class="company-layout">
+      <section class="panel company-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Company details</p>
+            <h2>
+              @if (company) {
+                Update company
+              } @else {
+                Create company
+              }
+            </h2>
+            <p>
+              Keep your public company information accurate and current.
+            </p>
+          </div>
+
+          @if (company; as currentCompany) {
+            <div class="company-monogram" aria-hidden="true">
+              {{ currentCompany.name.charAt(0).toUpperCase() }}
+            </div>
+          }
+        </div>
+
+        <form
+          [formGroup]="companyForm"
+          (ngSubmit)="saveCompany()"
+          novalidate
+        >
+          <div class="form-grid">
+            <div class="field field-wide">
+              <label for="companyName">Company name</label>
+              <input
+                id="companyName"
+                type="text"
+                formControlName="name"
+                autocomplete="organization"
+              />
+
+              @if (
+                companyForm.controls.name.touched &&
+                companyForm.controls.name.hasError('required')
+              ) {
+                <p class="field-error">Company name is required.</p>
+              }
+
+              @if (
+                companyForm.controls.name.touched &&
+                companyForm.controls.name.hasError('maxlength')
+              ) {
+                <p class="field-error">Company name is too long.</p>
+              }
+            </div>
+
+            <div class="field field-wide">
+              <label for="description">Description</label>
+              <textarea
+                id="description"
+                rows="5"
+                formControlName="description"
+              ></textarea>
+            </div>
+
+            <div class="field">
+              <label for="website">Website</label>
+              <input
+                id="website"
+                type="url"
+                formControlName="website"
+                autocomplete="url"
+                placeholder="https://example.com"
+              />
+            </div>
+
+            <div class="field">
+              <label for="location">Location</label>
+              <input
+                id="location"
+                type="text"
+                formControlName="location"
+                autocomplete="address-level2"
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="savingCompany"
+            >
+              @if (savingCompany) {
+                Saving...
+              } @else if (company) {
+                Save changes
+              } @else {
+                Create company
+              }
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="trust-column">
+        <section class="panel trust-panel">
+          <p class="eyebrow">Company trust</p>
+          <h2>Trust status</h2>
+
+          @if (company; as currentCompany) {
+            <dl class="status-list">
+              <div>
+                <dt>Membership</dt>
+                <dd>
+                  <span class="status-pill">
+                    {{ currentCompany.membershipStatus }}
+                  </span>
+                </dd>
+              </div>
+
+              <div>
+                <dt>Verification</dt>
+                <dd>
+                  <span class="status-pill">
+                    {{ currentCompany.verificationStatus }}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+
+            <p class="guidance">{{ verificationGuidance }}</p>
+          } @else {
+            <p class="guidance">
+              Create your company profile to begin company verification.
+            </p>
+          }
+        </section>
+
+        <section class="panel verification-panel">
+          <p class="eyebrow">Verification evidence</p>
+          <h2>Submit for review</h2>
+          <p class="guidance">{{ verificationGuidance }}</p>
+
+          <form
+            [formGroup]="verificationForm"
+            (ngSubmit)="submitVerification()"
+            novalidate
+          >
+            <div class="field">
+              <label for="verificationEvidence">
+                Evidence document
+              </label>
+
+              <input
+                id="verificationEvidence"
+                class="file-input"
+                type="file"
+                accept="application/pdf,.pdf"
+                [disabled]="!canSubmitVerification || submittingVerification"
+                (change)="onEvidenceSelected($event)"
+              />
+
+              <p class="field-help">
+                PDF only. Maximum file size: 5 MiB.
+              </p>
+
+              @if (selectedEvidence) {
+                <p class="selected-file">
+                  Selected: {{ selectedEvidence.name }}
+                </p>
+              }
+
+              @if (evidenceError) {
+                <p class="field-error">{{ evidenceError }}</p>
+              }
+            </div>
+
+            <div class="field">
+              <label for="verificationNotes">Notes</label>
+              <textarea
+                id="verificationNotes"
+                rows="4"
+                formControlName="notes"
+                [disabled]="!canSubmitVerification || submittingVerification"
+                placeholder="Add supporting notes for the reviewer"
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              class="primary-button verification-button"
+              [disabled]="
+                !canSubmitVerification ||
+                !selectedEvidence ||
+                submittingVerification
+              "
+            >
+              @if (submittingVerification) {
+                Submitting...
+              } @else {
+                Submit verification
+              }
+            </button>
+          </form>
+        </section>
+      </aside>
+    </div>
+  }
+</main>

@@ -1,0 +1,133 @@
+<main class="dashboard-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Employer workspace</p>
+      <h1>Dashboard</h1>
+      <p class="intro">Manage your hiring activity and company presence.</p>
+    </div>
+  </header>
+
+  @if (loading) {
+    <section class="state-card" aria-live="polite">
+      <p>Loading employer dashboard...</p>
+    </section>
+  } @else if (errorMessage) {
+    <section class="state-card error-state" role="alert">
+      <h2>Dashboard unavailable</h2>
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="secondary-button" (click)="loadDashboard()">
+        Try again
+      </button>
+    </section>
+  } @else if (dashboard) {
+    <section class="kpi-grid" aria-label="Employer hiring overview">
+      <article class="kpi-card">
+        <span class="kpi-label">Open vacancies</span>
+        <strong>{{ dashboard.openVacancyCount }}</strong>
+        <span class="kpi-help">Currently open roles</span>
+      </article>
+
+      <article class="kpi-card">
+        <span class="kpi-label">Applications</span>
+        <strong>{{ dashboard.applicationCount }}</strong>
+        <span class="kpi-help">Applications received</span>
+      </article>
+
+      <article class="kpi-card">
+        <span class="kpi-label">Pending contact requests</span>
+        <strong>{{ dashboard.pendingContactRequestCount }}</strong>
+        <span class="kpi-help">Requests awaiting action</span>
+      </article>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel next-action">
+        <p class="eyebrow">Next action</p>
+        <h2>{{ nextAction.title }}</h2>
+        <p>{{ nextAction.description }}</p>
+        <a class="secondary-button" [routerLink]="nextAction.route">
+          {{ nextAction.label }}
+        </a>
+      </article>
+
+      <article class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Company trust</p>
+            <h2>Company status</h2>
+          </div>
+        </div>
+
+        @if (primaryCompany; as company) {
+          <div class="company-row">
+            <div class="monogram" aria-hidden="true">
+              {{ company.name.charAt(0).toUpperCase() }}
+            </div>
+
+            <div>
+              <strong>{{ company.name }}</strong>
+              <p>{{ company.location || 'Location not provided' }}</p>
+            </div>
+          </div>
+
+          <dl class="status-list">
+            <div>
+              <dt>Membership</dt>
+              <dd>{{ company.membershipStatus }}</dd>
+            </div>
+            <div>
+              <dt>Verification</dt>
+              <dd>{{ company.verificationStatus }}</dd>
+            </div>
+          </dl>
+        } @else {
+          <p class="empty-copy">
+            No company profile is available yet.
+          </p>
+        }
+      </article>
+
+      <article class="panel vacancy-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Vacancy preview</p>
+            <h2>Your vacancies</h2>
+          </div>
+        </div>
+
+        @if (vacancyPreview.length > 0) {
+          <div class="vacancy-list">
+            @for (vacancy of vacancyPreview; track vacancy.id) {
+              <div class="vacancy-row">
+                <div>
+                  <strong>{{ vacancy.title }}</strong>
+                  <p>
+                    {{ vacancy.location || 'Location not provided' }}
+                    @if (vacancy.workMode) {
+                      <span> · {{ vacancy.workMode }}</span>
+                    }
+                  </p>
+                </div>
+
+                <span class="status-pill">
+                  {{ vacancy.lifecycleStatus }}
+                </span>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-copy">No vacancies are available yet.</p>
+        }
+      </article>
+
+      <article class="panel workload-panel">
+        <p class="eyebrow">Application workload</p>
+        <h2>{{ dashboard.applicationCount }} applications</h2>
+        <p>
+          {{ dashboard.pendingContactRequestCount }}
+          pending contact requests currently need attention.
+        </p>
+      </article>
+    </section>
+  }
+</main>

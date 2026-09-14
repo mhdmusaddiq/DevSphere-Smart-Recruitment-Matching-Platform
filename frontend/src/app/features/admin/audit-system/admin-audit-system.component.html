@@ -1,0 +1,344 @@
+<section class="audit-system-page">
+  <header class="page-heading">
+    <p class="eyebrow">Admin operations</p>
+    <h1>Audit &amp; System</h1>
+    <p>
+      Review platform audit history and allowlisted system
+      configuration without exposing sensitive values or
+      inventing unsupported controls.
+    </p>
+  </header>
+
+  <div
+    class="tabs"
+    role="tablist"
+    aria-label="Audit and system sections"
+  >
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'audit'"
+      [class.active]="activeTab() === 'audit'"
+      (click)="setTab('audit')"
+    >
+      Audit events
+    </button>
+
+    <button
+      type="button"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'settings'"
+      [class.active]="activeTab() === 'settings'"
+      (click)="setTab('settings')"
+    >
+      System settings
+    </button>
+  </div>
+
+  @if (activeTab() === 'audit') {
+    <div class="scope-note">
+      <strong>Audit view:</strong>
+      choose how many recent events to load, then search within
+      that list.
+    </div>
+
+    <div class="audit-controls">
+      <label>
+        <span class="sr-only">
+          Search current loaded audit events
+        </span>
+        <input
+          type="search"
+          autocomplete="off"
+          placeholder="Search current loaded events (client view only)"
+          [formControl]="auditSearchControl"
+        />
+      </label>
+
+      <label>
+        <span class="sr-only">
+          Number of latest events
+        </span>
+        <select [formControl]="auditTakeControl">
+          <option [ngValue]="50">Latest 50</option>
+          <option [ngValue]="100">Latest 100</option>
+          <option [ngValue]="200">Latest 200</option>
+        </select>
+      </label>
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="auditLoading()"
+        (click)="loadAudit()"
+      >
+        {{ auditLoading() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+
+    <div class="list-summary">
+      <span>
+        <strong>Latest events</strong>
+        — newest first
+      </span>
+      <span>UTC timestamps</span>
+    </div>
+
+    @if (auditError()) {
+      <div class="error-panel" role="alert">
+        <strong>Audit history unavailable</strong>
+        <span>{{ auditError() }}</span>
+        <button type="button" (click)="loadAudit()">
+          Retry
+        </button>
+      </div>
+    } @else if (auditLoading()) {
+      <div
+        class="loading-list"
+        aria-label="Loading audit events"
+      >
+        @for (item of [1,2,3,4]; track item) {
+          <span></span>
+        }
+      </div>
+    } @else {
+      <section class="list-card">
+        <header>
+          <h2>Recent audit history</h2>
+          <p>
+            Action, target family and recorded detail.
+            Actor display names are unavailable for some historical entries.
+          </p>
+        </header>
+
+        @if (filteredAuditEvents().length) {
+          @for (
+            event of filteredAuditEvents();
+            track event.id
+          ) {
+            <article class="audit-row">
+              <time>
+                {{
+                  event.occurredAtUtc
+                    | date:'dd MMM y':'UTC'
+                }}
+                <small>
+                  {{
+                    event.occurredAtUtc
+                      | date:'HH:mm':'UTC'
+                  }}
+                  UTC
+                </small>
+              </time>
+
+              <div class="event-copy">
+                <strong>{{ event.action }}</strong>
+                <span>
+                  {{ event.details || 'No detail supplied' }}
+                </span>
+              </div>
+
+              <span class="entity-badge">
+                {{ event.entityName || 'Entity' }}
+              </span>
+
+              <div class="technical-copy">
+                <span>
+                  Entity:
+                  {{ event.entityId || 'not supplied' }}
+                </span>
+                <span>
+                  Actor reference:
+                  {{ event.userId || 'not supplied' }}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                class="detail-button"
+                (click)="openDetail(event)"
+              >
+                View detail
+              </button>
+            </article>
+          }
+        } @else {
+          <div class="empty-state">
+            <strong>
+              No events match the current loaded view
+            </strong>
+            <span>
+              This does not mean no historical audit events
+              exist. Change the client-view search or refresh a
+              larger latest-event window.
+            </span>
+          </div>
+        }
+      </section>
+    }
+  } @else {
+    <div class="scope-note">
+      <strong>Read-only system settings:</strong>
+      sensitive values stay protected and cannot be revealed or
+      copied from this page.
+    </div>
+
+    <div class="settings-actions">
+      <span>
+        Current approved settings and their recorded values.
+      </span>
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="settingsLoading()"
+        (click)="loadSettings()"
+      >
+        {{
+          settingsLoading()
+            ? 'Refreshing…'
+            : 'Refresh settings'
+        }}
+      </button>
+    </div>
+
+    @if (settingsError()) {
+      <div class="error-panel" role="alert">
+        <strong>System settings unavailable</strong>
+        <span>{{ settingsError() }}</span>
+        <button type="button" (click)="loadSettings()">
+          Retry
+        </button>
+      </div>
+    } @else if (settingsLoading()) {
+      <div
+        class="loading-list"
+        aria-label="Loading system settings"
+      >
+        @for (item of [1,2,3]; track item) {
+          <span></span>
+        }
+      </div>
+    } @else {
+      <section class="list-card settings-card">
+        <header>
+          <h2>System settings</h2>
+          <p>
+            Read-only operational values. Sensitive configuration
+            remains protected.
+          </p>
+        </header>
+
+        @if (settings().length) {
+          @for (
+            setting of settings();
+            track setting.id
+          ) {
+            <article class="setting-row">
+              <div>
+                <strong>{{ setting.key }}</strong>
+                <span>
+                  {{
+                    setting.description ||
+                    'No description supplied'
+                  }}
+                </span>
+              </div>
+
+              <span
+                [class]="settingValueClass(setting)"
+              >
+                {{ displaySettingValue(setting) }}
+              </span>
+
+              <span
+                class="setting-kind"
+                [class.setting-kind--sensitive]="
+                  setting.isSensitive
+                "
+              >
+                {{
+                  setting.isSensitive
+                    ? 'Sensitive · redacted'
+                    : 'Visible · read only'
+                }}
+              </span>
+            </article>
+          }
+        } @else {
+          <div class="empty-state">
+            <strong>No system settings returned</strong>
+            <span>
+              No settings are available for this environment.
+            </span>
+          </div>
+        }
+      </section>
+    }
+  }
+
+  @if (selectedEvent(); as selected) {
+    <div
+      class="dialog-backdrop"
+      (click)="closeDetail()"
+    >
+      <section
+        class="detail-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="audit-detail-title"
+        (click)="$event.stopPropagation()"
+      >
+        <header>
+          <div>
+            <p class="eyebrow">Audit event detail</p>
+            <h2 id="audit-detail-title">
+              {{ selected.action }}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Close audit detail"
+            (click)="closeDetail()"
+          >
+            <apt-app-icon name="close" [size]="18" />
+          </button>
+        </header>
+
+        <dl>
+          <div>
+            <dt>Occurred</dt>
+            <dd>
+              {{
+                selected.occurredAtUtc
+                  | date:'dd MMM y · HH:mm:ss':'UTC'
+              }}
+              UTC
+            </dd>
+          </div>
+          <div>
+            <dt>Entity family</dt>
+            <dd>{{ selected.entityName || 'Not supplied' }}</dd>
+          </div>
+          <div>
+            <dt>Entity reference</dt>
+            <dd>{{ selected.entityId || 'Not supplied' }}</dd>
+          </div>
+          <div>
+            <dt>Actor reference</dt>
+            <dd>{{ selected.userId || 'Not supplied' }}</dd>
+          </div>
+          <div>
+            <dt>Event detail</dt>
+            <dd>{{ selected.details || 'Not supplied' }}</dd>
+          </div>
+        </dl>
+
+        <p class="detail-boundary">
+          No additional detail is available for this audit entry.
+        </p>
+      </section>
+    </div>
+  }
+</section>

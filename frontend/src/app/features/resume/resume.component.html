@@ -1,0 +1,180 @@
+<main class="cv-page">
+  <header class="page-header">
+    <div>
+      <p class="breadcrumb">CV / Resume Versions</p>
+      <h1>CV & Resume Versions</h1>
+      <p>Keep your current PDF ready while preserving immutable versions used by submitted applications.</p>
+    </div>
+    <label class="primary upload-shortcut" for="cvFile">Upload new PDF</label>
+  </header>
+
+  @if (successMessage) {
+    <div class="notice success" role="status">{{ successMessage }}</div>
+  }
+
+  @if (errorMessage) {
+    <apt-error-state
+      title="CV action failed"
+      [message]="errorMessage"
+      [retryable]="true"
+      (retry)="loadResume()" />
+  }
+
+  @if (loading) {
+    <apt-loading-state message="Loading your CV versions…" />
+  } @else {
+    <div class="cv-layout">
+      <div class="cv-main">
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Current CV</h2>
+              <p>This CV is used for a new application unless you choose another version first.</p>
+            </div>
+          </div>
+
+          @if (currentVersion; as current) {
+            <article class="file-row current">
+              <span class="pdf-icon" aria-hidden="true">PDF</span>
+              <div class="file-copy">
+                <strong>{{ current.originalFileName }}</strong>
+                <span>
+                  Version {{ current.versionNumber }} · {{ formatFileSize(current.fileSizeBytes) }} · PDF
+                </span>
+              </div>
+              <span class="current-chip">Current</span>
+              <button
+                class="secondary"
+                type="button"
+                [disabled]="downloadingId === current.id"
+                (click)="download(current)">
+                {{ downloadingId === current.id ? 'Downloading…' : 'Download' }}
+              </button>
+            </article>
+          } @else {
+            <div class="empty-state">
+              <h3>No CV uploaded yet.</h3>
+              <p>Upload a PDF and keep a current version ready for application readiness.</p>
+              <label class="primary" for="cvFile">Upload PDF</label>
+            </div>
+          }
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Upload a new version</h2>
+              <p>PDF uploads are checked and stored privately.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="uploadForm" (ngSubmit)="upload()">
+            <div
+              class="drop-zone"
+              [class.drag-active]="dragActive"
+              (dragover)="onDragOver($event)"
+              (dragleave)="onDragLeave($event)"
+              (drop)="onDrop($event)">
+              <input
+                id="cvFile"
+                class="visually-hidden"
+                type="file"
+                accept="application/pdf,.pdf"
+                (change)="onFileSelected($event)">
+
+              <span class="upload-icon" aria-hidden="true"><apt-app-icon name="upload" [size]="24" /></span>
+              <strong>Drop a PDF here or choose a file</strong>
+              <p>PDF only. Maximum file size 5 MB.</p>
+              <label class="primary" for="cvFile">Choose PDF</label>
+
+              @if (selectedFile) {
+                <div class="selected-file">
+                  <strong>{{ selectedFile.name }}</strong>
+                  <span>{{ formatFileSize(selectedFile.size) }}</span>
+                </div>
+              }
+
+              @if (fileError) {
+                <small class="field-error" role="alert">{{ fileError }}</small>
+              }
+            </div>
+
+            <button
+              class="primary upload-action"
+              type="submit"
+              [disabled]="uploadForm.invalid || uploading">
+              {{ uploading ? 'Uploading…' : 'Upload selected PDF' }}
+            </button>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <h2>Resume version history</h2>
+              <p>Previous CV versions remain available so submitted applications keep their original CV.</p>
+            </div>
+          </div>
+
+          @if (!resume || resume.versions.length === 0) {
+            <p class="empty-copy">No CV versions yet.</p>
+          } @else {
+            <div class="version-list">
+              @for (version of resume.versions; track version.id) {
+                <article class="file-row">
+                  <span class="pdf-icon" aria-hidden="true">PDF</span>
+                  <div class="file-copy">
+                    <strong>{{ version.originalFileName }}</strong>
+                    <span>Version {{ version.versionNumber }} · {{ formatFileSize(version.fileSizeBytes) }}</span>
+                  </div>
+
+                  @if (version.isCurrent) {
+                    <span class="current-chip">Current</span>
+                  }
+
+                  <div class="row-actions">
+                    <button
+                      class="secondary"
+                      type="button"
+                      [disabled]="downloadingId === version.id"
+                      (click)="download(version)">
+                      {{ downloadingId === version.id ? 'Downloading…' : 'Download' }}
+                    </button>
+
+                    @if (!version.isCurrent) {
+                      <button
+                        class="secondary"
+                        type="button"
+                        [disabled]="settingCurrentId !== null"
+                        (click)="setCurrent(version)">
+                        {{ settingCurrentId === version.id ? 'Updating…' : 'Make current' }}
+                      </button>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
+
+      <aside class="privacy-card">
+        <h2>CV privacy</h2>
+        <p>Your CV is not a public web asset.</p>
+
+        <dl>
+          <div><dt>Format</dt><dd>PDF</dd></div>
+          <div><dt>Max size</dt><dd>5 MB</dd></div>
+          <div><dt>Current version</dt><dd>{{ currentVersion ? 'Version ' + currentVersion.versionNumber : 'None' }}</dd></div>
+          <div><dt>Storage</dt><dd>Private</dd></div>
+        </dl>
+
+        <div class="privacy-note">
+          When an application is submitted, the chosen CV version is preserved with the application. Changing your current CV later does not replace that historical version.
+        </div>
+
+        <a routerLink="/seeker/profile">Review career profile</a>
+      </aside>
+    </div>
+  }
+</main>

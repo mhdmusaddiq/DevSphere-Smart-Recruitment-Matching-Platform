@@ -1,0 +1,364 @@
+<main class="register-page">
+  <section class="register-visual" aria-hidden="true">
+    <div class="visual-content">
+      <div class="visual-brand">
+        <apt-brand-wordmark [showTagline]="true" />
+      </div>
+
+      <div class="journey-visual">
+        <div class="journey-line"></div>
+
+        <div class="journey-step journey-step--active">
+          <span class="journey-step__number">1</span>
+
+          <div>
+            <strong>Create account</strong>
+            <small>Choose how you use AptLens</small>
+          </div>
+        </div>
+
+        <div class="journey-step">
+          <span class="journey-step__number">2</span>
+
+          <div>
+            <strong>Verify email</strong>
+            <small>Confirm your account securely</small>
+          </div>
+        </div>
+
+        <div class="journey-step">
+          <span class="journey-step__number">3</span>
+
+          <div>
+            <strong>Build your profile</strong>
+            <small>Start your AptLens journey</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="visual-copy">
+        <p class="visual-kicker">YOUR APTLENS JOURNEY</p>
+
+        <h2>
+          One account. A clearer path to the right fit.
+        </h2>
+
+        <p>
+          Create your account as a job seeker or employer and continue
+          through the AptLens recruitment experience.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="register-panel">
+    <div class="mobile-brand">
+      <apt-brand-wordmark [showTagline]="true" />
+    </div>
+
+    <div class="register-card">
+      <header class="register-header">
+        <p class="register-eyebrow">GET STARTED</p>
+
+        <h1>Create your AptLens account</h1>
+
+        <p>
+          Choose your role and enter your account details.
+        </p>
+      </header>
+
+      <form
+        class="register-form"
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        novalidate
+      >
+        @if (submitError()) {
+          <div
+            class="form-alert"
+            role="alert"
+            aria-live="polite"
+          >
+            <span class="form-alert__icon" aria-hidden="true">!</span>
+            <p>{{ submitError() }}</p>
+          </div>
+        }
+
+        <fieldset class="role-field">
+          <legend>I am joining as</legend>
+
+          <div class="role-options">
+            <button
+              type="button"
+              class="role-option"
+              [class.role-option--active]="
+                form.controls.role.value === 'JobSeeker'
+              "
+              [attr.aria-pressed]="
+                form.controls.role.value === 'JobSeeker'
+              "
+              (click)="selectRole('JobSeeker')"
+            >
+              <span class="role-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="8" r="3.5"></circle>
+                  <path d="M5 20c.8-4 3.2-6 7-6s6.2 2 7 6"></path>
+                </svg>
+              </span>
+
+              <span class="role-copy">
+                <strong>Job Seeker</strong>
+                <small>Find roles that fit you</small>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              class="role-option"
+              [class.role-option--active]="
+                form.controls.role.value === 'Employer'
+              "
+              [attr.aria-pressed]="
+                form.controls.role.value === 'Employer'
+              "
+              (click)="selectRole('Employer')"
+            >
+              <span class="role-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 20V7h10v13"></path>
+                  <path d="M14 11h6v9"></path>
+                  <path d="M8 11h2M8 15h2M17 15h1"></path>
+                </svg>
+              </span>
+
+              <span class="role-copy">
+                <strong>Employer</strong>
+                <small>Discover relevant talent</small>
+              </span>
+            </button>
+          </div>
+        </fieldset>
+
+        <div class="form-field">
+          <label for="displayName">Display name</label>
+
+          <input
+            id="displayName"
+            type="text"
+            formControlName="displayName"
+            autocomplete="name"
+            placeholder="Enter your name"
+            [attr.aria-invalid]="
+              form.controls.displayName.invalid &&
+              form.controls.displayName.touched
+            "
+          />
+
+          @if (
+            form.controls.displayName.touched &&
+            form.controls.displayName.hasError('required')
+          ) {
+            <p class="field-error" role="alert">
+              Enter your display name.
+            </p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="registerEmail">Email address</label>
+
+          <input
+            id="registerEmail"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="you@example.com"
+            [attr.aria-invalid]="
+              form.controls.email.invalid &&
+              form.controls.email.touched
+            "
+          />
+
+          @if (
+            form.controls.email.touched &&
+            form.controls.email.hasError('required')
+          ) {
+            <p class="field-error" role="alert">
+              Enter your email address.
+            </p>
+          } @else if (
+            form.controls.email.touched &&
+            form.controls.email.hasError('email')
+          ) {
+            <p class="field-error" role="alert">
+              Enter a valid email address.
+            </p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="registerPassword">Password</label>
+
+          <div class="password-control">
+            <input
+              id="registerPassword"
+              [type]="passwordVisible() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="new-password"
+              placeholder="Create a strong password"
+              [attr.aria-invalid]="
+                form.controls.password.invalid &&
+                form.controls.password.touched
+              "
+            />
+
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('password')"
+              [attr.aria-label]="
+                passwordVisible()
+                  ? 'Hide password'
+                  : 'Show password'
+              "
+              [attr.aria-pressed]="passwordVisible()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                @if (passwordVisible()) {
+                  <path
+                    d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.3A10.7 10.7 0 0 1 12 4c5.5 0 9.5 5 9.5 8a8.7 8.7 0 0 1-2.2 3.8M6.6 6.6C4.1 8.1 2.5 10.3 2.5 12c0 3 4 8 9.5 8a10.7 10.7 0 0 0 3.1-.5"
+                  />
+                } @else {
+                  <path
+                    d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"
+                  />
+                  <circle cx="12" cy="12" r="3" />
+                }
+              </svg>
+            </button>
+          </div>
+
+          <p class="password-help">
+            Use at least 15 characters with uppercase, lowercase,
+            a number and a symbol.
+          </p>
+
+          @if (
+            form.controls.password.touched &&
+            form.controls.password.hasError('required')
+          ) {
+            <p class="field-error" role="alert">
+              Create a password.
+            </p>
+          } @else if (
+            form.controls.password.touched &&
+            form.controls.password.hasError('pattern')
+          ) {
+            <p class="field-error" role="alert">
+              Your password does not meet all requirements.
+            </p>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="confirmPassword">Confirm password</label>
+
+          <div class="password-control">
+            <input
+              id="confirmPassword"
+              [type]="
+                confirmPasswordVisible()
+                  ? 'text'
+                  : 'password'
+              "
+              formControlName="confirmPassword"
+              autocomplete="new-password"
+              placeholder="Enter your password again"
+              [attr.aria-invalid]="
+                (
+                  form.controls.confirmPassword.invalid ||
+                  form.hasError('passwordMismatch')
+                ) &&
+                form.controls.confirmPassword.touched
+              "
+            />
+
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="
+                togglePasswordVisibility('confirmPassword')
+              "
+              [attr.aria-label]="
+                confirmPasswordVisible()
+                  ? 'Hide confirm password'
+                  : 'Show confirm password'
+              "
+              [attr.aria-pressed]="confirmPasswordVisible()"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                @if (confirmPasswordVisible()) {
+                  <path
+                    d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 4.3A10.7 10.7 0 0 1 12 4c5.5 0 9.5 5 9.5 8a8.7 8.7 0 0 1-2.2 3.8M6.6 6.6C4.1 8.1 2.5 10.3 2.5 12c0 3 4 8 9.5 8a10.7 10.7 0 0 0 3.1-.5"
+                  />
+                } @else {
+                  <path
+                    d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"
+                  />
+                  <circle cx="12" cy="12" r="3" />
+                }
+              </svg>
+            </button>
+          </div>
+
+          @if (
+            form.controls.confirmPassword.touched &&
+            form.controls.confirmPassword.hasError('required')
+          ) {
+            <p class="field-error" role="alert">
+              Confirm your password.
+            </p>
+          } @else if (
+            form.controls.confirmPassword.touched &&
+            form.hasError('passwordMismatch')
+          ) {
+            <p class="field-error" role="alert">
+              Passwords do not match.
+            </p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="isSubmitting()"
+        >
+          @if (isSubmitting()) {
+            <span class="button-spinner" aria-hidden="true"></span>
+            <span>Creating account…</span>
+          } @else {
+            <span>Create account</span>
+
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"></path>
+            </svg>
+          }
+        </button>
+      </form>
+
+      <footer class="register-footer">
+        <p>
+          Already have an account?
+          <a routerLink="/login" class="text-link">
+            Sign in
+          </a>
+        </p>
+      </footer>
+    </div>
+
+    <p class="page-note">
+      AptLens · See the fit. Know the why.
+    </p>
+  </section>
+</main>

@@ -1,0 +1,6 @@
+body :is(.error-panel, .error-banner, .blocking-error, .action-banner--error, .notice.error, .form-alert) { border: 1px solid #fecaca; border-radius: 12px; background: #fff1f2; color: #9f1239; }
+body :is(.success-banner, .action-banner--success, .notice.success) { border: 1px solid #bbf7d0; border-radius: 12px; background: #f0fdf4; color: #166534; }
+body :is(.notice, .scope-note, .truth-note, .privacy-note, .governance-note, .boundary-card) { border-radius: 12px; }
+body :is(.empty-state, .empty-card, .empty-block, .calm-empty, .missing-card) { border: 1px dashed var(--al-border); border-radius: 12px; background: var(--al-surface-1); color: var(--al-muted); }
+body :is(.loading-grid, .loading-list, .skeleton) { animation: al-pulse 1.5s ease-in-out infinite; }
+@keyframes al-pulse { 50% { opacity: .55; } }

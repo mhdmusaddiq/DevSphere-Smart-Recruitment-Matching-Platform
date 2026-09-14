@@ -1,0 +1,1468 @@
+<section class="vacancy-editor">
+  <div class="page-heading">
+    <div>
+      <a class="back-link" routerLink="/employer/vacancies">
+        <apt-app-icon name="arrow-left" [size]="16" /> Back to vacancies
+      </a>
+
+      <h1>{{ pageTitle }}</h1>
+
+      <p>
+        @if (isEditMode) {
+          Update vacancy facts and configure the matching policy.
+        } @else {
+          Create a Draft first, then configure the matching policy
+          before publishing.
+        }
+      </p>
+    </div>
+
+    @if (loadedVacancy) {
+      <span class="lifecycle-badge">
+        {{ loadedVacancy.lifecycleStatus }}
+      </span>
+    }
+  </div>
+
+  <nav class="stage-nav" aria-label="Vacancy editor stages">
+    @for (stage of stages; track stage; let index = $index) {
+      <button
+        type="button"
+        class="stage-button"
+        [class.active]="activeStage === index"
+        [class.completed]="index < highestAccessibleStage"
+        [disabled]="index > highestAccessibleStage"
+        [attr.aria-current]="activeStage === index ? 'step' : null"
+        (click)="goToStage(index)"
+      >
+        <span class="stage-number">{{ index + 1 }}</span>
+        <span>{{ stage }}</span>
+      </button>
+    }
+  </nav>
+
+  @if (errorMessage) {
+    <div class="message error-message" role="alert">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (stageErrorMessage) {
+    <div #stageError class="message error-message" role="alert" tabindex="-1">
+      {{ stageErrorMessage }}
+    </div>
+  }
+
+  @if (loading) {
+    <section class="editor-card">
+      <p>Loading vacancy…</p>
+    </section>
+  } @else {
+    <form [formGroup]="form">
+      @if (isReadOnly) {
+        <div class="message readonly-message">
+          This vacancy is Closed. Closed is terminal and its vacancy
+          facts are read-only.
+        </div>
+      }
+
+      @if (activeStage === 0) {
+        <section class="editor-card">
+          <p class="stage-label">Step 1 of 7</p>
+          <h2>Basics</h2>
+          <p class="section-description">
+            Define the vacancy title and description.
+          </p>
+
+          <div class="form-grid single-column">
+            <label class="field">
+              <span>Company</span>
+
+              <select formControlName="companyId" [attr.aria-invalid]="form.controls.companyId.touched && form.controls.companyId.invalid">
+                <option [ngValue]="null">
+                  Select company
+                </option>
+
+                @for (
+                  company of companies;
+                  track company.id
+                ) {
+                  <option [ngValue]="company.id">
+                    {{ company.name }}
+                    · {{ company.verificationStatus }}
+                  </option>
+                }
+              </select>
+              @if (form.controls.companyId.touched && form.controls.companyId.invalid) {
+                <small class="field-error">Select a company.</small>
+              }
+            </label>
+
+            @if (companiesLoading) {
+              <p class="section-description">
+                Loading companies...
+              </p>
+            }
+
+            @if (companiesErrorMessage) {
+              <div
+                class="message error-message"
+                role="alert"
+              >
+                {{ companiesErrorMessage }}
+              </div>
+            }
+
+            @if (
+              !companiesLoading &&
+              !companiesErrorMessage &&
+              companies.length === 0
+            ) {
+              <div class="message readonly-message">
+                No company profile is available.
+                <a routerLink="/employer/company">
+                  Manage company
+                </a>
+              </div>
+            }
+
+            <label class="field">
+              <span>Title *</span>
+              <input
+                id="vacancy-title"
+                type="text"
+                formControlName="title"
+                placeholder="e.g. Senior Software Engineer"
+              />
+              @if (form.controls.title.touched && form.controls.title.invalid) {
+                <small class="field-error">Enter a vacancy title.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Description</span>
+              <textarea
+                id="vacancy-description"
+                rows="8"
+                formControlName="description"
+                placeholder="Describe the vacancy responsibilities and expectations."
+              ></textarea>
+              @if (form.controls.description.touched && form.controls.description.invalid) {
+                <small class="field-error">Add a role description.</small>
+              }
+            </label>
+          </div>
+        </section>
+      }
+
+      @if (activeStage === 1) {
+        <section class="editor-card">
+          <p class="stage-label">Step 2 of 7</p>
+          <h2>Location &amp; Work</h2>
+          <p class="section-description">
+            Define where and how this role is performed.
+          </p>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Location *</span>
+              <input
+                type="text"
+                formControlName="location"
+                placeholder="e.g. Colombo"
+              />
+              @if (form.controls.location.touched && form.controls.location.invalid) {
+                <small class="field-error">Enter the role location.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Work mode *</span>
+              <select formControlName="workMode">
+                <option value="">Select work mode</option>
+                @for (option of workModeOptions; track option) { <option [value]="option">{{ option }}</option> }
+              </select>
+              @if (form.controls.workMode.touched && form.controls.workMode.invalid) {
+                <small class="field-error">Select a work mode.</small>
+              }
+            </label>
+
+            <label class="field">
+              <span>Employment type *</span>
+              <select formControlName="employmentType">
+                <option value="">Select employment type</option>
+                @for (option of employmentTypeOptions; track option) { <option [value]="option">{{ option }}</option> }
+              </select>
+              @if (form.controls.employmentType.touched && form.controls.employmentType.invalid) {
+                <small class="field-error">Select an employment type.</small>
+              }
+            </label>
+          </div>
+        </section>
+      }
+
+      @if (activeStage === 2) {
+        <section class="editor-card">
+          <p class="stage-label">Step 3 of 7</p>
+          <h2>Experience &amp; Education</h2>
+          <p class="section-description">
+            Set the experience range and education requirement.
+          </p>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Minimum experience (months) *</span>
+              <input
+                type="number"
+                min="0"
+                formControlName="minExperienceMonths"
+              />
+            </label>
+
+            <label class="field">
+              <span>Maximum experience (months)</span>
+              <input
+                type="number"
+                min="0"
+                formControlName="maxExperienceMonths"
+              />
+            </label>
+
+            <label class="field full-width">
+              <span>Required education</span>
+              <input
+                type="text"
+                formControlName="requiredEducation"
+                placeholder="e.g. Bachelor's degree"
+              />
+            </label>
+          </div>
+        </section>
+      }
+
+      @if (activeStage === 3) {
+        <section class="editor-card">
+          <p class="stage-label">Step 4 of 7</p>
+          <h2>Compensation &amp; Closing</h2>
+          <p class="section-description">
+            Add optional salary bounds and the vacancy closing date.
+          </p>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Salary minimum</span>
+              <input
+                type="number"
+                min="0"
+                formControlName="salaryMin"
+              />
+            </label>
+
+            <label class="field">
+              <span>Salary maximum</span>
+              <input
+                type="number"
+                min="0"
+                formControlName="salaryMax"
+              />
+            </label>
+
+            <label class="field full-width">
+              <span>Closing date *</span>
+              <input
+                type="datetime-local"
+                formControlName="closingDateUtc"
+              />
+              @if (form.controls.closingDateUtc.touched && form.controls.closingDateUtc.invalid) {
+                <small class="field-error">Set a future closing date.</small>
+              }
+            </label>
+          </div>
+        </section>
+      }
+
+      @if (activeStage === 4) {
+        <section class="editor-card">
+          <div class="card-heading-row">
+            <div>
+              <p class="stage-label">Step 5 of 7</p>
+              <h2>Required Skills</h2>
+              <p class="section-description">
+                Add at least one skill and assign a positive weight.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="isReadOnly"
+              (click)="addSkill()"
+            >
+              + Add skill
+            </button>
+          </div>
+
+          <div
+            class="skills-list"
+            formArrayName="requiredSkills"
+          >
+            @for (
+              skill of requiredSkills.controls;
+              track skill;
+              let index = $index
+            ) {
+              <div
+                class="skill-row"
+                [formGroupName]="index"
+              >
+                <label class="field skill-name">
+                  <span>Skill name *</span>
+                  <input
+                    type="text"
+                    formControlName="name"
+                    placeholder="e.g. Angular"
+                  />
+                </label>
+
+                <label class="field skill-weight">
+                  <span>Weight *</span>
+                  <input
+                    type="number"
+                    min="1"
+                    formControlName="weight"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  class="remove-button"
+                  [disabled]="
+                    isReadOnly ||
+                    requiredSkills.length <= 1
+                  "
+                  (click)="removeSkill(index)"
+                >
+                  Remove
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeStage === 5) {
+        <section class="editor-card">
+          <div class="card-heading-row">
+            <div>
+              <p class="stage-label">Step 6 of 7</p>
+              <h2>Matching Policy</h2>
+              <p class="section-description">
+                Group the evidence that matters for this role and choose how strongly each requirement should influence matching.
+              </p>
+            </div>
+
+            @if (policy) {
+              <span class="policy-revision">
+                Revision {{ policy.revision.revisionNumber }}
+              </span>
+            }
+          </div>
+
+          @if (!vacancyId) {
+            <div class="message readonly-message">
+              Save the Draft vacancy before configuring its
+              matching policy.
+            </div>
+          } @else if (policyLoading) {
+            <p>Loading matching policy...</p>
+          } @else {
+            @if (policyErrorMessage) {
+              <div
+                class="message error-message"
+                role="alert"
+              >
+                {{ policyErrorMessage }}
+              </div>
+            }
+
+            @if (policySuccessMessage) {
+              <div
+                class="message success-message"
+                role="status"
+              >
+                {{ policySuccessMessage }}
+              </div>
+            }
+
+            @if (policy?.revision?.isMateriallyLocked) {
+              <div class="message readonly-message">
+                This matching policy is locked after the first application so every applicant is assessed against the same rules.
+              </div>
+            }
+
+            @if (
+              loadedVacancy?.lifecycleStatus === 'Closed'
+            ) {
+              <div class="message readonly-message">
+                This vacancy is Closed. Its matching policy is
+                read-only.
+              </div>
+            }
+
+            @if (policy) {
+              <div class="policy-section">
+                <div class="card-heading-row">
+                  <div>
+                    <h3>Requirement families</h3>
+                    <p class="section-description">
+                      Each family can appear only once.
+                    </p>
+                  </div>
+
+                  <div class="action-group">
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      [disabled]="
+                        isPolicyReadOnly ||
+                        policyFamilies.length >=
+                          policyFamilyOptions.length
+                      "
+                      (click)="addPolicyFamily()"
+                    >
+                      + Add family
+                    </button>
+
+                    <button
+                      type="button"
+                      class="primary-button"
+                      [disabled]="
+                        isPolicyReadOnly ||
+                        policySaving
+                      "
+                      (click)="savePolicy()"
+                    >
+                      @if (policySaving) {
+                        Saving...
+                      } @else {
+                        Save matching policy
+                      }
+                    </button>
+                  </div>
+                </div>
+
+                @if (policyFamilies.length === 0) {
+                  <div class="policy-empty">
+                    No requirement families configured yet.
+                  </div>
+                } @else {
+                  <div class="policy-family-list">
+                    @for (
+                      family of policyFamilies;
+                      track family.clientKey;
+                      let index = $index
+                    ) {
+                      <article class="policy-family-card">
+                        <div class="policy-family-heading">
+                          <div>
+                            <strong>
+                              {{
+                                familyLabel(
+                                  family.requirementFamily
+                                )
+                              }}
+                            </strong>
+                          </div>
+
+                          <button
+                            type="button"
+                            class="remove-button"
+                            [disabled]="isPolicyReadOnly"
+                            (click)="removePolicyFamily(index)"
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div class="form-grid">
+                          <label class="field">
+                            <span>Importance</span>
+                            <select
+                              [disabled]="isPolicyReadOnly"
+                              [value]="family.familyImportance"
+                              (change)="
+                                updatePolicyFamily(
+                                  index,
+                                  {
+                                    familyImportance:
+                                      selectNumber($event)
+                                  }
+                                )
+                              "
+                            >
+                              @for (
+                                option of importanceOptions;
+                                track option.value
+                              ) {
+                                <option
+                                  [value]="option.value"
+                                >
+                                  {{ option.label }}
+                                </option>
+                              }
+                            </select>
+                          </label>
+
+                          <label class="policy-check">
+                            <input
+                              type="checkbox"
+                              [disabled]="isPolicyReadOnly"
+                              [checked]="family.isActive"
+                              (change)="
+                                updatePolicyFamily(
+                                  index,
+                                  {
+                                    isActive:
+                                      $any($event.target).checked
+                                  }
+                                )
+                              "
+                            />
+                            <span>Active</span>
+                          </label>
+
+                          <label class="policy-check">
+                            <input
+                              type="checkbox"
+                              [disabled]="isPolicyReadOnly"
+                              [checked]="family.isScored"
+                              (change)="
+                                updatePolicyFamily(
+                                  index,
+                                  {
+                                    isScored:
+                                      $any($event.target).checked
+                                  }
+                                )
+                              "
+                            />
+                            <span>Scored</span>
+                          </label>
+                        </div>
+
+                        <div class="policy-requirements">
+                          <div class="card-heading-row">
+                            <div>
+                              <h4>Requirements</h4>
+                              <p class="section-description">
+                                Add the evidence requirements that belong to this family.
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              class="secondary-button"
+                              [disabled]="isPolicyReadOnly"
+                              (click)="
+                                addPolicyRequirement(family)
+                              "
+                            >
+                              + Add requirement
+                            </button>
+                          </div>
+
+                          @if (
+                            requirementsForFamily(
+                              family.clientKey
+                            ).length === 0
+                          ) {
+                            <div class="policy-empty">
+                              No requirements in this family.
+                            </div>
+                          } @else {
+                            <div class="requirement-list">
+                              @for (
+                                requirement of
+                                  requirementsForFamily(
+                                    family.clientKey
+                                  );
+                                track requirement.clientKey
+                              ) {
+                                <article
+                                  class="requirement-card"
+                                >
+                                  <div
+                                    class="policy-family-heading"
+                                  >
+                                    <strong>
+                                      Requirement
+                                      {{ requirement.displayOrder }}
+                                    </strong>
+
+                                    <button
+                                      type="button"
+                                      class="remove-button"
+                                      [disabled]="
+                                        isPolicyReadOnly
+                                      "
+                                      (click)="
+                                        removePolicyRequirement(
+                                          requirement.clientKey
+                                        )
+                                      "
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+
+                                  <div class="form-grid">
+                                    <label
+                                      class="field full-width"
+                                    >
+                                      <span>Description</span>
+                                      <input
+                                        type="text"
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="
+                                          requirement.description
+                                        "
+                                        (input)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              description:
+                                                $any(
+                                                  $event.target
+                                                ).value
+                                            }
+                                          )
+                                        "
+                                      />
+                                    </label>
+
+                                    <label class="field">
+                                      <span>Mode</span>
+                                      <select
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="requirement.mode"
+                                        (change)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              mode:
+                                                selectNumber($event)
+                                            }
+                                          )
+                                        "
+                                      >
+                                        @for (
+                                          option of
+                                            requirementModeOptions;
+                                          track option.value
+                                        ) {
+                                          <option
+                                            [value]="option.value"
+                                          >
+                                            {{ option.label }}
+                                          </option>
+                                        }
+                                      </select>
+                                    </label>
+
+                                    <label class="field">
+                                      <span>Importance</span>
+                                      <select
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="
+                                          requirement.importance
+                                        "
+                                        (change)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              importance:
+                                                selectNumber($event)
+                                            }
+                                          )
+                                        "
+                                      >
+                                        @for (
+                                          option of
+                                            importanceOptions;
+                                          track option.value
+                                        ) {
+                                          <option
+                                            [value]="option.value"
+                                          >
+                                            {{ option.label }}
+                                          </option>
+                                        }
+                                      </select>
+                                    </label>
+
+                                    <label class="field">
+                                      <span>Skill or evidence target</span>
+                                      <input
+                                        type="text"
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="
+                                          requirement
+                                            .canonicalTargetKey ??
+                                          ''
+                                        "
+                                        (input)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              canonicalTargetKey:
+                                                $any(
+                                                  $event.target
+                                                ).value || null
+                                            }
+                                          )
+                                        "
+                                      />
+                                    </label>
+
+                                    <label class="field">
+                                      <span>Required value</span>
+                                      <input
+                                        type="text"
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="
+                                          requirement
+                                            .requiredValue ?? ''
+                                        "
+                                        (input)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              requiredValue:
+                                                $any(
+                                                  $event.target
+                                                ).value || null
+                                            }
+                                          )
+                                        "
+                                      />
+                                    </label>
+
+                                    <label class="field">
+                                      <span>Required months</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="
+                                          requirement
+                                            .requiredMonths ?? ''
+                                        "
+                                        (input)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              requiredMonths:
+                                                $any(
+                                                  $event.target
+                                                ).value === ''
+                                                  ? null
+                                                  : selectNumber($event)
+                                            }
+                                          )
+                                        "
+                                      />
+                                    </label>
+
+                                    @if (
+                                      isStructuredQuestion(
+                                        requirement
+                                      )
+                                    ) {
+                                      <label
+                                        class="field full-width"
+                                      >
+                                        <span>Question text</span>
+                                        <textarea
+                                          rows="3"
+                                          [disabled]="
+                                            isPolicyReadOnly
+                                          "
+                                          [value]="
+                                            requirement.questionText ??
+                                            ''
+                                          "
+                                          (input)="
+                                            updatePolicyRequirement(
+                                              requirement.clientKey,
+                                              {
+                                                questionText:
+                                                  $any(
+                                                    $event.target
+                                                  ).value || null
+                                              }
+                                            )
+                                          "
+                                        ></textarea>
+                                      </label>
+
+                                      @if (
+                                        requirement.mode !== 3 &&
+                                        requirement.isScored
+                                      ) {
+                                        <label
+                                          class="field full-width"
+                                        >
+                                          <span>
+                                            Expected answer
+                                          </span>
+                                          <textarea
+                                            rows="3"
+                                            [disabled]="
+                                              isPolicyReadOnly
+                                            "
+                                            [value]="
+                                              requirement
+                                                .expectedAnswer ??
+                                              ''
+                                            "
+                                            (input)="
+                                              updatePolicyRequirement(
+                                                requirement.clientKey,
+                                                {
+                                                  expectedAnswer:
+                                                    $any(
+                                                      $event.target
+                                                    ).value || null
+                                                }
+                                              )
+                                            "
+                                          ></textarea>
+                                        </label>
+                                      }
+                                    }
+                                    <label class="policy-check">
+                                      <input
+                                        type="checkbox"
+                                        [disabled]="
+                                          isPolicyReadOnly ||
+                                          requirement.mode === 3
+                                        "
+                                        [checked]="
+                                          requirement.isScored
+                                        "
+                                        (change)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              isScored:
+                                                $any(
+                                                  $event.target
+                                                ).checked
+                                            }
+                                          )
+                                        "
+                                      />
+                                      <span>Scored</span>
+                                    </label>
+
+                                    <label class="policy-check">
+                                      <input
+                                        type="checkbox"
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [checked]="
+                                          requirement
+                                            .requiresVerification
+                                        "
+                                        (change)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              requiresVerification:
+                                                $any(
+                                                  $event.target
+                                                ).checked
+                                            }
+                                          )
+                                        "
+                                      />
+                                      <span>
+                                        Requires verification
+                                      </span>
+                                    </label>
+
+                                    <label class="policy-check">
+                                      <input
+                                        type="checkbox"
+                                        [disabled]="
+                                          isPolicyReadOnly ||
+                                          requirement.mode === 3
+                                        "
+                                        [checked]="
+                                          requirement
+                                            .isRegulatoryGate
+                                        "
+                                        (change)="
+                                          updatePolicyRequirement(
+                                            requirement.clientKey,
+                                            {
+                                              isRegulatoryGate:
+                                                $any(
+                                                  $event.target
+                                                ).checked
+                                            }
+                                          )
+                                        "
+                                      />
+                                      <span>Regulatory gate</span>
+                                    </label>
+                                  </div>
+                                </article>
+                              }
+                            </div>
+                          }
+                        </div>
+
+                        <div class="policy-alternative-sets">
+                          <div class="card-heading-row">
+                            <div>
+                              <h4>Alternative sets</h4>
+                              <p class="section-description">
+                                Group same-family requirements as
+                                Any of or Minimum satisfied.
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              class="secondary-button"
+                              [disabled]="isPolicyReadOnly"
+                              (click)="addAlternativeSet(family)"
+                            >
+                              + Add alternative set
+                            </button>
+                          </div>
+
+                          @if (
+                            alternativeSetsForFamily(
+                              family.clientKey
+                            ).length === 0
+                          ) {
+                            <div class="policy-empty">
+                              No alternative sets configured.
+                            </div>
+                          } @else {
+                            <div class="alternative-set-list">
+                              @for (
+                                set of alternativeSetsForFamily(
+                                  family.clientKey
+                                );
+                                track set.clientKey
+                              ) {
+                                <article
+                                  class="alternative-set-card"
+                                >
+                                  <div
+                                    class="policy-family-heading"
+                                  >
+                                    <strong>
+                                      Alternative set
+                                      {{ set.displayOrder }}
+                                    </strong>
+
+                                    <button
+                                      type="button"
+                                      class="remove-button"
+                                      [disabled]="
+                                        isPolicyReadOnly
+                                      "
+                                      (click)="
+                                        removeAlternativeSet(
+                                          set.clientKey
+                                        )
+                                      "
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+
+                                  <div class="form-grid">
+                                    <label class="field">
+                                      <span>Set type</span>
+                                      <select
+                                        [disabled]="
+                                          isPolicyReadOnly
+                                        "
+                                        [value]="set.setType"
+                                        (change)="
+                                          updateAlternativeSet(
+                                            set.clientKey,
+                                            {
+                                              setType:
+                                                selectNumber($event)
+                                            }
+                                          )
+                                        "
+                                      >
+                                        @for (
+                                          option of
+                                            alternativeSetTypeOptions;
+                                          track option.value
+                                        ) {
+                                          <option
+                                            [value]="option.value"
+                                          >
+                                            {{ option.label }}
+                                          </option>
+                                        }
+                                      </select>
+                                    </label>
+
+                                    @if (set.setType === 2) {
+                                      <label class="field">
+                                        <span>
+                                          Minimum satisfied
+                                        </span>
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          [max]="
+                                            set
+                                              .memberRequirementClientKeys
+                                              .length
+                                          "
+                                          [disabled]="
+                                            isPolicyReadOnly
+                                          "
+                                          [value]="
+                                            set.minimumSatisfiedCount ??
+                                            1
+                                          "
+                                          (input)="
+                                            updateAlternativeSet(
+                                              set.clientKey,
+                                              {
+                                                minimumSatisfiedCount:
+                                                  selectNumber($event)
+                                              }
+                                            )
+                                          "
+                                        />
+                                      </label>
+                                    }
+                                  </div>
+
+                                  <div class="set-members">
+                                    <span class="field-label">
+                                      Members
+                                    </span>
+
+                                    @for (
+                                      requirement of
+                                        availableRequirementsForAlternativeSet(
+                                          family.clientKey,
+                                          set.clientKey
+                                        );
+                                      track requirement.clientKey
+                                    ) {
+                                      <label
+                                        class="policy-check member-check"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          [disabled]="
+                                            isPolicyReadOnly
+                                          "
+                                          [checked]="
+                                            isAlternativeSetMember(
+                                              set,
+                                              requirement.clientKey
+                                            )
+                                          "
+                                          (change)="
+                                            toggleAlternativeSetMember(
+                                              set.clientKey,
+                                              requirement,
+                                              $any(
+                                                $event.target
+                                              ).checked
+                                            )
+                                          "
+                                        />
+                                        <span>
+                                          {{
+                                            requirement.description ||
+                                              'Requirement ' +
+                                                requirement.displayOrder
+                                          }}
+                                        </span>
+                                      </label>
+                                    }
+
+                                    @if (
+                                      availableRequirementsForAlternativeSet(
+                                        family.clientKey,
+                                        set.clientKey
+                                      ).length === 0
+                                    ) {
+                                      <p
+                                        class="section-description"
+                                      >
+                                        No compatible unassigned
+                                        requirements are available.
+                                      </p>
+                                    }
+                                  </div>
+                                </article>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </article>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </section>
+      }
+
+      @if (activeStage === 6) {
+        <section class="editor-card review-section">
+          <p class="stage-label">Step 7 of 7</p>
+          <h2>Review & publish readiness</h2>
+
+          <p class="section-description">
+            Confirm every visible fact and matching rule before publishing.
+          </p>
+
+          @if (!vacancyId || !loadedVacancy) {
+            <div class="message readonly-message">
+              Save the Draft vacancy before publishing.
+            </div>
+          } @else {
+            @if (publishErrorMessage) {
+              <div
+                class="message error-message"
+                role="alert"
+              >
+                {{ publishErrorMessage }}
+              </div>
+            }
+
+            @if (publishSuccessMessage) {
+              <div
+                class="message success-message"
+                role="status"
+              >
+                {{ publishSuccessMessage }}
+              </div>
+            }
+
+            <article class="review-card">
+              <div class="card-heading-row">
+                <div>
+                  <h3>Vacancy facts</h3>
+
+                  <p class="section-description">
+                    Lifecycle:
+                    {{ loadedVacancy.lifecycleStatus }}
+                  </p>
+                </div>
+
+                @if (
+                  loadedVacancy.lifecycleStatus !==
+                  'Closed'
+                ) {
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    (click)="goToStage(0)"
+                  >
+                    Edit facts
+                  </button>
+                }
+              </div>
+
+              <dl class="review-grid">
+                <div>
+                  <dt>Title</dt>
+                  <dd>{{ loadedVacancy.title }}</dd>
+                </div>
+
+                <div>
+                  <dt>Company</dt>
+                  <dd>
+                    {{
+                      loadedVacancy.companyName ||
+                        'Not provided'
+                    }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Location</dt>
+                  <dd>
+                    {{
+                      loadedVacancy.location ||
+                        'Not provided'
+                    }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Work mode</dt>
+                  <dd>
+                    {{
+                      loadedVacancy.workMode ||
+                        'Not provided'
+                    }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Employment type</dt>
+                  <dd>
+                    {{
+                      loadedVacancy.employmentType ||
+                        'Not provided'
+                    }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Required skills</dt>
+                  <dd class="review-skill-list">
+                    @for (skill of loadedVacancy.requiredSkills; track skill.name) {
+                      <span>{{ skill.name }} · weight {{ skill.weight }}</span>
+                    } @empty { <span>Not provided</span> }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Experience</dt>
+                  <dd>
+                    {{ loadedVacancy.minExperienceMonths }}
+                    –
+                    {{
+                      loadedVacancy.maxExperienceMonths ??
+                        'No maximum'
+                    }}
+                    months
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Education</dt>
+                  <dd>{{ loadedVacancy.requiredEducation || 'Not provided' }}</dd>
+                </div>
+
+                <div>
+                  <dt>Salary range</dt>
+                  <dd>
+                    @if (loadedVacancy.salaryMin !== null || loadedVacancy.salaryMax !== null) {
+                      {{ loadedVacancy.salaryMin !== null ? (loadedVacancy.salaryMin | currency:'LKR':'symbol':'1.0-0') : 'No minimum' }}
+                      –
+                      {{ loadedVacancy.salaryMax !== null ? (loadedVacancy.salaryMax | currency:'LKR':'symbol':'1.0-0') : 'No maximum' }}
+                    } @else { Not provided }
+                  </dd>
+                </div>
+
+                <div class="full-width">
+                  <dt>Description</dt>
+                  <dd class="review-description">{{ loadedVacancy.description || 'Not provided' }}</dd>
+                </div>
+
+                <div>
+                  <dt>Closing</dt>
+                  <dd>
+                    {{
+                      loadedVacancy.closingDateUtc
+                        ? (
+                            loadedVacancy.closingDateUtc
+                              | date: 'medium'
+                          )
+                        : 'Not set'
+                    }}
+                  </dd>
+                </div>
+              </dl>
+            </article>
+
+            <article class="review-card">
+              <div class="card-heading-row">
+                <div>
+                  <h3>Matching policy</h3>
+
+                  @if (policy) {
+                    <p class="section-description">
+                      Revision
+                      {{ policy.revision.revisionNumber }}
+                      ·
+                      {{ policyFamilies.length }}
+                      families ·
+                      {{ policyRequirements.length }}
+                      requirements ·
+                      {{ policyAlternativeSets.length }}
+                      alternative sets
+                    </p>
+                  } @else {
+                    <p class="section-description">
+                      Matching policy is unavailable.
+                    </p>
+                  }
+                </div>
+
+                @if (!isPolicyReadOnly) {
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    (click)="goToStage(5)"
+                  >
+                    Edit policy
+                  </button>
+                }
+              </div>
+
+              @if (
+                policy?.revision?.isMateriallyLocked
+              ) {
+                <div class="message readonly-message">
+                  Matching policy is materially locked
+                  after the first application.
+                </div>
+              }
+
+              @if (policyRequirements.length > 0) {
+                <ul class="policy-review-list">
+                  @for (requirement of policyRequirements; track requirement.clientKey) {
+                    <li>
+                      <strong>{{ familyLabel(requirement.requirementFamily) }}</strong>
+                      <span>{{ requirement.description || requirement.requiredValue || 'Requirement details not provided' }}</span>
+                      <small>{{ requirement.mode }} · {{ requirement.importance }}</small>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="section-description">No advanced requirements. The required skill list remains part of matching.</p>
+              }
+            </article>
+
+            @if (
+              loadedVacancy.lifecycleStatus ===
+              'Draft'
+            ) {
+              <div class="publish-readiness">
+                <div>
+                  <h3>Publish vacancy</h3>
+
+                  <p class="section-description">
+                    Confirm the vacancy facts and matching rules before making this role public.
+                  </p>
+                  @if (publishReadinessIssues.length > 0) {
+                    <ul class="readiness-list" aria-label="Items required before publishing">
+                      @for (issue of publishReadinessIssues; track issue) { <li>{{ issue }}</li> }
+                    </ul>
+                  } @else {
+                    <p class="ready-copy">Ready to publish.</p>
+                  }
+                </div>
+
+                <button
+                  type="button"
+                  class="primary-button"
+                  [disabled]="!canPublish"
+                  (click)="publishVacancy()"
+                >
+                  @if (publishing) {
+                    Publishing...
+                  } @else {
+                    Publish vacancy
+                  }
+                </button>
+              </div>
+            } @else if (
+              loadedVacancy.lifecycleStatus ===
+              'Published'
+            ) {
+              <div
+                class="message success-message"
+                role="status"
+              >
+                This vacancy is Published.
+              </div>
+            } @else if (
+              loadedVacancy.lifecycleStatus ===
+              'Closed'
+            ) {
+              <div class="message readonly-message">
+                This vacancy is Closed. Closed is terminal.
+              </div>
+            }
+          }
+        </section>
+      }
+
+      @if (successMessage) {
+        <div class="message success-message" role="status">
+          {{ successMessage }}
+        </div>
+      }
+
+      <div class="editor-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="activeStage === 0 || saving"
+          (click)="previousStage()"
+        >
+          Previous
+        </button>
+
+        <div class="action-group">
+          @if (!isReadOnly) {
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="saving"
+              (click)="saveVacancy()"
+            >
+              @if (saving) {
+                Saving...
+              } @else if (isEditMode) {
+                Save changes
+              } @else {
+                Save Draft
+              }
+            </button>
+          }
+
+          @if (activeStage < stages.length - 1) {
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="saving"
+              (click)="nextStage()"
+            >
+              Continue
+            </button>
+          }
+        </div>
+      </div>
+    </form>
+  }
+</section>

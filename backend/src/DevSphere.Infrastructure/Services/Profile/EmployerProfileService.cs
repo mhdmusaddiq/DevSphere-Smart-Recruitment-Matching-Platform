@@ -1,0 +1,99 @@
+using DevSphere.Application.DTOs.Profile;
+using DevSphere.Application.Interfaces;
+using DevSphere.Domain.Entities.Employers;
+using DevSphere.Infrastructure.Repositories;
+
+namespace DevSphere.Infrastructure.Services.Profile;
+
+public class EmployerProfileService : IEmployerProfileService
+{
+    private readonly EmployerProfileRepository _repository;
+
+    public EmployerProfileService(
+        EmployerProfileRepository repository)
+    {
+        _repository = repository;
+    }
+
+
+    public async Task<EmployerProfileDto?> GetByUserIdAsync(
+        string userId)
+    {
+        var profile = await _repository
+            .GetByUserIdAsync(userId);
+
+        if (profile == null)
+        {
+            return null;
+        }
+
+
+        return new EmployerProfileDto
+        {
+            CompanyName = profile.CompanyName,
+            ContactEmail = profile.ContactEmail,
+            Website = profile.Website,
+            Location = profile.Location
+        };
+    }
+
+
+    public async Task<EmployerProfileDto> CreateAsync(
+        string userId,
+        EmployerProfileDto profile)
+    {
+        var entity = new EmployerProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            CompanyName = profile.CompanyName,
+            ContactEmail = profile.ContactEmail,
+            Website = profile.Website,
+            Location = profile.Location,
+            CreatedAt = DateTime.UtcNow
+        };
+
+
+        await _repository.AddAsync(entity);
+
+
+        return new EmployerProfileDto
+        {
+            CompanyName = entity.CompanyName,
+            ContactEmail = entity.ContactEmail,
+            Website = entity.Website,
+            Location = entity.Location
+        };
+    }
+
+
+    public async Task<EmployerProfileDto> UpdateAsync(
+        string userId,
+        EmployerProfileDto profile)
+    {
+        var entity = await _repository
+            .GetByUserIdAsync(userId);
+
+        if (entity == null)
+        {
+            throw new Exception(
+                "Employer profile not found.");
+        }
+
+        entity.CompanyName = profile.CompanyName;
+        entity.ContactEmail = profile.ContactEmail;
+        entity.Website = profile.Website;
+        entity.Location = profile.Location;
+        entity.UpdatedAt = DateTime.UtcNow;
+
+        await _repository.UpdateAsync(entity);
+
+        return new EmployerProfileDto
+        {
+            CompanyName = entity.CompanyName,
+            ContactEmail = entity.ContactEmail,
+            Website = entity.Website,
+            Location = entity.Location
+        };
+    }
+}
