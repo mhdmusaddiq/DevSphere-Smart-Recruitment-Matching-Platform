@@ -75,3 +75,31 @@ footer p { color: var(--color-text-muted); font-size: 13px; }
   box-shadow: 0 28px 72px rgba(46, 38, 141, .14);
 } .landing-section, .how-section { width: calc(100% - 40px); padding: 72px 0; } .path-grid { grid-template-columns: 1fr; } .landing-cta { align-items: flex-start; flex-direction: column; width: calc(100% - 40px); padding: 32px 24px; } footer { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 600px) { .public-header a, .path-grid a { min-height: 44px; display: flex; align-items: center; } .public-header nav > a:not(.button) { min-width: 44px; justify-content: center; } }
+
+/* FINAL RESPONSIVE HERO OVERRIDE */
+@media (max-width: 900px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    padding-top: 56px;
+  }
+
+  .hero-art {
+    width: 100%;
+    max-width: 620px;
+    margin: 48px auto 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .landing-hero {
+    min-height: auto;
+    padding: 56px 20px 48px;
+  }
+
+  .hero-art {
+    width: 100%;
+    max-width: none;
+    aspect-ratio: 1.2;
+    margin: 36px 0 0;
+  }
+}
